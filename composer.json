@@ -1,0 +1,16 @@
+{
+    "name": "lumenpink/picoshare",
+    "description": "Simple url shortener and file sharing system",
+    "type": "project",
+    "require-dev": {
+        "laravel/pint": "^1.14"
+    },
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Lumen Pink",
+            "email": "hi@lumen.pink"
+        }
+    ],
+    "require": {}
+}
