@@ -5,6 +5,7 @@ const FILENAME_LENGTH = 5;                                          // Length of
 const DATA_DIR = 'data/';                                           // Must end with a slash
 const RANDOM_NAME_ALLOWED_CHARS = '256789bcdfghjklmnpqrstvwxyz';    // Excluding vowels and vowels lookalikes
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 500;                          // 500MB
+const AUTHORIZATION = ['tatanka'];                                  // Auth token
 const ALLOWED_EXTENSIONS = [
     'jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'ogg', 'mp3', 'wav',
     'flac', 'pdf', 'txt', 'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'doc', 'docx', 'xls',
@@ -37,13 +38,13 @@ function generate_name_safe()
 }
 function check_file_exists($name)
 {
-    $files = glob(DATA_DIR.$name.'.*');
+    $files = glob(DATA_DIR . $name . '.*');
 
     return count($files) > 0;
 }
 function check_and_create_upload_dir()
 {
-    if (! file_exists(DATA_DIR)) {
+    if (!file_exists(DATA_DIR)) {
         mkdir(DATA_DIR, 0777, true);
     }
 }
@@ -52,14 +53,14 @@ function upload_file($file)
     global $oneshot;
     check_and_create_upload_dir();
     $validate = validate_file($file);
-    if (! $validate['result']) {
+    if (!$validate['result']) {
         return $validate;
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $file_name = generate_name_safe().'.'.$ext;
-    $file_path = DATA_DIR.$file_name;
+    $file_name = generate_name_safe() . '.' . $ext;
+    $file_path = DATA_DIR . $file_name;
     if ($oneshot) {
-        $file_path = $file_path.'.oneshot';
+        $file_path = $file_path . '.oneshot';
     }
 
     if (move_uploaded_file($file['tmp_name'], $file_path)) {
@@ -74,7 +75,7 @@ function validate_file($file)
     if ($file['size'] > MAX_UPLOAD_SIZE) {
         return ['result' => false, 'description' => 'File too large'];
     }
-    if (! in_array(strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)), ALLOWED_EXTENSIONS)) {
+    if (!in_array(strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)), ALLOWED_EXTENSIONS)) {
         return ['result' => false, 'description' => 'Invalid file type'];
     }
 
@@ -84,16 +85,26 @@ function validate_file($file)
 function create_url_file($url, $oneshot, $remote)
 {
     $file_name = generate_name_safe();
-    $file_path = $file_name.'.'.($oneshot ? 'oneshot.' : '').'url';
-    $file = fopen(DATA_DIR.$file_path, 'w');
+    $file_path = $file_name . '.' . ($oneshot ? 'oneshot.' : '') . 'url';
+    $file = fopen(DATA_DIR . $file_path, 'w');
     fwrite($file, $url);
     fclose($file);
-    echo $_SERVER['HTTP_HOST'].'/'.$file_name;
+    echo $_SERVER['HTTP_HOST'] . '/' . $file_name;
     exit;
 }
 // Main
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (count(AUTHORIZATION) > 0) {
+        if (!isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            header('HTTP/1.1 401 Unauthorized (no auth header)');
+            exit;
+        }
+        if (!in_array($_SERVER['HTTP_AUTHORIZATION'], AUTHORIZATION)) {
+            header('HTTP/1.1 401 Unauthorized (invalid auth header)');
+            exit;
+        }
+    }
     $oneshot = false;
     $remote = false;
     if (isset($_FILES['file']) || isset($_FILES['oneshot'])) {
@@ -104,9 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $saved_file = upload_file($_FILES['oneshot']);
         }
         if ($saved_file['result']) {
-            echo $_SERVER['HTTP_HOST'].'/'.$saved_file['description'];
+            echo $_SERVER['HTTP_HOST'] . '/' . $saved_file['description'];
         } else {
-            echo 'Error uploading file: '.$saved_file['description'];
+            echo 'Error uploading file: ' . $saved_file['description'];
         }
     }
 
@@ -124,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo 'Remote method not implemented';
             exit;
         }
-        if (! filter_var($url, FILTER_VALIDATE_URL)) {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
             echo 'Invalid URL';
             exit;
         }
@@ -136,8 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $request_uri = ltrim($_SERVER['REQUEST_URI'], '/');
     $request = explode('.', $request_uri);
     //convert to lowercase and permit only the allowed chars
-    $file_name = preg_replace('/[^'.RANDOM_NAME_ALLOWED_CHARS.']+/', '', strtolower($request[0]));
-    $files = glob(DATA_DIR.$file_name.'.*');
+    $file_name = preg_replace('/[^' . RANDOM_NAME_ALLOWED_CHARS . ']+/', '', strtolower($request[0]));
+    $files = glob(DATA_DIR . $file_name . '.*');
     if (count($files) == 0) {
         header('HTTP/1.1 404 File Not Found');
         echo 'File Not Found';
@@ -160,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if ($oneshot) {
             unlink($files[0]);
         }
-        header('Location: '.$url);
+        header('Location: ' . $url);
         exit;
     } else {
         $file_last_part = $file_exploded[count($file_exploded) - 1];
@@ -172,13 +183,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $mime_type = mime_content_type($files[0]);
         $mime_type_family = explode('/', $mime_type)[0];
         if ($mime_type_family == 'image') {
-            header('Content-Disposition: inline; filename="'.implode('.', $file_exploded).'"');
+            header('Content-Disposition: inline; filename="' . implode('.', $file_exploded) . '"');
         } else {
-            header('Content-Disposition: attachment; filename="'.implode('.', $file_exploded).'"');
+            header('Content-Disposition: attachment; filename="' . implode('.', $file_exploded) . '"');
         }
-        header('Content-Type: '.$mime_type);
-        header('Content-Disposition: inline; filename="'.implode('.', $file_exploded).'"');
-        header('Content-Length: '.filesize($files[0]));
+        header('Content-Type: ' . $mime_type);
+        header('Content-Disposition: inline; filename="' . implode('.', $file_exploded) . '"');
+        header('Content-Length: ' . filesize($files[0]));
         fpassthru($file);
         fclose($file);
         if ($oneshot) {
