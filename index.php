@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $file = fopen("$files[0]", 'r') or exit('Unable to open file!');
         $mime_type = mime_content_type($files[0]);
         $mime_type_family = explode('/', $mime_type)[0];
-        if ($mime_type_family == 'image') {
+        if ($mime_type_family == 'image' || $mime_type_family == 'video' || $mime_type_family == 'audio') {
             header('Content-Disposition: inline; filename="' . implode('.', $file_exploded) . '"');
         } else {
             header('Content-Disposition: attachment; filename="' . implode('.', $file_exploded) . '"');
