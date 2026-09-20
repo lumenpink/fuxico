@@ -104,7 +104,7 @@ class App
             $num = (float) $val;
             // Milliseconds since epoch
             if ($num > 1000000000000) {
-                return (int) ($num / 1000);
+                return (int) round($num / 1000.0);
             }
             // Seconds since epoch
             if ($num > 1000000000) {
@@ -112,7 +112,7 @@ class App
             }
             // Hours format (0x0.st standard format)
             if ($num > 0) {
-                return time() + (int) ($num * 3600);
+                return time() + (int) round($num * 3600.0);
             }
         }
 
@@ -285,7 +285,9 @@ class App
         }
 
         // 2. URL Shorten (or remote fetch if requested)
-        $urlCandidate = $_POST['shorten'] ?? $_POST['url'] ?? null;
+        $urlCandidate = (isset($_POST['shorten']) && is_string($_POST['shorten']))
+            ? $_POST['shorten']
+            : ((isset($_POST['url']) && is_string($_POST['url'])) ? $_POST['url'] : null);
         $isRemoteFetch = isset($_POST['remote']) || (isset($_POST['url']) && ! isset($_POST['shorten']) && isset($_POST['fetch']));
 
         if ($isRemoteFetch && $urlCandidate) {

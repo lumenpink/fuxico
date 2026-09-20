@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<psalm
+    errorLevel="4"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+>
+    <projectFiles>
+        <directory name="src" />
+        <file name="index.php" />
+        <ignoreFiles>
+            <directory name="vendor" />
+        </ignoreFiles>
+    </projectFiles>
+
+    <taintAnalysis>
+        <ignoreFiles>
+            <directory name="vendor" />
+        </ignoreFiles>
+    </taintAnalysis>
+
+    <issueHandlers>
+        <PossiblyUnusedMethod errorLevel="info" />
+        <PossiblyUnusedReturnValue errorLevel="info" />
+        <PossiblyUnusedParam errorLevel="info" />
+        <UnusedClass errorLevel="info" />
+        <UnusedProperty errorLevel="info" />
+        <PossiblyUnusedProperty errorLevel="info" />
+        <RedundantCondition errorLevel="info" />
+        <TypeDoesNotContainType errorLevel="info" />
+        <RedundantCast errorLevel="info" />
+        <UnusedVariable errorLevel="info" />
+    </issueHandlers>
+</psalm>

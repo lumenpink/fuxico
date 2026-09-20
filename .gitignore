@@ -3,3 +3,6 @@ data/
 .antigravity
 cli/target/
 .phpunit.result.cache
+coverage/
+public_reports/
+.psalm-cache/
