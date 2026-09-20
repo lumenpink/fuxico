@@ -223,6 +223,10 @@ else
     CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD}")
 fi
 
+if [[ -n "${CUSTOM_NAME}" ]]; then
+    CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}")
+fi
+
 if [[ "${ONESHOT}" == true ]]; then
     CURL_ARGS+=("-F" "oneshot=true")
 fi
