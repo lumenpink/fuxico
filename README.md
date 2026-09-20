@@ -34,17 +34,21 @@
 
 ## 🚀 Quick Start
 
-### 1. Requirements
-- PHP 8.2 or newer with extensions: `pdo_sqlite`, `fileinfo`, `curl`, `mbstring`.
-- Composer (for running tests and formatting).
-
-### 2. Run Locally with Built-in Server
+### 1. Run with Docker Compose (Recommended)
 ```bash
-# Start server on port 8080
+# Clone the repository
+git clone https://codeberg.org/lumenpink/picoshare.git && cd picoshare
+
+# Start PicoShare and automated image updater (Watchtower)
+docker compose up -d
+```
+Visit [http://localhost:8080](http://localhost:8080) to access the service.
+
+### 2. Run Locally with Built-in PHP Server
+- Requires PHP 8.2+ (`pdo_sqlite`, `fileinfo`, `curl`, `mbstring`).
+```bash
 php -S 127.0.0.1:8080 index.php
 ```
-
-Visit [http://localhost:8080](http://localhost:8080) in your browser to access the Web UI, or use cURL from the terminal.
 
 ---
 
