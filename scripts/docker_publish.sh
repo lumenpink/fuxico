@@ -26,7 +26,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Default configurations
-DEFAULT_IMAGE="lumenpink/picoshare"
+DEFAULT_IMAGE="lumenpink/fuxico"
 IMAGE_NAME="${DOCKER_IMAGE:-$DEFAULT_IMAGE}"
 DRY_RUN=false
 FORCE_LATEST=false
@@ -104,7 +104,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo -e "${BOLD}======================================================${RESET}"
-echo -e "${BOLD} 🐳 PicoShare Docker Build & Publish Pipeline        ${RESET}"
+echo -e "${BOLD} 🐳 Fuxico Docker Build & Publish Pipeline           ${RESET}"
 echo -e "${BOLD}======================================================${RESET}"
 
 # 1. Pre-flight checks

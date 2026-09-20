@@ -1,8 +1,8 @@
 FROM dunglas/frankenphp:alpine
 
 LABEL maintainer="Lumen Pink <hi@lumen.pink>"
-LABEL org.opencontainers.image.title="PicoShare"
-LABEL org.opencontainers.image.description="12-Factor Minimalist File Sharing & URL Shortener"
+LABEL org.opencontainers.image.title="Fuxico"
+LABEL org.opencontainers.image.description="A malícia popular do boca a boca - Edge File Vault & URL Shortener"
 
 ENV SERVER_NAME=":8080" \
     CADDYFILE="/etc/caddy/Caddyfile" \

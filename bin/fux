@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# fux - A malícia popular do boca a boca no terminal
+# ==============================================================================
+# Regra de ouro: deboche no stderr, URL pura no stdout!
+# ==============================================================================
+
+set -euo pipefail
+
+SERVER_URL="${FUXICO_URL:-${PICOSHARE_URL:-http://localhost:8080}}"
+AUTH_TOKEN="${FUXICO_TOKEN:-${PICOSHARE_TOKEN:-tatanka}}"
+
+EXPIRATION="24"
+ONESHOT=false
+SECRET=false
+CUSTOM_NAME=""
+TARGET_URL=""
+DELETE_TARGET=""
+LIST_FILES=false
+COPY_CLIPBOARD=false
+SILENT=false
+
+# Visual formatting (stderr only)
+BOLD="$(printf '\033[1m')"
+YELLOW="$(printf '\033[0;33m')"
+PINK="$(printf '\033[0;35m')"
+CYAN="$(printf '\033[0;36m')"
+RESET="$(printf '\033[0m')"
+
+log() {
+    if [[ "${SILENT}" == false ]]; then
+        echo -e "${YELLOW}[fux]${RESET} $*" >&2
+    fi
+}
+
+usage() {
+    cat <<EOF
+fux - A malícia popular do boca a boca
+
+Uso:
+    fux [opções] <arquivo>
+    cat dump.sql | fux [opções]
+    fux -q <arquivo>          (queima de arquivo: some no 1º download)
+    fux -u <url>              (encurtar fofoca)
+    fux -d <slug>             (queimar fofoca com token)
+    fux -l                    (listar fofocas ativas)
+
+Opções:
+    -q, -1, --queima    Queima-de-arquivo (destruição no primeiro GET)
+    -e <tempo>          Validade do bafão (ex: 2h, 24, 7d, 30d)
+    -s, --segredo       Fofoca cifrada (slug de 16 caracteres indecifrável)
+    -u <url>            Encurtar URL de destino
+    -n <nome>           Apelido customizado / slug
+    -t <token>          Token de autorização (ou env FUXICO_TOKEN)
+    -S <servidor>       URL do servidor (padrão: \$FUXICO_URL ou http://localhost:8080)
+    -d <slug>           Apagar / queimar fofoca
+    -l                  Listar fofocas ativas
+    -c                  Copiar link pro clipboard (xclip/wl-copy/pbcopy)
+    --quiet             Modo silencioso: silencia o stderr
+    -h, --help          Mostra esta ajuda
+
+Exemplos:
+    fux segredo.pdf -q
+    cat dump.sql | fux -e 2h
+    url=\$(fux bafao.png --quiet)
+EOF
+}
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -q|-1|--queima)
+            ONESHOT=true
+            shift
+            ;;
+        -e|--expires)
+            EXPIRATION="${2:-}"
+            shift 2
+            ;;
+        -s|--segredo)
+            SECRET=true
+            shift
+            ;;
+        -u|--url)
+            TARGET_URL="${2:-}"
+            shift 2
+            ;;
+        -n|--name)
+            CUSTOM_NAME="${2:-}"
+            shift 2
+            ;;
+        -t|--token)
+            AUTH_TOKEN="${2:-}"
+            shift 2
+            ;;
+        -S|--server)
+            SERVER_URL="${2:-}"
+            shift 2
+            ;;
+        -d|--delete)
+            DELETE_TARGET="${2:-}"
+            shift 2
+            ;;
+        -l|--list)
+            LIST_FILES=true
+            shift
+            ;;
+        -c|--copy)
+            COPY_CLIPBOARD=true
+            shift
+            ;;
+        --quiet)
+            SILENT=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            POSITIONAL_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+copy_to_clipboard() {
+    local text="$1"
+    if command -v wl-copy >/dev/null 2>&1; then
+        printf "%s" "$text" | wl-copy
+    elif command -v xclip >/dev/null 2>&1; then
+        printf "%s" "$text" | xclip -selection clipboard
+    elif command -v pbcopy >/dev/null 2>&1; then
+        printf "%s" "$text" | pbcopy
+    fi
+}
+
+# 1. Listar fofocas
+if [[ "${LIST_FILES}" == true ]]; then
+    log "consultando o cofre de fofocas..."
+    curl -s -f -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/list"
+    exit 0
+fi
+
+# 2. Queimar / Apagar fofoca
+if [[ -n "${DELETE_TARGET}" ]]; then
+    log "queimando a fofoca '${DELETE_TARGET}'..."
+    RES=$(curl -s -w "\n%{http_code}" -X DELETE -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/${DELETE_TARGET}")
+    HTTP_CODE=$(echo "$RES" | tail -n 1)
+    BODY=$(echo "$RES" | sed '$d')
+    if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+        log "segredo incinerado com sucesso."
+    else
+        echo -e "${PINK}[fux]${RESET} falha ao queimar: ${BODY} (HTTP ${HTTP_CODE})" >&2
+        exit 1
+    fi
+    exit 0
+fi
+
+# 3. Encurtar URL
+if [[ -n "${TARGET_URL}" ]]; then
+    log "espalhando o link quente..."
+    CURL_ARGS=("-s" "-f" "-F" "shorten=${TARGET_URL}")
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+    if [[ "${SECRET}" == true ]]; then CURL_ARGS+=("-F" "secret="); fi
+    if [[ -n "${CUSTOM_NAME}" ]]; then CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}"); fi
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+
+    URL_RESULT=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+    log "tá na rua! link encurtado:"
+    echo "${URL_RESULT}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${URL_RESULT}"; fi
+    exit 0
+fi
+
+# 4. Upload de Arquivo (ou stdin)
+FILE_TO_UPLOAD=""
+TEMP_FILE=""
+
+cleanup() {
+    if [[ -n "${TEMP_FILE}" && -f "${TEMP_FILE}" ]]; then
+        rm -f "${TEMP_FILE}"
+    fi
+}
+trap cleanup EXIT
+
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 ]]; then
+    FILE_TO_UPLOAD="${POSITIONAL_ARGS[0]}"
+    if [[ ! -f "${FILE_TO_UPLOAD}" ]]; then
+        echo -e "${PINK}[fux]${RESET} arquivo não encontrado: ${FILE_TO_UPLOAD}" >&2
+        exit 1
+    fi
+elif [ ! -t 0 ]; then
+    TEMP_FILE=$(mktemp /tmp/fux_stdin_XXXXXX)
+    cat > "${TEMP_FILE}"
+    FILE_TO_UPLOAD="${TEMP_FILE}"
+    if [[ -z "${CUSTOM_NAME}" ]]; then
+        MIME_DETECTED=$(file -b --mime-type "${TEMP_FILE}" 2>/dev/null || echo "text/plain")
+        case "${MIME_DETECTED}" in
+            application/json) CUSTOM_NAME="stdin.json" ;;
+            text/csv) CUSTOM_NAME="stdin.csv" ;;
+            text/html) CUSTOM_NAME="stdin.html" ;;
+            text/markdown|text/x-markdown) CUSTOM_NAME="stdin.md" ;;
+            application/pdf) CUSTOM_NAME="stdin.pdf" ;;
+            image/png) CUSTOM_NAME="stdin.png" ;;
+            image/jpeg) CUSTOM_NAME="stdin.jpg" ;;
+            *) CUSTOM_NAME="stdin.txt" ;;
+        esac
+    fi
+else
+    usage
+    exit 1
+fi
+
+log "espalhando o bafão..."
+
+CURL_ARGS=("-s" "-f")
+if [[ -n "${CUSTOM_NAME}" ]]; then
+    CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD};filename=${CUSTOM_NAME}")
+else
+    CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD}")
+fi
+
+if [[ "${ONESHOT}" == true ]]; then
+    CURL_ARGS+=("-F" "oneshot=true")
+fi
+
+if [[ "${SECRET}" == true ]]; then
+    CURL_ARGS+=("-F" "secret=")
+fi
+
+if [[ -n "${EXPIRATION}" ]]; then
+    CURL_ARGS+=("-F" "expires=${EXPIRATION}")
+fi
+
+if [[ -n "${AUTH_TOKEN}" ]]; then
+    CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}")
+fi
+
+URL_RESULT=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+
+if [[ "${ONESHOT}" == true ]]; then
+    log "tá na rua! modo queima-de-arquivo ativado (evapora no 1º download)."
+else
+    log "tá na rua!"
+fi
+
+# Regra de ouro: apenas a URL pura no stdout!
+echo "${URL_RESULT}"
+
+if [[ "${COPY_CLIPBOARD}" == true ]]; then
+    copy_to_clipboard "${URL_RESULT}"
+    log "link copiado pro clipboard."
+fi

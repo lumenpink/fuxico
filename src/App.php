@@ -424,8 +424,14 @@ class App
         $item = $this->db->findBySlug($slug);
         if (! $item) {
             http_response_code(404);
-            header('Content-Type: text/plain');
-            echo "404 Not Found\n";
+            $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+            if (str_contains($accept, 'text/html')) {
+                header('Content-Type: text/html; charset=UTF-8');
+                echo Views::renderErrorPage(404, 'err_404_title', 'err_404_desc', new I18n);
+            } else {
+                header('Content-Type: text/plain');
+                echo "404 Not Found: Essa fofoca já prescreveu (ou você errou o link).\n";
+            }
 
             return;
         }
@@ -644,35 +650,44 @@ class App
     private function handleRootGet(): void
     {
         $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        $i18n = new I18n;
         if (str_contains($accept, 'text/html')) {
-            echo Views::renderWebUI($this->config);
+            echo Views::renderWebUI($this->config, $i18n);
 
             return;
         }
 
         // Plain text banner for CLI curl
         header('Content-Type: text/plain');
+        $tagline = $i18n->t('tagline');
         echo <<<TEXT
-picoshare - Minimalist File Sharing & URL Shortener
-===================================================
+  ___ _   ___  _____ ___  ___ 
+ | __| | | \ \/ /_ _/ __|/ _ \
+ | _|| |_| |>  < | | (__| (_) |
+ |_|  \___//_/\_\___\___|\___/ 
+ {$tagline}
 
-Upload a file:
+Upload a file / Solta o verbo:
     curl -F 'file=@yourfile.png' {$this->getBaseUrl()}/
 
-Upload with expiration (e.g. 24 hours):
-    curl -F 'file=@yourfile.png' -F 'expires=24' {$this->getBaseUrl()}/
-
-Upload oneshot (burn-after-reading):
+Burn after reading / Queima de arquivo:
     curl -F 'file=@yourfile.png' -F 'oneshot=true' {$this->getBaseUrl()}/
 
-Shorten a URL:
+Upload with expiration (e.g. 2h / 24 hours):
+    curl -F 'file=@yourfile.png' -F 'expires=2h' {$this->getBaseUrl()}/
+
+Shorten a URL / Encurtar fofoca:
     curl -F 'shorten=https://example.com' {$this->getBaseUrl()}/
 
-Delete file with token:
+Delete file with token / Queimar segredo:
     curl -F 'token=<X-Token>' -F 'delete=' {$this->getBaseUrl()}/<slug>
 
-List files (rustypaste API):
+List files / Listar bafões (rustypaste API):
     curl -H 'Authorization: <token>' {$this->getBaseUrl()}/list
+
+CLI tool available:
+    ./bin/fux <file>
+    cat dump.sql | ./bin/fux -q
 
 TEXT;
     }

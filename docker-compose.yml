@@ -3,17 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: lumenpink/picoshare:latest
-    container_name: picoshare
+    image: lumenpink/fuxico:latest
+    container_name: fuxico
     restart: unless-stopped
     ports:
       - "${PORT:-8080}:8080"
     environment:
-      - PICOSHARE_PUBLIC_MODE=${PICOSHARE_PUBLIC_MODE:-false}
-      - PICOSHARE_AUTH_TOKENS=${PICOSHARE_AUTH_TOKENS:-tatanka}
-      - PICOSHARE_BASE_URL=${PICOSHARE_BASE_URL:-}
-      - PICOSHARE_MAX_UPLOAD_SIZE=${PICOSHARE_MAX_UPLOAD_SIZE:-524288000}
-      - PICOSHARE_DATA_DIR=/data
+      - FUXICO_PUBLIC_MODE=${FUXICO_PUBLIC_MODE:-${PICOSHARE_PUBLIC_MODE:-false}}
+      - FUXICO_AUTH_TOKENS=${FUXICO_AUTH_TOKENS:-${PICOSHARE_AUTH_TOKENS:-tatanka}}
+      - FUXICO_BASE_URL=${FUXICO_BASE_URL:-${PICOSHARE_BASE_URL:-}}
+      - FUXICO_MAX_UPLOAD_SIZE=${FUXICO_MAX_UPLOAD_SIZE:-${PICOSHARE_MAX_UPLOAD_SIZE:-524288000}}
+      - FUXICO_DATA_DIR=/data
     volumes:
       - ./data:/data
     labels:
@@ -21,7 +21,7 @@ services:
 
   watchtower:
     image: containrrr/watchtower:latest
-    container_name: picoshare_watchtower
+    container_name: fuxico_watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

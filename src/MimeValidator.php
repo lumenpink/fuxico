@@ -47,7 +47,7 @@ class MimeValidator
 
         // Documents & Text
         'pdf' => ['application/pdf'],
-        'txt' => ['text/plain'],
+        'txt' => ['text/plain', 'application/json'],
         'md' => ['text/plain', 'text/markdown', 'text/x-markdown'],
         'log' => ['text/plain'],
         'csv' => ['text/plain', 'text/csv', 'application/csv'],
