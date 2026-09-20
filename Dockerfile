@@ -6,14 +6,14 @@ LABEL org.opencontainers.image.description="A malícia popular do boca a boca - 
 
 ENV SERVER_NAME=":8080" \
     CADDYFILE="/etc/caddy/Caddyfile" \
-    PICOSHARE_DATA_DIR="/data" \
-    PICOSHARE_PUBLIC_MODE="false"
+    FUXICO_DATA_DIR="/data" \
+    FUXICO_PUBLIC_MODE="false"
 
 # Configure PHP runtime parameters for large uploads
-RUN echo "upload_max_filesize = 512M" > "$PHP_INI_DIR/conf.d/picoshare.ini" && \
-    echo "post_max_size = 512M" >> "$PHP_INI_DIR/conf.d/picoshare.ini" && \
-    echo "memory_limit = 512M" >> "$PHP_INI_DIR/conf.d/picoshare.ini" && \
-    echo "max_execution_time = 300" >> "$PHP_INI_DIR/conf.d/picoshare.ini" && \
+RUN echo "upload_max_filesize = 512M" > "$PHP_INI_DIR/conf.d/fuxico.ini" && \
+    echo "post_max_size = 512M" >> "$PHP_INI_DIR/conf.d/fuxico.ini" && \
+    echo "memory_limit = 512M" >> "$PHP_INI_DIR/conf.d/fuxico.ini" && \
+    echo "max_execution_time = 300" >> "$PHP_INI_DIR/conf.d/fuxico.ini" && \
     mkdir -p /data && \
     chown -R www-data:www-data /data
 

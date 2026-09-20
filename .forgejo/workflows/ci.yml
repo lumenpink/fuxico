@@ -166,7 +166,7 @@ jobs:
         uses: https://github.com/dependency-check/Dependency-Check_Action@v1.1.0
         id: depcheck
         with:
-          project: "picoshare"
+          project: "fuxico"
           path: "."
           format: "HTML SARIF"
           out: "coverage/dependency-check"
@@ -214,6 +214,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'lumenpink_picoshare' }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'lumenpink_fuxico' }}
             -Dsonar.organization=${{ vars.SONAR_ORG || 'lumenpink' }}
             -Dsonar.php.coverage.reportPaths=coverage/clover.xml

@@ -1,6 +1,6 @@
 {
-    "name": "lumenpink/picoshare",
-    "description": "Simple url shortener and file sharing system with 0x0.st and rustypaste protocol support",
+    "name": "lumenpink/fuxico",
+    "description": "Fuxico: A malícia popular do boca a boca - File sharing and URL shortener with 0x0.st and rustypaste protocol support",
     "type": "project",
     "license": "GPL-3.0-or-later",
     "authors": [
@@ -11,6 +11,7 @@
     ],
     "autoload": {
         "psr-4": {
+            "Fuxico\\": "src/",
             "PicoShare\\": "src/"
         }
     },

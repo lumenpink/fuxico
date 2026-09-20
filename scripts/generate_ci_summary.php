@@ -73,7 +73,7 @@ if ($isStepSummary || ! $isPages) {
     $psalmStatus = $psalmIssues === 0 ? '✅ 0 issues' : "⚠️ {$psalmIssues} issues";
 
     $md = <<<MARKDOWN
-## 📊 PicoShare CI Execution Report
+## 📊 Fuxico CI Execution Report
 
 | Item | Status | Details |
 |---|---|---|
@@ -121,12 +121,11 @@ if ($isPages) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PicoShare CI Reports Dashboard</title>
+    <title>Fuxico CI Reports Dashboard</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: #1e293b; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        h1 { color: #db2777; margin-bottom: 20px; }
-        a { color: #38bdf8; text-decoration: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; background: #0f172a; color: #f8fafc; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155; }
+        h1 { color: #f43f5e; margin-bottom: 24px; font-size: 1.8rem; }      a { color: #38bdf8; text-decoration: none; }
         a:hover { text-decoration: underline; }
         ul { list-style: none; padding: 0; }
         li { padding: 12px; border-bottom: 1px solid #334155; }
@@ -134,7 +133,7 @@ if ($isPages) {
 </head>
 <body>
     <div class="container">
-        <h1>🪶 PicoShare CI Reports</h1>
+        <h1>⚡ Fuxico CI Reports</h1>
         <ul>
             <li><a href="coverage/index.html">📊 Code Coverage HTML Report</a></li>
             <li><a href="coverage/clover.xml">📄 Clover XML Coverage</a></li>
