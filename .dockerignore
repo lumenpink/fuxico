@@ -9,3 +9,5 @@ public_reports/
 .psalm-cache/
 .phpunit.result.cache
 *.log
+dist/
+fuxico.php

@@ -6,6 +6,6 @@ cli/target/
 coverage/
 public_reports/
 .psalm-cache/
-# Bundles and release artifacts
-dist/*
-!dist/fuxico.php
+# Build and release artifacts
+dist/
+fuxico.php

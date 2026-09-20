@@ -27,6 +27,9 @@ test('compile.php generates a valid standalone single-file distribution', functi
 test('compiled artifact defines constants and aliases in isolated execution', function () {
     $rootDir = dirname(__DIR__, 2);
     $distFile = $rootDir.'/dist/fuxico.php';
+    if (! file_exists($distFile)) {
+        exec("php {$rootDir}/compile.php --quiet");
+    }
 
     $code = escapeshellarg(<<<PHP
 define('FUXICO_NO_RUN', true);
@@ -55,6 +58,9 @@ PHP
 test('compiled standalone fuxico.php handles HTTP requests via php built-in server', function () {
     $rootDir = dirname(__DIR__, 2);
     $distFile = $rootDir.'/dist/fuxico.php';
+    if (! file_exists($distFile)) {
+        exec("php {$rootDir}/compile.php --quiet");
+    }
 
     $tempDir = sys_get_temp_dir().'/fuxico_compiled_test_'.uniqid();
     mkdir($tempDir, 0755, true);
