@@ -177,11 +177,46 @@ fux.example.com {
 
 ---
 
-## 4. Automated Expiration Purge (Cron Job)
+---
+
+## 4. Single-File Portable Deployment (`fuxico.php`)
+
+If you do not want to deploy the entire git tree or install Composer dependencies, you can deploy the single bundled `fuxico.php` artifact:
+
+### Quick Deployment via curl
+```bash
+mkdir -p /var/www/fuxico && cd /var/www/fuxico
+curl -O https://codeberg.org/lumenpink/fuxico/raw/branch/main/fuxico.php
+
+# Run directly via PHP-CLI Server (development / lightweight private use):
+FUXICO_PUBLIC_MODE=true php -S 127.0.0.1:8080 fuxico.php
+```
+
+### With Caddy & PHP-FPM
+When running `fuxico.php` as a single file, route all requests directly to `fuxico.php`:
+
+```caddy
+fux.example.com {
+    root * /var/www/fuxico
+    encode zstd gzip
+
+    @blocked path /data/* /.*
+    respond @blocked 404
+
+    # Route all traffic to the single bundled file
+    try_files {path} /fuxico.php?{query}
+    php_fastcgi unix//run/php/php8.2-fpm.sock
+    file_server
+}
+```
+
+---
+
+## 5. Automated Expiration Purge (Cron Job)
 
 While expired files are automatically removed upon access, you can run a periodic background cleanup:
 
 ```bash
-# Clean expired files once every hour
-0 * * * * php /var/www/fuxico/index.php > /dev/null 2>&1
+# Clean expired files once every hour (modular or single-file)
+0 * * * * php /var/www/fuxico/fuxico.php > /dev/null 2>&1
 ```

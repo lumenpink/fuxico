@@ -43,13 +43,29 @@ docker compose up -d
 ```
 Visit [http://localhost:8080](http://localhost:8080) to access the service.
 
-### 2. Run Locally with Built-in PHP Server
-- Requires PHP 8.2+ (`pdo_sqlite`, `fileinfo`, `curl`, `mbstring`).
+### 2. Portable Single-File Mode (Zero Composer / Zero Dependencies)
+Download `fuxico.php` and run directly on any server with PHP 8.2+:
+```bash
+# Baixar o arquivo único e rodar instantaneamente:
+curl -O https://codeberg.org/lumenpink/fuxico/raw/branch/main/fuxico.php
+FUXICO_PUBLIC_MODE=true php -S 127.0.0.1:8080 fuxico.php
+```
+
+### 3. Run Locally with Built-in PHP Server (Modular Mode)
+- Requires PHP 8.2+ (`pdo_sqlite`, `fileinfo`).
 ```bash
 php -S 127.0.0.1:8080 index.php
 ```
 
-### 3. Build & Publish Docker Image
+### 4. Compile Single-File Portable Edition
+Bundle all modular source files into `dist/fuxico.php` and root `fuxico.php`:
+```bash
+composer compile
+# or directly:
+php compile.php --check
+```
+
+### 5. Build & Publish Docker Image
 ```bash
 # Build and publish to Docker Hub with automatic version tagging
 ./scripts/docker_publish.sh --dry-run
