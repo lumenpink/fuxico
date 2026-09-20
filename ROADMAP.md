@@ -54,6 +54,7 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
   - [x] 7.2 Dual Language i18n (`src/I18n.php`) supporting PT-BR and EN with streetwise microcopy.
   - [x] 7.3 `fux` CLI ergonomics (deboche no stderr, clean URL no stdout, `-q` queima-de-arquivo, stdin pipe).
   - [x] 7.4 Migration of repository and environment configurations to `fuxico`.
+  - [x] 7.5 Unified CLI dialect engine & bilingual options for Bash & Rust (`nullpointer` vs `rustypaste`, `~/.config/fux/config.toml`, PT-BR aliases) (closes #8).
 
 - [x] **Phase 8: Single-File Compiler & Standalone Distribution (closes #10)**
   - [x] 8.1 Standalone bundler `compile.php` generating portable single-file `fuxico.php`.

@@ -92,3 +92,19 @@ Protected by `Authorization: Bearer <master_token>`.
 - `GET /api/stats`: Returns overall item counts, total bytes, and views.
 - `GET /api/items?search=&type=&limit=50&offset=0`: Returns paginated records with total count.
 - `DELETE /api/items/<slug>`: Deletes the item by slug.
+
+---
+
+## 4. Client CLI & Dialect Specifications (`fux`)
+
+Both Bash (`bin/fux`) and Native Rust (`cli/target/release/fux`) clients support dual dialect selection via `-D, --dialect, --dialeto <nullpointer|rustypaste>` and configuration files (`~/.config/fux/config.toml`):
+
+### Dialect Mapping
+| Feature | `nullpointer` (0x0.st) | `rustypaste` |
+|---|---|---|
+| **Upload TTL** | Form field `expires=<val>` | Header `expire: <val>` |
+| **Oneshot** | Form field `oneshot=true` | Header `oneshot: true` |
+| **Shorten** | Form field `shorten=<url>` | Form field `url=<url>` |
+| **Deletion** | `POST /<slug> -F token=... -F delete=` | `DELETE /<slug> -H "Authorization: Bearer ..."` |
+| **Listing** | Via `GET /list` (shared) | `GET /list -H "Authorization: Bearer ..."` |
+

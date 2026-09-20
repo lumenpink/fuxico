@@ -127,44 +127,58 @@ curl -X DELETE -H 'Authorization: Bearer <token>' http://localhost:8080/abcde.pn
 
 ---
 
-## 🛠️ Client CLIs
+## 🛠️ Client CLIs (`fux`)
 
-### 1. `fux` CLI (`bin/fux`)
+Ambos os clientes (Bash e Rust) compartilham o mesmo nome curto (`fux`), aceitam arquivo de configuração unificado (`~/.config/fux/config.toml`), suportam os dois dialetos (`nullpointer` e `rustypaste`) e possuem opções bilingues (EN & PT-BR).
+
+### Arquivo de Configuração Compartilhado (`~/.config/fux/config.toml`)
+```toml
+server = "http://localhost:8080"
+token = "tatanka"
+dialect = "nullpointer" # ou "rustypaste"
+# expires = "24h"
+# oneshot = false
+```
+
+### 1. `fux` CLI em Bash (`bin/fux`)
 ```bash
-# Upload de arquivo padrão (TTL default 24h)
-./bin/fux photo.png
+# Upload padrão com expiração e cópia pro clipboard:
+./bin/fux photo.png --caduca 2h --copia
 
-# Modo Queima de Arquivo (-q: auto-destruição no 1º download)
+# Queima-de-arquivo (-q / --queima: auto-destruição no 1º download)
 ./bin/fux -q relatorio.pdf
 
-# Definir expiração explícita e copiar link pro clipboard
-./bin/fux -e 2h -c backup.gpg
+# Modo silencioso (deboche no stderr silenciado, apenas URL pura no stdout)
+url=$(./bin/fux segredo.pdf --caladinho)
 
-# Suporte a stdin pipe (sem gerar arquivo temporário manual)
-cat dump.sql | ./bin/fux -e 2h
+# Suporte a stdin pipe
+cat dump.sql | ./bin/fux --caduca 2h
 
-# Regra de ouro: deboche no stderr, URL limpa no stdout!
-url=$(./bin/fux segredo.pdf --quiet)
+# Seleção de dialeto explícita (nullpointer vs rustypaste)
+./bin/fux foto.png --dialeto rustypaste
 
 # Encurtar uma URL
-./bin/fux -u https://example.com -n meulink
+./bin/fux --encurta https://example.com --nome meulink
 
-# Queimar/Apagar fofoca com token
-./bin/fux -d abcde -t <X-Token>
+# Apagar fofoca com token
+./bin/fux --apaga abcde --ficha <X-Token>
 
 # Listar fofocas ativas
-./bin/fux -l
+./bin/fux --lista
 ```
 
 *(O atalho `./bin/picoshare` é mantido como wrapper para retrocompatibilidade).*
 
-### 2. Native Rust CLI (`cli/`)
-Cliente nativo em Rust compilado na especificação **Rust 2024 spec** e `ureq 3.4`:
+### 2. `fux` CLI Nativo em Rust (`cli/`)
+Cliente compilado na especificação **Rust 2024 spec** com as mesmíssimas opções e aliases:
 ```bash
-# Compilar e rodar binário nativo otimizado:
+# Compilar binário nativo otimizado:
 cd cli && cargo build --release
-./target/release/picoshare-cli foto.png
-./target/release/picoshare-cli -u https://example.com
+
+# Uso idêntico ao script bash:
+./cli/target/release/fux foto.png --caduca 2h --copia
+./cli/target/release/fux --encurta https://example.com --segredo
+./cli/target/release/fux --ajuda
 ```
 
 ---
