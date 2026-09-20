@@ -81,7 +81,7 @@ php compile.php --check
 ```
 
 ### 6. Build Complete Release Bundles (Server & Clients)
-Compiles standalone servers (`fuxico.php`, `picoshare.php`), packages Bash clients (`fux`, `picoshare`), compiles native Rust binaries (`fux-linux-x86_64`, `picoshare-cli`), generates SHA-256 checksums, and produces a consolidated release archive in `dist/`:
+Compiles standalone server (`fuxico.php`), packages Bash client (`fux`), compiles native Rust binary (`fux-linux-x86_64`), generates SHA-256 checksums, and produces a consolidated release archive in `dist/`:
 ```bash
 composer bundle
 # or directly:
@@ -175,8 +175,6 @@ cat dump.sql | ./bin/fux --caduca 2h
 ./bin/fux --lista
 ```
 
-*(O atalho `./bin/picoshare` é mantido como wrapper para retrocompatibilidade).*
-
 ### 2. `fux` CLI Nativo em Rust (`cli/`)
 Cliente compilado na especificação **Rust 2024 spec** com as mesmíssimas opções e aliases:
 ```bash
@@ -205,8 +203,6 @@ Set any of the following environment variables (or export them in your web serve
 | `FUXICO_SECRET_SLUG_LENGTH` | `16` | Length of secret slugs. |
 | `FUXICO_BASE_URL` | *(auto)* | Override base URL (e.g. `https://fux.example.com`). |
 | `FUXICO_LANG` | `en` *(or auto)*| Force default UI language (`pt` or `en`). |
-
-*(Legacy `PICOSHARE_*` environment variables remain supported as fallbacks).*
 
 ---
 

@@ -39,7 +39,7 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
   - [x] 4.4 Code style enforcement with Laravel Pint.
 
 - [x] **Phase 5: Client Tooling & Documentation**
-  - [x] 5.1 Native Bash CLI (`bin/fux` and `bin/picoshare` wrapper) with cURL wrapper and clipboard integration.
+  - [x] 5.1 Native Bash CLI (`bin/fux`) with cURL wrapper and clipboard integration.
   - [x] 5.2 Standalone Rust CLI (`cli/`) upgraded to Rust 2024 spec and ureq 3.4.
   - [x] 5.3 Complete API documentation (`docs/API.md`) and deployment guide (`docs/DEPLOYMENT.md`).
 
@@ -62,8 +62,8 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
 
 - [x] **Phase 9: Distribution Bundles & Release Automation (closes #7)**
   - [x] 9.1 Multi-artifact bundler `scripts/build_bundles.sh` and `composer bundle`.
-  - [x] 9.2 Synchronized `picoshare.php` and `fuxico.php` dual standalone distributions.
-  - [x] 9.3 Packaged Bash and native Rust binary clients (`fux`, `picoshare`, `fux-linux-x86_64`, `picoshare-cli`).
+  - [x] 9.2 Standalone portable distribution (`dist/fuxico.php`).
+  - [x] 9.3 Packaged Bash and native Rust binary clients (`fux`, `fux-linux-x86_64`, `fux-rs`).
   - [x] 9.4 SHA-256 cryptographic verification manifest (`dist/checksums.sha256`) and release archive (`dist/fuxico-*.tar.gz`).
   - [x] 9.5 Automated Forgejo release packaging workflow (`.forgejo/workflows/release-bundles.yml`).
 
