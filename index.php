@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-use PicoShare\App;
+use Fuxico\App;
 
 // Fuxico - A malícia popular do boca a boca
 // 100% 0x0.st & rustypaste protocol support
@@ -11,13 +11,11 @@ if (file_exists(__DIR__.'/vendor/autoload.php')) {
 } else {
     // Standalone PSR-4 fallback autoloader
     spl_autoload_register(function (string $class) {
-        foreach (['Fuxico\\', 'PicoShare\\'] as $prefix) {
-            if (str_starts_with($class, $prefix)) {
-                $rel = str_replace('\\', '/', substr($class, strlen($prefix)));
-                $file = __DIR__.'/src/'.$rel.'.php';
-                if (file_exists($file)) {
-                    require_once $file;
-                }
+        if (str_starts_with($class, 'Fuxico\\')) {
+            $rel = str_replace('\\', '/', substr($class, strlen('Fuxico\\')));
+            $file = __DIR__.'/src/'.$rel.'.php';
+            if (file_exists($file)) {
+                require_once $file;
             }
         }
     });

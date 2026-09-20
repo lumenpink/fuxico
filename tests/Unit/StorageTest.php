@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use PicoShare\Storage;
+use Fuxico\Storage;
 
 beforeEach(function () {
-    $this->baseDir = sys_get_temp_dir().'/picoshare_storage_'.uniqid();
+    $this->baseDir = sys_get_temp_dir().'/fuxico_storage_'.uniqid();
     $this->dataDir = $this->baseDir.'/data';
     $this->filesDir = $this->dataDir.'/files';
     $this->storage = new Storage($this->dataDir, $this->filesDir);

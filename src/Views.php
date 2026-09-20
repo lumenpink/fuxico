@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PicoShare;
+namespace Fuxico;
 
 class Views
 {
@@ -835,7 +835,7 @@ class Views
     </div>
 
     <footer class="footer">
-        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/picoshare" target="_blank">Codeberg</a> // 100% 0x0.st & rustypaste drop-in protocol</p>
+        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Codeberg</a> // 100% 0x0.st & rustypaste drop-in protocol</p>
     </footer>
 
     <script>

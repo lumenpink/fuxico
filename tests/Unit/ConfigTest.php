@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use PicoShare\Config;
+use Fuxico\Config;
 
 test('default configuration values', function () {
     $config = new Config;

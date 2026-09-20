@@ -62,10 +62,10 @@ load_config() {
             [[ -z "$key" ]] && continue
 
             case "$(echo "$key" | tr '[:upper:]' '[:lower:]')" in
-                server|servidor|url|fuxico_url|picoshare_url)
+                server|servidor|url|fuxico_url)
                     [[ -z "$SERVER_URL" ]] && SERVER_URL="$val"
                     ;;
-                token|ficha|auth_token|fuxico_token|picoshare_token)
+                token|ficha|auth_token|fuxico_token)
                     [[ -z "$AUTH_TOKEN" ]] && AUTH_TOKEN="$val"
                     ;;
                 dialect|dialeto|sotaque)
@@ -102,9 +102,7 @@ else
     XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
     for candidate in \
         "$XDG_CONFIG/fux/config.toml" \
-        "$HOME/.fuxrc" \
-        "$XDG_CONFIG/picoshare/config.toml" \
-        "$HOME/.picosharerc"; do
+        "$HOME/.fuxrc"; do
         if [[ -f "$candidate" ]]; then
             load_config "$candidate"
             break
@@ -113,8 +111,8 @@ else
 fi
 
 # Fallback to Environment Variables or Defaults
-SERVER_URL="${SERVER_URL:-${FUXICO_URL:-${PICOSHARE_URL:-http://localhost:8080}}}"
-AUTH_TOKEN="${AUTH_TOKEN:-${FUXICO_TOKEN:-${PICOSHARE_TOKEN:-tatanka}}}"
+SERVER_URL="${SERVER_URL:-${FUXICO_URL:-http://localhost:8080}}"
+AUTH_TOKEN="${AUTH_TOKEN:-${FUXICO_TOKEN:-tatanka}}"
 
 log() {
     if [[ "${SILENT}" == false ]]; then

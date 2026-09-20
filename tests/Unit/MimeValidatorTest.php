@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use PicoShare\MimeValidator;
+use Fuxico\MimeValidator;
 
 beforeEach(function () {
-    $this->tempDir = sys_get_temp_dir().'/picoshare_test_'.uniqid();
+    $this->tempDir = sys_get_temp_dir().'/fuxico_test_'.uniqid();
     mkdir($this->tempDir, 0777, true);
 });
 
@@ -19,7 +19,7 @@ afterEach(function () {
 
 test('validates clean text file correctly', function () {
     $filePath = $this->tempDir.'/test.txt';
-    file_put_contents($filePath, 'Hello, PicoShare!');
+    file_put_contents($filePath, 'Hello, Fuxico!');
 
     $result = MimeValidator::validate($filePath, 'test.txt', 1048576);
 

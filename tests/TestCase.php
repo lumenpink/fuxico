@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Fuxico\App;
+use Fuxico\Config;
+use Fuxico\Database;
+use Fuxico\Storage;
 use PHPUnit\Framework\TestCase as BaseTestCase;
-use PicoShare\App;
-use PicoShare\Config;
-use PicoShare\Database;
-use PicoShare\Storage;
 
 abstract class TestCase extends BaseTestCase
 {

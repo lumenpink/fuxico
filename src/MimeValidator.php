@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PicoShare;
+namespace Fuxico;
 
 class MimeValidator
 {

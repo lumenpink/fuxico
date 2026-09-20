@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PicoShare;
+namespace Fuxico;
 
 class Config
 {
@@ -38,16 +38,16 @@ class Config
     public function __construct(?string $baseDir = null)
     {
         $base = $baseDir ?? dirname(__DIR__);
-        $this->dataDir = (string) (getenv('FUXICO_DATA_DIR') ?: getenv('PICOSHARE_DATA_DIR') ?: $base.'/data');
+        $this->dataDir = (string) (getenv('FUXICO_DATA_DIR') ?: $base.'/data');
         $this->filesDir = $this->dataDir.'/files';
         $this->dbPath = $this->dataDir.'/fuxico.sqlite';
 
         // Public Mode: if true, anyone can upload. Dashboard & bulk list still require master token.
-        $envPublic = getenv('FUXICO_PUBLIC_MODE') ?: getenv('PICOSHARE_PUBLIC_MODE');
+        $envPublic = getenv('FUXICO_PUBLIC_MODE');
         $this->publicMode = $envPublic !== false ? filter_var($envPublic, FILTER_VALIDATE_BOOLEAN) : false;
 
         // Auth Tokens
-        $envTokens = getenv('FUXICO_AUTH_TOKENS') ?: getenv('PICOSHARE_AUTH_TOKENS');
+        $envTokens = getenv('FUXICO_AUTH_TOKENS');
         if ($envTokens !== false && trim((string) $envTokens) !== '') {
             $this->authTokens = array_map('trim', explode(',', (string) $envTokens));
         } else {
@@ -55,11 +55,11 @@ class Config
         }
 
         // Upload Limits & Slugs
-        $this->maxUploadSize = (int) (getenv('FUXICO_MAX_UPLOAD_SIZE') ?: getenv('PICOSHARE_MAX_UPLOAD_SIZE') ?: self::DEFAULT_MAX_UPLOAD_SIZE);
+        $this->maxUploadSize = (int) (getenv('FUXICO_MAX_UPLOAD_SIZE') ?: self::DEFAULT_MAX_UPLOAD_SIZE);
         $this->allowedChars = self::DEFAULT_ALLOWED_CHARS;
-        $this->filenameLength = (int) (getenv('FUXICO_SLUG_LENGTH') ?: getenv('PICOSHARE_SLUG_LENGTH') ?: self::DEFAULT_FILENAME_LENGTH);
-        $this->secretFilenameLength = (int) (getenv('FUXICO_SECRET_SLUG_LENGTH') ?: getenv('PICOSHARE_SECRET_SLUG_LENGTH') ?: self::DEFAULT_SECRET_FILENAME_LENGTH);
-        $this->baseUrl = getenv('FUXICO_BASE_URL') ?: getenv('PICOSHARE_BASE_URL') ?: null;
+        $this->filenameLength = (int) (getenv('FUXICO_SLUG_LENGTH') ?: self::DEFAULT_FILENAME_LENGTH);
+        $this->secretFilenameLength = (int) (getenv('FUXICO_SECRET_SLUG_LENGTH') ?: self::DEFAULT_SECRET_FILENAME_LENGTH);
+        $this->baseUrl = getenv('FUXICO_BASE_URL') ?: null;
     }
 
     public function isAuthorized(?string $token): bool

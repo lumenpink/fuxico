@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use PicoShare\App;
-use PicoShare\Config;
-use PicoShare\Database;
-use PicoShare\Storage;
+use Fuxico\App;
+use Fuxico\Config;
+use Fuxico\Database;
+use Fuxico\Storage;
 
 beforeEach(function () {
-    $this->tempDir = sys_get_temp_dir().'/picoshare_feat_'.uniqid();
+    $this->tempDir = sys_get_temp_dir().'/fuxico_feat_'.uniqid();
     $dataDir = $this->tempDir.'/data';
     $filesDir = $dataDir.'/files';
-    $dbPath = $dataDir.'/picoshare.sqlite';
+    $dbPath = $dataDir.'/fuxico.sqlite';
 
     $this->config = new Config;
     $this->config->dataDir = $dataDir;

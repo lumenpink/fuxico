@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use PicoShare\Database;
+use Fuxico\Database;
 
 beforeEach(function () {
-    $this->dbPath = sys_get_temp_dir().'/picoshare_test_'.uniqid().'.sqlite';
+    $this->dbPath = sys_get_temp_dir().'/fuxico_test_'.uniqid().'.sqlite';
     $this->db = new Database($this->dbPath);
 });
 

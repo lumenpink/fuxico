@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Fuxico Release Bundler
-# Compiles standalone server (fuxico.php, picoshare.php),
-# packages Bash clients (fux, picoshare),
-# builds native Rust clients (fux-linux-x86_64, picoshare-cli),
+# Compiles standalone server (fuxico.php),
+# packages Bash client (fux),
+# builds native Rust client (fux-linux-x86_64, fux-rs),
 # and generates checksums + release tarball.
 # ==============================================================================
 
@@ -20,17 +20,10 @@ mkdir -p "${DIST_DIR}"
 echo "🐘 Compiling standalone PHP server bundle..."
 php "${ROOT_DIR}/compile.php" --check
 
-# Ensure compatibility copies exist
-if [[ ! -f "${DIST_DIR}/picoshare.php" ]]; then
-    cp "${DIST_DIR}/fuxico.php" "${DIST_DIR}/picoshare.php"
-fi
-
 # 2. Package Bash CLI client
 echo "🐚 Packaging Bash CLI client..."
 cp "${ROOT_DIR}/bin/fux" "${DIST_DIR}/fux"
 chmod +x "${DIST_DIR}/fux"
-cp "${DIST_DIR}/fux" "${DIST_DIR}/picoshare"
-chmod +x "${DIST_DIR}/picoshare"
 
 # 3. Compile Native Rust CLI client
 if command -v cargo >/dev/null 2>&1; then
@@ -38,8 +31,7 @@ if command -v cargo >/dev/null 2>&1; then
     cargo build --release --manifest-path "${ROOT_DIR}/cli/Cargo.toml"
     cp "${ROOT_DIR}/cli/target/release/fux" "${DIST_DIR}/fux-linux-x86_64"
     cp "${DIST_DIR}/fux-linux-x86_64" "${DIST_DIR}/fux-rs"
-    cp "${DIST_DIR}/fux-linux-x86_64" "${DIST_DIR}/picoshare-cli"
-    chmod +x "${DIST_DIR}/fux-linux-x86_64" "${DIST_DIR}/fux-rs" "${DIST_DIR}/picoshare-cli"
+    chmod +x "${DIST_DIR}/fux-linux-x86_64" "${DIST_DIR}/fux-rs"
 else
     echo "⚠️ Cargo not found, skipping Rust CLI compilation"
 fi
@@ -52,9 +44,9 @@ echo "🗜️  Creating release tarball: ${TARBALL}..."
     rm -f "${TARBALL}" "checksums.sha256"
     
     # Collect available artifacts into tarball
-    FILES_TO_PACK=(fuxico.php picoshare.php fux picoshare)
+    FILES_TO_PACK=(fuxico.php fux)
     if [[ -f "fux-linux-x86_64" ]]; then
-        FILES_TO_PACK+=(fux-linux-x86_64 fux-rs picoshare-cli)
+        FILES_TO_PACK+=(fux-linux-x86_64 fux-rs)
     fi
     tar -czf "${TARBALL}" "${FILES_TO_PACK[@]}"
 

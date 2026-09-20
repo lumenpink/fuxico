@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use PicoShare\I18n;
+use Fuxico\I18n;
 
 test('defaults to english when no accept-language provided', function () {
     unset($_SERVER['HTTP_ACCEPT_LANGUAGE'], $_GET['lang']);

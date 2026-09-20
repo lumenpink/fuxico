@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PicoShare;
+namespace Fuxico;
 
 class App
 {
@@ -356,7 +356,7 @@ class App
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'PicoShare/1.0');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Fuxico/1.0');
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         $success = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

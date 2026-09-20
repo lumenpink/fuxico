@@ -85,15 +85,14 @@ beforeAll(function () use ($testEnv) {
 
     $testEnv->bashBin = $rootDir.'/bin/fux';
     $rustFux = $rootDir.'/cli/target/release/fux';
-    $rustLegacy = $rootDir.'/cli/target/release/picoshare-cli';
-    $testEnv->rustBin = file_exists($rustFux) ? $rustFux : $rustLegacy;
+    $testEnv->rustBin = $rustFux;
 
     // Ensure rust binary exists if cargo is present in environment
     if (! file_exists($testEnv->rustBin)) {
         exec('which cargo 2>&1', $cargoCheck, $cargoExit);
         if ($cargoExit === 0) {
             exec("cargo build --release --manifest-path {$rootDir}/cli/Cargo.toml > /dev/null 2>&1");
-            $testEnv->rustBin = file_exists($rustFux) ? $rustFux : $rustLegacy;
+            $testEnv->rustBin = $rustFux;
         }
     }
 
@@ -104,7 +103,7 @@ beforeAll(function () use ($testEnv) {
     $testEnv->host = "http://127.0.0.1:{$testEnv->port}";
 
     $cmd = sprintf(
-        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=tatanka PICOSHARE_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
+        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=tatanka FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
         escapeshellarg($testEnv->tempDir.'/data'),
         $testEnv->port,
         escapeshellarg($distFile)
@@ -291,7 +290,7 @@ test('bash cli deletes fofoca via -d flag', function () use ($testEnv) {
 });
 
 // ============================================================================
-// Native Rust CLI (cli/target/release/picoshare-cli) Test Suite
+// Native Rust CLI (cli/target/release/fux) Test Suite
 // ============================================================================
 
 test('rust cli uploads file: management token on stderr, clean URL on stdout, and valid download', function () use ($testEnv) {

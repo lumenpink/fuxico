@@ -9,4 +9,3 @@ public_reports/
 # Bundles and release artifacts
 dist/*
 !dist/fuxico.php
-!dist/picoshare.php

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PicoShare;
+namespace Fuxico;
 
 class Storage
 {
@@ -37,7 +37,7 @@ class Storage
     {
         $htaccessPath = $dir.'/.htaccess';
         if (! file_exists($htaccessPath)) {
-            $htaccess = "# PicoShare Security Lockdown\n"
+            $htaccess = "# Fuxico Security Lockdown\n"
                       ."# Prevent direct web access to internal data and files\n"
                       ."<IfModule mod_authz_core.c>\n"
                       ."    Require all denied\n"

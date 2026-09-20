@@ -9,8 +9,8 @@ declare(strict_types=1);
  * │  100% compatible with 0x0.st and rustypaste protocols      │
  * └─────────────────────────────────────────────────────────────┘
  *
- * Version: 0.1.0-dev.30+20260920.e1b6876+5f19432
- * Built:   2026-09-20 18:53:13 UTC
+ * Version: 0.1.0-dev.32+20260920.4450eac+ebb3655
+ * Built:   2026-09-20 19:11:24 UTC
  * License: GPL-3.0-or-later
  * Source:  https://codeberg.org/lumenpink/fuxico
  *
@@ -53,13 +53,13 @@ namespace {
 
     if (!defined('FUXICO_COMPILED')) {
         define('FUXICO_COMPILED', true);
-        define('FUXICO_VERSION', '0.1.0-dev.30+20260920.e1b6876+5f19432');
-        define('FUXICO_BUILD_DATE', '2026-09-20 18:53:13 UTC');
+        define('FUXICO_VERSION', '0.1.0-dev.32+20260920.4450eac+ebb3655');
+        define('FUXICO_BUILD_DATE', '2026-09-20 19:11:24 UTC');
     }
 }
 
 /* --- Module: Config.php --- */
-namespace PicoShare {
+namespace Fuxico {
 class Config
 {
     public const DEFAULT_ALLOWED_CHARS = '256789bcdfghjklmnpqrstvwxyz';
@@ -94,16 +94,16 @@ class Config
     public function __construct(?string $baseDir = null)
     {
         $base = $baseDir ?? dirname(__DIR__);
-        $this->dataDir = (string) (getenv('FUXICO_DATA_DIR') ?: getenv('PICOSHARE_DATA_DIR') ?: $base.'/data');
+        $this->dataDir = (string) (getenv('FUXICO_DATA_DIR') ?: $base.'/data');
         $this->filesDir = $this->dataDir.'/files';
         $this->dbPath = $this->dataDir.'/fuxico.sqlite';
 
         // Public Mode: if true, anyone can upload. Dashboard & bulk list still require master token.
-        $envPublic = getenv('FUXICO_PUBLIC_MODE') ?: getenv('PICOSHARE_PUBLIC_MODE');
+        $envPublic = getenv('FUXICO_PUBLIC_MODE');
         $this->publicMode = $envPublic !== false ? filter_var($envPublic, FILTER_VALIDATE_BOOLEAN) : false;
 
         // Auth Tokens
-        $envTokens = getenv('FUXICO_AUTH_TOKENS') ?: getenv('PICOSHARE_AUTH_TOKENS');
+        $envTokens = getenv('FUXICO_AUTH_TOKENS');
         if ($envTokens !== false && trim((string) $envTokens) !== '') {
             $this->authTokens = array_map('trim', explode(',', (string) $envTokens));
         } else {
@@ -111,11 +111,11 @@ class Config
         }
 
         // Upload Limits & Slugs
-        $this->maxUploadSize = (int) (getenv('FUXICO_MAX_UPLOAD_SIZE') ?: getenv('PICOSHARE_MAX_UPLOAD_SIZE') ?: self::DEFAULT_MAX_UPLOAD_SIZE);
+        $this->maxUploadSize = (int) (getenv('FUXICO_MAX_UPLOAD_SIZE') ?: self::DEFAULT_MAX_UPLOAD_SIZE);
         $this->allowedChars = self::DEFAULT_ALLOWED_CHARS;
-        $this->filenameLength = (int) (getenv('FUXICO_SLUG_LENGTH') ?: getenv('PICOSHARE_SLUG_LENGTH') ?: self::DEFAULT_FILENAME_LENGTH);
-        $this->secretFilenameLength = (int) (getenv('FUXICO_SECRET_SLUG_LENGTH') ?: getenv('PICOSHARE_SECRET_SLUG_LENGTH') ?: self::DEFAULT_SECRET_FILENAME_LENGTH);
-        $this->baseUrl = getenv('FUXICO_BASE_URL') ?: getenv('PICOSHARE_BASE_URL') ?: null;
+        $this->filenameLength = (int) (getenv('FUXICO_SLUG_LENGTH') ?: self::DEFAULT_FILENAME_LENGTH);
+        $this->secretFilenameLength = (int) (getenv('FUXICO_SECRET_SLUG_LENGTH') ?: self::DEFAULT_SECRET_FILENAME_LENGTH);
+        $this->baseUrl = getenv('FUXICO_BASE_URL') ?: null;
     }
 
     public function isAuthorized(?string $token): bool
@@ -139,7 +139,7 @@ class Config
 }
 
 /* --- Module: Storage.php --- */
-namespace PicoShare {
+namespace Fuxico {
 class Storage
 {
     private string $dataDir;
@@ -173,7 +173,7 @@ class Storage
     {
         $htaccessPath = $dir.'/.htaccess';
         if (! file_exists($htaccessPath)) {
-            $htaccess = "# PicoShare Security Lockdown\n"
+            $htaccess = "# Fuxico Security Lockdown\n"
                       ."# Prevent direct web access to internal data and files\n"
                       ."<IfModule mod_authz_core.c>\n"
                       ."    Require all denied\n"
@@ -364,7 +364,7 @@ class Storage
 }
 
 /* --- Module: MimeValidator.php --- */
-namespace PicoShare {
+namespace Fuxico {
 class MimeValidator
 {
     /** @var string[] Extensions strictly disallowed for security */
@@ -527,7 +527,7 @@ class MimeValidator
 }
 
 /* --- Module: Database.php --- */
-namespace PicoShare {
+namespace Fuxico {
 use PDO;
 
 class Database
@@ -771,7 +771,7 @@ class Database
 }
 
 /* --- Module: I18n.php --- */
-namespace PicoShare {
+namespace Fuxico {
 class I18n
 {
     private string $lang;
@@ -920,7 +920,7 @@ class I18n
             return strtolower((string) $_GET['lang']);
         }
 
-        $envLang = getenv('FUXICO_LANG') ?: getenv('PICOSHARE_LANG');
+        $envLang = getenv('FUXICO_LANG');
         if ($envLang && in_array(strtolower((string) $envLang), ['pt', 'en'], true)) {
             return strtolower((string) $envLang);
         }
@@ -978,7 +978,7 @@ class I18n
 }
 
 /* --- Module: Views.php --- */
-namespace PicoShare {
+namespace Fuxico {
 class Views
 {
     public static function renderWebUI(Config $config, ?I18n $i18n = null): string
@@ -1810,7 +1810,7 @@ class Views
     </div>
 
     <footer class="footer">
-        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/picoshare" target="_blank">Codeberg</a> // 100% 0x0.st & rustypaste drop-in protocol</p>
+        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Codeberg</a> // 100% 0x0.st & rustypaste drop-in protocol</p>
     </footer>
 
     <script>
@@ -2211,7 +2211,7 @@ HTML;
 }
 
 /* --- Module: App.php --- */
-namespace PicoShare {
+namespace Fuxico {
 class App
 {
     private Config $config;
@@ -2564,7 +2564,7 @@ class App
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'PicoShare/1.0');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Fuxico/1.0');
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         $success = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -2902,19 +2902,8 @@ TEXT;
 }
 }
 
-/* --- Runner & Namespace Compatibility --- */
+/* --- Runner --- */
 namespace {
-    // Class aliases for Fuxico namespace
-    if (!class_exists(\Fuxico\App::class, false)) {
-        class_alias(\PicoShare\App::class, \Fuxico\App::class);
-        class_alias(\PicoShare\Config::class, \Fuxico\Config::class);
-        class_alias(\PicoShare\Database::class, \Fuxico\Database::class);
-        class_alias(\PicoShare\Storage::class, \Fuxico\Storage::class);
-        class_alias(\PicoShare\Views::class, \Fuxico\Views::class);
-        class_alias(\PicoShare\MimeValidator::class, \Fuxico\MimeValidator::class);
-        class_alias(\PicoShare\I18n::class, \Fuxico\I18n::class);
-    }
-
     // Auto-dispatch when executed directly via web server or CLI
     if (!defined('FUXICO_NO_RUN')) {
         $isCli = (PHP_SAPI === 'cli');
@@ -2922,7 +2911,7 @@ namespace {
         $isWebServer = !$isCli;
 
         if ($isWebServer || $isDirectCli) {
-            $app = new \PicoShare\App();
+            $app = new \Fuxico\App();
             $app->handleRequest();
         }
     }

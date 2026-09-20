@@ -166,8 +166,6 @@ fn load_file_config(cli_config: Option<&Path>) -> FileConfig {
     let candidates = [
         format!("{}/fux/config.toml", xdg),
         format!("{}/.fuxrc", home),
-        format!("{}/picoshare/config.toml", xdg),
-        format!("{}/.picosharerc", home),
     ];
 
     for path in &candidates {
@@ -219,7 +217,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Resolve merged settings (CLI > Env > Config File > Default)
     let server_raw = cli
         .server
-        .or_else(|| std::env::var("PICOSHARE_URL").ok())
         .or(file_cfg.server)
         .or(file_cfg.servidor)
         .unwrap_or_else(|| "http://localhost:8080".to_string());
@@ -227,7 +224,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let token = cli
         .token
-        .or_else(|| std::env::var("PICOSHARE_TOKEN").ok())
         .or(file_cfg.token)
         .or(file_cfg.ficha)
         .unwrap_or_else(|| "tatanka".to_string());

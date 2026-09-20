@@ -166,34 +166,23 @@ foreach ($compileFiles as $filename) {
     $content = preg_replace('/^<\?php\s*/', '', $content) ?? '';
     $content = preg_replace('/declare\s*\([^)]*\);\s*/', '', $content) ?? '';
 
-    // Strip namespace PicoShare; statement
-    $content = preg_replace('/namespace\s+PicoShare\s*;\s*/', '', $content) ?? '';
+    // Strip namespace Fuxico; statement
+    $content = preg_replace('/namespace\s+Fuxico\s*;\s*/', '', $content) ?? '';
 
     $content = trim($content);
 
     $compiled[] = <<<MODULE
 /* --- Module: {$filename} --- */
-namespace PicoShare {
+namespace Fuxico {
 {$content}
 }
 MODULE;
 }
 
-// 5. Add Global Runner and Aliases
+// 5. Add Global Runner
 $compiled[] = <<<'RUNNER'
-/* --- Runner & Namespace Compatibility --- */
+/* --- Runner --- */
 namespace {
-    // Class aliases for Fuxico namespace
-    if (!class_exists(\Fuxico\App::class, false)) {
-        class_alias(\PicoShare\App::class, \Fuxico\App::class);
-        class_alias(\PicoShare\Config::class, \Fuxico\Config::class);
-        class_alias(\PicoShare\Database::class, \Fuxico\Database::class);
-        class_alias(\PicoShare\Storage::class, \Fuxico\Storage::class);
-        class_alias(\PicoShare\Views::class, \Fuxico\Views::class);
-        class_alias(\PicoShare\MimeValidator::class, \Fuxico\MimeValidator::class);
-        class_alias(\PicoShare\I18n::class, \Fuxico\I18n::class);
-    }
-
     // Auto-dispatch when executed directly via web server or CLI
     if (!defined('FUXICO_NO_RUN')) {
         $isCli = (PHP_SAPI === 'cli');
@@ -201,7 +190,7 @@ namespace {
         $isWebServer = !$isCli;
 
         if ($isWebServer || $isDirectCli) {
-            $app = new \PicoShare\App();
+            $app = new \Fuxico\App();
             $app->handleRequest();
         }
     }
@@ -226,11 +215,9 @@ if (file_put_contents($outputFile, $finalCode) === false) {
     exit(1);
 }
 
-// Also update root fuxico.php and compatibility copies (picoshare.php) if standard compilation
+// Also update root fuxico.php if standard compilation
 if (! $customOutput) {
     file_put_contents($rootDir.'/fuxico.php', $finalCode);
-    file_put_contents($distDir.'/picoshare.php', $finalCode);
-    file_put_contents($rootDir.'/picoshare.php', $finalCode);
 }
 
 // 7. Verification & Stats
@@ -244,7 +231,6 @@ if (! $quiet) {
     echo "   Artifact:  {$outputFile}\n";
     if (! $customOutput) {
         echo "   Root copy: {$rootDir}/fuxico.php\n";
-        echo "   Compat:    {$distDir}/picoshare.php\n";
     }
     echo "   Version:   {$fullVersion}\n";
     echo "   Size:      {$sizeKb} KB ({$sizeBytes} bytes)\n";

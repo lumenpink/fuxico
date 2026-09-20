@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PicoShare;
+namespace Fuxico;
 
 class I18n
 {
@@ -152,7 +152,7 @@ class I18n
             return strtolower((string) $_GET['lang']);
         }
 
-        $envLang = getenv('FUXICO_LANG') ?: getenv('PICOSHARE_LANG');
+        $envLang = getenv('FUXICO_LANG');
         if ($envLang && in_array(strtolower((string) $envLang), ['pt', 'en'], true)) {
             return strtolower((string) $envLang);
         }
