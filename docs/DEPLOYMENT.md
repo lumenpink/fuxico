@@ -64,6 +64,22 @@ location / {
 }
 ```
 
+### Building & Publishing Images
+Use the included automated build and publish script to build and push Docker images to Docker Hub:
+
+```bash
+# Test building and tagging locally without pushing
+./scripts/docker_publish.sh --dry-run
+
+# Build and push with automatic semantic versioning and :latest tag
+./scripts/docker_publish.sh
+
+# Build with a custom tag and push
+./scripts/docker_publish.sh -t v0.1.0 --latest
+```
+
+When automated authentication is needed (e.g. in CI or batch jobs), export `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` in your environment.
+
 ---
 
 ## 2. Directory Permissions & Lockdown (Bare Metal)

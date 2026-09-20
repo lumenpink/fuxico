@@ -50,6 +50,12 @@ Visit [http://localhost:8080](http://localhost:8080) to access the service.
 php -S 127.0.0.1:8080 index.php
 ```
 
+### 3. Build & Publish Docker Image
+```bash
+# Build and publish to Docker Hub with automatic version tagging
+./scripts/docker_publish.sh --dry-run
+```
+
 ---
 
 ## 📡 Command-Line Usage (cURL)
