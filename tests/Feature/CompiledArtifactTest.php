@@ -5,21 +5,23 @@ declare(strict_types=1);
 test('compile.php generates a valid standalone single-file distribution', function () {
     $rootDir = dirname(__DIR__, 2);
     $compileScript = $rootDir.'/compile.php';
-    $distFile = $rootDir.'/dist/fuxico.php';
+    $tempDist = sys_get_temp_dir().'/fuxico_dist_test_'.uniqid().'.php';
 
-    // Execute compile.php
+    // Execute compile.php with custom output
     $output = [];
     $returnCode = 0;
-    exec("php {$compileScript} --quiet", $output, $returnCode);
+    exec("php {$compileScript} --output={$tempDist} --quiet", $output, $returnCode);
 
     expect($returnCode)->toBe(0);
-    expect(file_exists($distFile))->toBeTrue();
+    expect(file_exists($tempDist))->toBeTrue();
 
     // Verify php -l syntax check
     $lintOutput = [];
     $lintCode = 0;
-    exec("php -l {$distFile} 2>&1", $lintOutput, $lintCode);
+    exec("php -l {$tempDist} 2>&1", $lintOutput, $lintCode);
     expect($lintCode)->toBe(0);
+
+    @unlink($tempDist);
 });
 
 test('compiled artifact defines constants and aliases in isolated execution', function () {

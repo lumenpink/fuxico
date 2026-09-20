@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(slug) = cli.delete {
         let url = format!("{}/{}", server, slug);
         let resp = ureq::delete(&url)
-            .set("Authorization", &format!("Bearer {}", cli.token))
+            .header("Authorization", format!("Bearer {}", cli.token))
             .call();
 
         match resp {
@@ -78,11 +78,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
                 let post_resp = ureq::post(&url)
-                    .set(
+                    .header(
                         "Content-Type",
-                        &format!("multipart/form-data; boundary={}", boundary),
+                        format!("multipart/form-data; boundary={}", boundary),
                     )
-                    .send_bytes(&body);
+                    .send(body.as_slice());
 
                 match post_resp {
                     Ok(_) => {
@@ -101,10 +101,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 2. List operation
     if cli.list {
         let url = format!("{}/list", server);
-        let resp = ureq::get(&url)
-            .set("Authorization", &format!("Bearer {}", cli.token))
+        let mut resp = ureq::get(&url)
+            .header("Authorization", format!("Bearer {}", cli.token))
             .call()?;
-        let body: String = resp.into_string()?;
+        let body: String = resp.body_mut().read_to_string()?;
         println!("{}", body);
         return Ok(());
     }
@@ -126,18 +126,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
-        let resp = ureq::post(server)
-            .set("Authorization", &format!("Bearer {}", cli.token))
-            .set(
+        let mut resp = ureq::post(server)
+            .header("Authorization", format!("Bearer {}", cli.token))
+            .header(
                 "Content-Type",
-                &format!("multipart/form-data; boundary={}", boundary),
+                format!("multipart/form-data; boundary={}", boundary),
             )
-            .send_bytes(&body)?;
+            .send(body.as_slice())?;
 
-        if let Some(x_token) = resp.header("x-token") {
+        if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
             eprintln!("Management Token (X-Token): {}", x_token);
         }
-        print!("{}", resp.into_string()?);
+        print!("{}", resp.body_mut().read_to_string()?);
         return Ok(());
     }
 
@@ -193,18 +193,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     body.extend_from_slice(b"\r\n");
     body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
-    let resp = ureq::post(server)
-        .set("Authorization", &format!("Bearer {}", cli.token))
-        .set(
+    let mut resp = ureq::post(server)
+        .header("Authorization", format!("Bearer {}", cli.token))
+        .header(
             "Content-Type",
-            &format!("multipart/form-data; boundary={}", boundary),
+            format!("multipart/form-data; boundary={}", boundary),
         )
-        .send_bytes(&body)?;
+        .send(body.as_slice())?;
 
-    if let Some(x_token) = resp.header("x-token") {
+    if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
         eprintln!("Management Token (X-Token): {}", x_token);
     }
-    print!("{}", resp.into_string()?);
+    print!("{}", resp.body_mut().read_to_string()?);
 
     Ok(())
 }
