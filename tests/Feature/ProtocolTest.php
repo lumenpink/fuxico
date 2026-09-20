@@ -7,25 +7,59 @@ use Fuxico\Config;
 use Fuxico\Database;
 use Fuxico\Storage;
 
-beforeEach(function () {
-    $this->tempDir = sys_get_temp_dir().'/fuxico_feat_'.uniqid();
-    $dataDir = $this->tempDir.'/data';
+$testEnv = new class
+{
+    public string $tempDir = '';
+
+    public ?Config $config = null;
+
+    public ?Database $db = null;
+
+    public ?Storage $storage = null;
+
+    public ?App $app = null;
+
+    public function app(): App
+    {
+        assert($this->app !== null);
+
+        return $this->app;
+    }
+
+    public function db(): Database
+    {
+        assert($this->db !== null);
+
+        return $this->db;
+    }
+
+    public function storage(): Storage
+    {
+        assert($this->storage !== null);
+
+        return $this->storage;
+    }
+};
+
+beforeEach(function () use ($testEnv) {
+    $testEnv->tempDir = sys_get_temp_dir().'/fuxico_feat_'.uniqid();
+    $dataDir = $testEnv->tempDir.'/data';
     $filesDir = $dataDir.'/files';
     $dbPath = $dataDir.'/fuxico.sqlite';
 
-    $this->config = new Config;
-    $this->config->dataDir = $dataDir;
-    $this->config->filesDir = $filesDir;
-    $this->config->dbPath = $dbPath;
-    $this->config->baseUrl = 'http://localhost:8080';
-    $this->config->authTokens = ['test-secret-token'];
+    $testEnv->config = new Config;
+    $testEnv->config->dataDir = $dataDir;
+    $testEnv->config->filesDir = $filesDir;
+    $testEnv->config->dbPath = $dbPath;
+    $testEnv->config->baseUrl = 'http://localhost:8080';
+    $testEnv->config->authTokens = ['test-secret-token'];
 
-    $this->db = new Database($dbPath);
-    $this->storage = new Storage($dataDir, $filesDir);
-    $this->app = new App($this->config, $this->db, $this->storage);
+    $testEnv->db = new Database($dbPath);
+    $testEnv->storage = new Storage($dataDir, $filesDir);
+    $testEnv->app = new App($testEnv->config, $testEnv->db, $testEnv->storage);
 });
 
-afterEach(function () {
+afterEach(function () use ($testEnv) {
     $deleteDir = function (string $dir) use (&$deleteDir) {
         if (! is_dir($dir)) {
             return;
@@ -48,44 +82,44 @@ afterEach(function () {
         @rmdir($dir);
     };
 
-    $deleteDir($this->tempDir);
+    $deleteDir($testEnv->tempDir);
 });
 
-test('expiration parser correctly handles hours, epochs, and duration strings', function () {
+test('expiration parser correctly handles hours, epochs, and duration strings', function () use ($testEnv) {
     $now = time();
 
     // Hours (0x0.st style)
-    $in24h = $this->app->parseExpiration('24');
+    $in24h = $testEnv->app()->parseExpiration('24');
     expect($in24h)->toBeGreaterThanOrEqual($now + 86390);
 
     // Duration strings (rustypaste style)
-    $in10m = $this->app->parseExpiration('10m');
+    $in10m = $testEnv->app()->parseExpiration('10m');
     expect($in10m)->toBeGreaterThanOrEqual($now + 590);
     expect($in10m)->toBeLessThanOrEqual($now + 610);
 
-    $in7d = $this->app->parseExpiration('7d');
+    $in7d = $testEnv->app()->parseExpiration('7d');
     expect($in7d)->toBeGreaterThanOrEqual($now + (7 * 86400) - 10);
 
     // Milliseconds epoch (0x0.st style)
     $futureMs = ($now + 3600) * 1000;
-    $in1h = $this->app->parseExpiration((string) $futureMs);
+    $in1h = $testEnv->app()->parseExpiration((string) $futureMs);
     expect($in1h)->toBeGreaterThanOrEqual($now + 3590);
 });
 
-test('slug generator generates short and secret high-entropy slugs', function () {
-    $standardSlug = $this->app->generateSlug(false);
+test('slug generator generates short and secret high-entropy slugs', function () use ($testEnv) {
+    $standardSlug = $testEnv->app()->generateSlug(false);
     expect(strlen($standardSlug))->toBe(5);
 
-    $secretSlug = $this->app->generateSlug(true);
+    $secretSlug = $testEnv->app()->generateSlug(true);
     expect(strlen($secretSlug))->toBe(16);
 });
 
-test('purges expired items and removes their physical files', function () {
-    $tmpFile = $this->tempDir.'/dummy.txt';
+test('purges expired items and removes their physical files', function () use ($testEnv) {
+    $tmpFile = $testEnv->tempDir.'/dummy.txt';
     file_put_contents($tmpFile, 'temporary');
-    $this->storage->storeUploadedFile($tmpFile, 'exp1.txt');
+    $testEnv->storage()->storeUploadedFile($tmpFile, 'exp1.txt');
 
-    $this->db->createItem([
+    $testEnv->db()->createItem([
         'id' => '1',
         'slug' => 'exp1',
         'type' => 'file',
@@ -95,16 +129,16 @@ test('purges expired items and removes their physical files', function () {
         'created_at' => time() - 200,
     ]);
 
-    expect($this->storage->fileExists('exp1.txt'))->toBeTrue();
+    expect($testEnv->storage()->fileExists('exp1.txt'))->toBeTrue();
 
-    $purged = $this->app->purgeExpired();
+    $purged = $testEnv->app()->purgeExpired();
     expect($purged)->toBe(1);
-    expect($this->storage->fileExists('exp1.txt'))->toBeFalse();
-    expect($this->db->findBySlug('exp1'))->toBeNull();
+    expect($testEnv->storage()->fileExists('exp1.txt'))->toBeFalse();
+    expect($testEnv->db()->findBySlug('exp1'))->toBeNull();
 });
 
-test('handles file upload and 0x0.st management deletion end-to-end', function () {
-    $uploadTmp = $this->tempDir.'/upload.txt';
+test('handles file upload and 0x0.st management deletion end-to-end', function () use ($testEnv) {
+    $uploadTmp = $testEnv->tempDir.'/upload.txt';
     file_put_contents($uploadTmp, 'Hello 0x0 protocol');
 
     $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -122,7 +156,7 @@ test('handles file upload and 0x0.st management deletion end-to-end', function (
     ];
 
     ob_start();
-    $this->app->handleRequest();
+    $testEnv->app()->handleRequest();
     $output = ob_get_clean();
 
     expect($output)->toContain('http://localhost:8080/');
@@ -130,7 +164,7 @@ test('handles file upload and 0x0.st management deletion end-to-end', function (
     expect($matches)->not->toBeEmpty();
     $slug = $matches[1];
 
-    $item = $this->db->findBySlug($slug);
+    $item = $testEnv->db()->findBySlug($slug);
     expect($item)->not->toBeNull();
     expect($item['mime_type'])->toBe('text/plain');
     $xToken = $item['x_token'];
@@ -142,14 +176,14 @@ test('handles file upload and 0x0.st management deletion end-to-end', function (
     $_FILES = [];
 
     ob_start();
-    $this->app->handleRequest();
+    $testEnv->app()->handleRequest();
     $delOutput = ob_get_clean();
 
     expect($delOutput)->toBe("File deleted.\n");
-    expect($this->db->findBySlug($slug))->toBeNull();
+    expect($testEnv->db()->findBySlug($slug))->toBeNull();
 });
 
-test('handles URL shortening and redirection', function () {
+test('handles URL shortening and redirection', function () use ($testEnv) {
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $_SERVER['REQUEST_URI'] = '/';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer test-secret-token';
@@ -157,20 +191,20 @@ test('handles URL shortening and redirection', function () {
     $_FILES = [];
 
     ob_start();
-    $this->app->handleRequest();
+    $testEnv->app()->handleRequest();
     $output = ob_get_clean();
 
     expect($output)->toBe("http://localhost:8080/mylink\n");
 
-    $item = $this->db->findBySlug('mylink');
+    $item = $testEnv->db()->findBySlug('mylink');
     expect($item)->not->toBeNull();
     expect($item['type'])->toBe('url');
     expect($item['target_url'])->toBe('https://github.com/lumenpink');
 });
 
-test('handles rustypaste list and delete endpoints', function () {
+test('handles rustypaste list and delete endpoints', function () use ($testEnv) {
     // Create test item
-    $this->db->createItem([
+    $testEnv->db()->createItem([
         'id' => 'rp-1',
         'slug' => 'rpfile',
         'original_name' => 'document.txt',
@@ -191,7 +225,7 @@ test('handles rustypaste list and delete endpoints', function () {
     $_FILES = [];
 
     ob_start();
-    $this->app->handleRequest();
+    $testEnv->app()->handleRequest();
     $jsonOutput = ob_get_clean();
 
     $list = json_decode($jsonOutput, true);
@@ -205,9 +239,9 @@ test('handles rustypaste list and delete endpoints', function () {
     $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer test-secret-token';
 
     ob_start();
-    $this->app->handleRequest();
+    $testEnv->app()->handleRequest();
     $delOutput = ob_get_clean();
 
     expect($delOutput)->toBe("File deleted.\n");
-    expect($this->db->findBySlug('rpfile'))->toBeNull();
+    expect($testEnv->db()->findBySlug('rpfile'))->toBeNull();
 });
