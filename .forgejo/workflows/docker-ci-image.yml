@@ -20,7 +20,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check Docker Hub Credentials
+        id: check-creds
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ] && [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "has_creds=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::DOCKERHUB_USERNAME/TOKEN not configured in repository secrets. Building without pushing."
+            echo "has_creds=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Log in to Docker Hub
+        if: steps.check-creds.outputs.has_creds == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -31,7 +42,7 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile.ci
-          push: true
+          push: ${{ steps.check-creds.outputs.has_creds == 'true' }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME || 'lumenpink' }}/fuxico-ci:latest
             ${{ secrets.DOCKERHUB_USERNAME || 'lumenpink' }}/fuxico-ci:php8.4

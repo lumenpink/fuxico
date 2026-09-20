@@ -15,6 +15,7 @@
   - initialize basic file upload and url shortener
 
 ### Bug Fixes
+  - (ci) publish fuxico-ci image and guard docker publish against missing secrets
   - (api) add video and audio content types to inline disposition
 
 ## Previous Releases
