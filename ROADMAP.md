@@ -59,3 +59,11 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
 - [x] **Phase 8: Single-File Compiler & Standalone Distribution (closes #10)**
   - [x] 8.1 Standalone bundler `compile.php` generating portable single-file `fuxico.php`.
   - [x] 8.2 Runtime environment validation, namespace aliasing, and test isolation.
+
+- [x] **Phase 9: Distribution Bundles & Release Automation (closes #7)**
+  - [x] 9.1 Multi-artifact bundler `scripts/build_bundles.sh` and `composer bundle`.
+  - [x] 9.2 Synchronized `picoshare.php` and `fuxico.php` dual standalone distributions.
+  - [x] 9.3 Packaged Bash and native Rust binary clients (`fux`, `picoshare`, `fux-linux-x86_64`, `picoshare-cli`).
+  - [x] 9.4 SHA-256 cryptographic verification manifest (`dist/checksums.sha256`) and release archive (`dist/fuxico-*.tar.gz`).
+  - [x] 9.5 Automated Forgejo release packaging workflow (`.forgejo/workflows/release-bundles.yml`).
+

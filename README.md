@@ -80,6 +80,14 @@ php compile.php --check
 ./scripts/docker_publish.sh --all
 ```
 
+### 6. Build Complete Release Bundles (Server & Clients)
+Compiles standalone servers (`fuxico.php`, `picoshare.php`), packages Bash clients (`fux`, `picoshare`), compiles native Rust binaries (`fux-linux-x86_64`, `picoshare-cli`), generates SHA-256 checksums, and produces a consolidated release archive in `dist/`:
+```bash
+composer bundle
+# or directly:
+./scripts/build_bundles.sh
+```
+
 ---
 
 ## 📡 Command-Line Usage (cURL)
