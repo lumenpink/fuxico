@@ -1,0 +1,40 @@
+name: Release Bundles
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  CI_IMAGE: lumenpink/fuxico-ci:latest
+
+jobs:
+  build-release:
+    name: "Build & Package Release Bundles"
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_IMAGE }}
+
+    steps:
+      - name: "Checkout"
+        uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Build All Bundles"
+        run: ./scripts/build_bundles.sh
+
+      - name: "Upload Artifacts to Workflow Run"
+        uses: https://github.com/actions/upload-artifact@v4
+        with:
+          name: fuxico-release-bundles
+          path: |
+            dist/fuxico.php
+            dist/picoshare.php
+            dist/fux
+            dist/picoshare
+            dist/fux-linux-x86_64
+            dist/picoshare-cli
+            dist/checksums.sha256
+            dist/*.tar.gz

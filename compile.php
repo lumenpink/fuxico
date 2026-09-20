@@ -226,9 +226,11 @@ if (file_put_contents($outputFile, $finalCode) === false) {
     exit(1);
 }
 
-// Also update root fuxico.php if standard compilation
+// Also update root fuxico.php and compatibility copies (picoshare.php) if standard compilation
 if (! $customOutput) {
     file_put_contents($rootDir.'/fuxico.php', $finalCode);
+    file_put_contents($distDir.'/picoshare.php', $finalCode);
+    file_put_contents($rootDir.'/picoshare.php', $finalCode);
 }
 
 // 7. Verification & Stats
@@ -242,6 +244,7 @@ if (! $quiet) {
     echo "   Artifact:  {$outputFile}\n";
     if (! $customOutput) {
         echo "   Root copy: {$rootDir}/fuxico.php\n";
+        echo "   Compat:    {$distDir}/picoshare.php\n";
     }
     echo "   Version:   {$fullVersion}\n";
     echo "   Size:      {$sizeKb} KB ({$sizeBytes} bytes)\n";

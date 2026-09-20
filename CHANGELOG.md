@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (release) generate release bundles for server and clients (closes #7)
   - (cli) unify bash and rust clients with dual dialects, shared config, and pt-br flags (closes #8)
   - (ci) integrate docker ci and publish workflows with rust support (closes #6)
   - (compiler) add single-file bundler compile.php generating fuxico.php (closes #10)

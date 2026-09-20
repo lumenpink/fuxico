@@ -171,3 +171,66 @@ test('compiled standalone fuxico.php handles HTTP requests via php built-in serv
         $cleanDir($tempDir);
     }
 });
+
+test('compile.php emits synchronized picoshare.php compatibility artifact', function () {
+    $rootDir = dirname(__DIR__, 2);
+    $picoshareDist = $rootDir.'/dist/picoshare.php';
+    $picoshareRoot = $rootDir.'/picoshare.php';
+
+    expect(file_exists($picoshareDist))->toBeTrue();
+    expect(file_exists($picoshareRoot))->toBeTrue();
+
+    // Verify syntax of picoshare.php
+    $lintOutput = [];
+    $lintCode = 0;
+    exec("php -l {$picoshareDist} 2>&1", $lintOutput, $lintCode);
+    expect($lintCode)->toBe(0);
+
+    // Verify execution defines both PicoShare and Fuxico namespaces
+    $code = escapeshellarg(<<<PHP
+define('FUXICO_NO_RUN', true);
+require_once '{$picoshareDist}';
+echo json_encode([
+    'has_app' => class_exists('\\PicoShare\\App'),
+    'has_fuxico' => class_exists('\\Fuxico\\App'),
+]);
+PHP
+    );
+
+    $output = shell_exec("php -r {$code}");
+    $data = json_decode((string) $output, true);
+
+    expect($data)->toBeArray();
+    expect($data['has_app'])->toBeTrue();
+    expect($data['has_fuxico'])->toBeTrue();
+});
+
+test('scripts/build_bundles.sh produces full distribution suite with valid sha256 checksums', function () {
+    $rootDir = dirname(__DIR__, 2);
+    $script = $rootDir.'/scripts/build_bundles.sh';
+
+    $output = [];
+    $code = 0;
+    exec("bash {$script} 2>&1", $output, $code);
+
+    expect($code)->toBe(0);
+
+    $distDir = $rootDir.'/dist';
+    expect(file_exists($distDir.'/fuxico.php'))->toBeTrue();
+    expect(file_exists($distDir.'/picoshare.php'))->toBeTrue();
+    expect(file_exists($distDir.'/fux'))->toBeTrue();
+    expect(file_exists($distDir.'/picoshare'))->toBeTrue();
+    expect(file_exists($distDir.'/checksums.sha256'))->toBeTrue();
+
+    // Checksums file must contain entries for all key artifacts
+    $checksums = (string) file_get_contents($distDir.'/checksums.sha256');
+    expect($checksums)->toContain('fuxico.php');
+    expect($checksums)->toContain('picoshare.php');
+    expect($checksums)->toContain('fux');
+    expect($checksums)->toContain('picoshare');
+
+    // Tarball must exist and be non-empty
+    $tarballs = glob($distDir.'/fuxico-*.tar.gz');
+    expect($tarballs)->not->toBeEmpty();
+    expect(filesize($tarballs[0]))->toBeGreaterThan(1000);
+});

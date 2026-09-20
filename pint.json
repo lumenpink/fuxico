@@ -3,6 +3,7 @@
         "dist"
     ],
     "notPath": [
-        "fuxico.php"
+        "fuxico.php",
+        "picoshare.php"
     ]
 }
