@@ -6,6 +6,7 @@
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL-3.0-or-later_1.0-lightgrey.svg)](LICENSE)
 [![Tests: Pest](https://img.shields.io/badge/tests-Pest%20PHP-ff2d20.svg)](https://pestphp.com/)
 [![Code Style: Pint](https://img.shields.io/badge/code%20style-Laravel%20Pint-orange.svg)](https://github.com/laravel/pint)
+[![CI](https://codeberg.org/lumenpink/picoshare/workflows/ci.yml/badge.svg)](https://codeberg.org/lumenpink/picoshare/actions)
 
 ---
 
@@ -152,10 +153,20 @@ Set any of the following environment variables (or export them in your web serve
 
 ```bash
 # Run automated test suite with Pest
-./vendor/bin/pest
+composer test
+
+# Run tests with code coverage & junit
+composer test:coverage
+
+# Run static security analysis with Psalm
+composer psalm
 
 # Code style inspection and formatting with Laravel Pint
-./vendor/bin/pint
+composer lint
+composer format
+
+# Run full local CI verification suite
+composer ci
 ```
 
 ---
