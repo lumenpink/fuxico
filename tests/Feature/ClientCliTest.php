@@ -86,9 +86,12 @@ beforeAll(function () use ($testEnv) {
     $testEnv->bashBin = $rootDir.'/bin/fux';
     $testEnv->rustBin = $rootDir.'/cli/target/release/picoshare-cli';
 
-    // Ensure rust binary exists
+    // Ensure rust binary exists if cargo is present in environment
     if (! file_exists($testEnv->rustBin)) {
-        exec("cargo build --release --manifest-path {$rootDir}/cli/Cargo.toml > /dev/null 2>&1");
+        exec('which cargo 2>&1', $cargoCheck, $cargoExit);
+        if ($cargoExit === 0) {
+            exec("cargo build --release --manifest-path {$rootDir}/cli/Cargo.toml > /dev/null 2>&1");
+        }
     }
 
     $testEnv->tempDir = sys_get_temp_dir().'/fuxico_cli_suite_'.uniqid();
@@ -304,7 +307,7 @@ test('rust cli uploads file: management token on stderr, clean URL on stdout, an
     $resp = $testEnv->fetch($url);
     expect($resp['status'])->toBe(200);
     expect($resp['body'])->toBe($content);
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli uploads from stdin stream pipe', function () use ($testEnv) {
     $input = 'Rust stdin pipe content '.uniqid();
@@ -317,7 +320,7 @@ test('rust cli uploads from stdin stream pipe', function () use ($testEnv) {
     $resp = $testEnv->fetch($url);
     expect($resp['status'])->toBe(200);
     expect($resp['body'])->toBe($input);
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli shortens URLs via -u flag', function () use ($testEnv) {
     $targetUrl = 'https://codeberg.org/lumenpink/fuxico';
@@ -329,7 +332,7 @@ test('rust cli shortens URLs via -u flag', function () use ($testEnv) {
 
     $resp = $testEnv->fetch($url);
     expect($resp['status'])->toBeIn([301, 302]);
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli generates 16-character secret slug via -s flag', function () use ($testEnv) {
     $sample = $testEnv->tempDir.'/rust_secret.txt';
@@ -341,7 +344,7 @@ test('rust cli generates 16-character secret slug via -s flag', function () use 
     $url = trim($res['stdout']);
     $slug = pathinfo(basename(parse_url($url, PHP_URL_PATH) ?? ''), PATHINFO_FILENAME);
     expect(strlen($slug))->toBe(16);
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli supports oneshot (-o): evaporates after 1st download', function () use ($testEnv) {
     $sample = $testEnv->tempDir.'/rust_oneshot.txt';
@@ -361,7 +364,7 @@ test('rust cli supports oneshot (-o): evaporates after 1st download', function (
     // 2nd download evaporates
     $second = $testEnv->fetch($url);
     expect($second['status'])->toBeIn([404, 410]);
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli lists active items as structured JSON via -l flag', function () use ($testEnv) {
     $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} -t tatanka -l");
@@ -373,7 +376,7 @@ test('rust cli lists active items as structured JSON via -l flag', function () u
         expect($data[0])->toHaveKey('file_name');
         expect($data[0])->toHaveKey('url');
     }
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli deletes item via -d flag and management token', function () use ($testEnv) {
     $sample = $testEnv->tempDir.'/rust_delete.txt';
@@ -400,4 +403,4 @@ test('rust cli deletes item via -d flag and management token', function () use (
 
     // Confirm deleted
     expect($testEnv->fetch($url)['status'])->toBe(404);
-});
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');

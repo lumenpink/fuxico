@@ -1,0 +1,51 @@
+# CI Image — PHP 8.4-cli + Rust/Cargo + Node.js 22 LTS + Xdebug + Composer
+# NOT the production runtime image (see Dockerfile for FrankenPHP production image).
+#
+# Node.js 22 LTS is required by the Forgejo actions runner (act) to execute
+# JavaScript-based actions (checkout, cache, upload-artifact, etc.)
+# when a container: is specified in the workflow job.
+#
+# Rust/Cargo is included to build and test the native Rust CLI (cli/).
+#
+# Build locally:
+#   docker build -f docker/Dockerfile.ci -t lumenpink/fuxico-ci:latest .
+#
+# Rebuilt and published automatically by .forgejo/workflows/docker-ci-image.yml
+# when this file changes on main.
+
+FROM php:8.4-cli
+
+# Copy official Rust toolchain from rust:1-bookworm
+COPY --from=rust:1-bookworm /usr/local/cargo /usr/local/cargo
+COPY --from=rust:1-bookworm /usr/local/rustup /usr/local/rustup
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+# Install mlocati/docker-php-extension-installer helper for reliable extension builds
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# System tools + Node.js 22 LTS + build essential (gcc/linker for Rust crates)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        unzip \
+        curl \
+        ca-certificates \
+        jq \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install required PHP extensions for testing & image handling: GD, zip, exif, xdebug
+RUN install-php-extensions gd zip exif xdebug \
+    && echo "xdebug.mode=off" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "display_errors = Off" >> /usr/local/etc/php/conf.d/docker-php-display-errors.ini
+
+# Composer 2 (copied from official image — no installer script needed)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install cargo-audit for fast security scanning of Rust dependencies
+RUN cargo install cargo-audit --locked || true
+
+WORKDIR /workspace

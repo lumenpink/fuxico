@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# PicoShare Docker Build & Publish Tool
+# Fuxico Docker Build & Publish Tool
 # ==============================================================================
-# Builds the production Docker image and publishes it to Docker Hub with
+# Builds production and CI Docker images and publishes them to Docker Hub with
 # semantic versioning, git commit tags, and optional :latest tagging.
 # ==============================================================================
 
@@ -26,8 +26,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Default configurations
-DEFAULT_IMAGE="lumenpink/fuxico"
-IMAGE_NAME="${DOCKER_IMAGE:-$DEFAULT_IMAGE}"
+DEFAULT_PROD_IMAGE="lumenpink/fuxico"
+DEFAULT_CI_IMAGE="lumenpink/fuxico-ci"
+
+TARGET_MODE="prod" # "prod", "ci", or "all"
+IMAGE_NAME=""
 DRY_RUN=false
 FORCE_LATEST=false
 NO_CACHE=false
@@ -39,22 +42,25 @@ ${BOLD}Usage:${RESET} $0 [OPTIONS]
 
 ${BOLD}Options:${RESET}
     -t, --tag <tag>       Add a custom image tag (can be used multiple times)
-    -i, --image <name>    Set Docker repository name (default: ${DEFAULT_IMAGE})
+    -i, --image <name>    Override Docker repository name
+    --ci                  Build and publish the CI image (${DEFAULT_CI_IMAGE})
+    --all                 Build and publish BOTH production and CI images
     -l, --latest          Always tag and push as 'latest'
     -n, --dry-run         Build and tag locally without pushing to Docker Hub
-    --no-cache            Build the Docker image without using layer cache
+    --no-cache            Build without using Docker layer cache
     -h, --help            Show this help documentation
 
 ${BOLD}Environment Variables:${RESET}
-    DOCKER_IMAGE          Default Docker image repository
+    DOCKER_IMAGE          Override default Docker image repository
     DOCKERHUB_USERNAME    Username for automated Docker Hub authentication
     DOCKERHUB_TOKEN       Access token or password for Docker Hub authentication
     DOCKERHUB_PASSWORD    Alternative to DOCKERHUB_TOKEN
 
 ${BOLD}Examples:${RESET}
     $0 --dry-run
+    $0 --ci --dry-run
+    $0 --all
     $0 --tag v0.1.0 --latest
-    $0 -i myorg/picoshare -t dev
 EOF
 }
 
@@ -78,6 +84,14 @@ while [[ $# -gt 0 ]]; do
                 error "Argument -i/--image requires a repository name."
                 exit 1
             fi
+            ;;
+        --ci)
+            TARGET_MODE="ci"
+            shift
+            ;;
+        --all)
+            TARGET_MODE="all"
+            shift
             ;;
         -l|--latest)
             FORCE_LATEST=true
@@ -118,61 +132,7 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 
-if [[ ! -f "${REPO_ROOT}/Dockerfile" ]]; then
-    error "Dockerfile not found in ${REPO_ROOT}."
-    exit 1
-fi
-
-# 2. Determine tags
-TAGS=()
-
-# Extract version from VERSION file if available
-if [[ -f "${REPO_ROOT}/VERSION" ]]; then
-    RAW_VERSION="$(head -n 1 "${REPO_ROOT}/VERSION" | tr -d '\r\n[:space:]')"
-    # Clean version (strip build metadata if desired, e.g. 0.1.0-dev.14)
-    CLEAN_VERSION="${RAW_VERSION%%+*}"
-    if [[ -n "${CLEAN_VERSION}" ]]; then
-        TAGS+=("${CLEAN_VERSION}")
-    fi
-fi
-
-# Git commit short SHA
-if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    GIT_SHA="$(git -C "${REPO_ROOT}" rev-parse --short HEAD)"
-    TAGS+=("sha-${GIT_SHA}")
-
-    # If current branch is main, include latest by default
-    CURRENT_BRANCH="$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
-    if [[ "${CURRENT_BRANCH}" == "main" ]]; then
-        FORCE_LATEST=true
-    fi
-fi
-
-if [[ "${FORCE_LATEST}" == true ]]; then
-    TAGS+=("latest")
-fi
-
-# Append custom user tags
-for custom_tag in "${EXTRA_TAGS[@]}"; do
-    TAGS+=("${custom_tag}")
-done
-
-# Deduplicate tags
-UNIQUE_TAGS=($(echo "${TAGS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-
-if [[ ${#UNIQUE_TAGS[@]} -eq 0 ]]; then
-    UNIQUE_TAGS=("latest")
-fi
-
-PRIMARY_TAG="${UNIQUE_TAGS[0]}"
-
-info "Target Repository: ${BOLD}${IMAGE_NAME}${RESET}"
-info "Tags to generate:  ${BOLD}${UNIQUE_TAGS[*]}${RESET}"
-if [[ "${DRY_RUN}" == true ]]; then
-    warn "DRY RUN MODE: Images will be built and tagged locally, but NOT pushed to registry."
-fi
-
-# 3. Docker Hub Authentication (if credentials provided)
+# 2. Authenticate once if credentials are provided
 DOCKER_AUTH_SECRET="${DOCKERHUB_TOKEN:-${DOCKERHUB_PASSWORD:-}}"
 if [[ -n "${DOCKERHUB_USERNAME:-}" && -n "${DOCKER_AUTH_SECRET}" ]]; then
     info "Authenticating with Docker Hub as '${DOCKERHUB_USERNAME}'..."
@@ -184,47 +144,117 @@ if [[ -n "${DOCKERHUB_USERNAME:-}" && -n "${DOCKER_AUTH_SECRET}" ]]; then
     fi
 fi
 
-# 4. Build Docker image
-BUILD_OPTS=()
-if [[ "${NO_CACHE}" == true ]]; then
-    BUILD_OPTS+=("--no-cache")
-fi
+# Helper function to build and publish a target image
+build_and_publish_image() {
+    local target_image="$1"
+    local dockerfile_path="$2"
+    local is_ci="$3"
 
-info "Building image '${IMAGE_NAME}:${PRIMARY_TAG}'..."
-docker build "${BUILD_OPTS[@]}" \
-    -t "${IMAGE_NAME}:${PRIMARY_TAG}" \
-    -f "${REPO_ROOT}/Dockerfile" \
-    "${REPO_ROOT}"
+    echo
+    echo -e "${BOLD}--- Processing: ${target_image} ---${RESET}"
 
-success "Image built: ${IMAGE_NAME}:${PRIMARY_TAG}"
-
-# 5. Apply additional tags
-for tag in "${UNIQUE_TAGS[@]}"; do
-    if [[ "${tag}" != "${PRIMARY_TAG}" ]]; then
-        info "Applying tag: ${IMAGE_NAME}:${tag}"
-        docker tag "${IMAGE_NAME}:${PRIMARY_TAG}" "${IMAGE_NAME}:${tag}"
+    if [[ ! -f "${dockerfile_path}" ]]; then
+        error "Dockerfile not found: ${dockerfile_path}"
+        exit 1
     fi
-done
 
-# 6. Push images
-if [[ "${DRY_RUN}" == true ]]; then
-    echo
-    warn "Dry-run complete. Would push the following tags:"
-    for tag in "${UNIQUE_TAGS[@]}"; do
-        echo "  - docker push ${IMAGE_NAME}:${tag}"
+    local tags=()
+
+    if [[ "${is_ci}" == true ]]; then
+        tags+=("latest" "php8.4")
+    else
+        # Determine production tags
+        if [[ -f "${REPO_ROOT}/VERSION" ]]; then
+            local raw_ver
+            raw_ver="$(head -n 1 "${REPO_ROOT}/VERSION" | tr -d '\r\n[:space:]')"
+            local clean_ver="${raw_ver%%+*}"
+            if [[ -n "${clean_ver}" ]]; then
+                tags+=("${clean_ver}")
+            fi
+        fi
+
+        if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            local git_sha
+            git_sha="$(git -C "${REPO_ROOT}" rev-parse --short HEAD)"
+            tags+=("sha-${git_sha}")
+
+            local current_branch
+            current_branch="$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+            if [[ "${current_branch}" == "main" ]]; then
+                FORCE_LATEST=true
+            fi
+        fi
+
+        if [[ "${FORCE_LATEST}" == true ]]; then
+            tags+=("latest")
+        fi
+    fi
+
+    # Append custom tags
+    for custom_tag in "${EXTRA_TAGS[@]}"; do
+        tags+=("${custom_tag}")
     done
-    echo
-    success "Dry run verification completed successfully!"
-    exit 0
+
+    # Deduplicate tags
+    local unique_tags=($(echo "${tags[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+    if [[ ${#unique_tags[@]} -eq 0 ]]; then
+        unique_tags=("latest")
+    fi
+
+    local primary_tag="${unique_tags[0]}"
+
+    info "Target Repository: ${BOLD}${target_image}${RESET}"
+    info "Tags to generate:  ${BOLD}${unique_tags[*]}${RESET}"
+
+    # Build options
+    local build_opts=()
+    if [[ "${NO_CACHE}" == true ]]; then
+        build_opts+=("--no-cache")
+    fi
+
+    info "Building image '${target_image}:${primary_tag}' from ${dockerfile_path}..."
+    docker build "${build_opts[@]}" \
+        -t "${target_image}:${primary_tag}" \
+        -f "${dockerfile_path}" \
+        "${REPO_ROOT}"
+
+    success "Image built: ${target_image}:${primary_tag}"
+
+    # Tag remaining tags
+    for tag in "${unique_tags[@]}"; do
+        if [[ "${tag}" != "${primary_tag}" ]]; then
+            info "Applying tag: ${target_image}:${tag}"
+            docker tag "${target_image}:${primary_tag}" "${target_image}:${tag}"
+        fi
+    done
+
+    # Push
+    if [[ "${DRY_RUN}" == true ]]; then
+        warn "Dry-run complete for ${target_image}. Would push tags:"
+        for tag in "${unique_tags[@]}"; do
+            echo "  - docker push ${target_image}:${tag}"
+        done
+    else
+        info "Pushing images for ${target_image}..."
+        for tag in "${unique_tags[@]}"; do
+            info "Pushing: ${target_image}:${tag}"
+            docker push "${target_image}:${tag}"
+            success "Pushed: ${target_image}:${tag}"
+        done
+        success "Published ${target_image} successfully!"
+    fi
+}
+
+# 3. Execute requested target(s)
+if [[ "${TARGET_MODE}" == "prod" || "${TARGET_MODE}" == "all" ]]; then
+    PROD_IMG="${IMAGE_NAME:-${DOCKER_IMAGE:-$DEFAULT_PROD_IMAGE}}"
+    build_and_publish_image "${PROD_IMG}" "${REPO_ROOT}/Dockerfile" false
+fi
+
+if [[ "${TARGET_MODE}" == "ci" || "${TARGET_MODE}" == "all" ]]; then
+    CI_IMG="${IMAGE_NAME:-${DOCKER_CI_IMAGE:-$DEFAULT_CI_IMAGE}}"
+    build_and_publish_image "${CI_IMG}" "${REPO_ROOT}/docker/Dockerfile.ci" true
 fi
 
 echo
-info "Pushing images to registry..."
-for tag in "${UNIQUE_TAGS[@]}"; do
-    info "Pushing: ${IMAGE_NAME}:${tag}"
-    docker push "${IMAGE_NAME}:${tag}"
-    success "Pushed: ${IMAGE_NAME}:${tag}"
-done
-
-echo
-success "All images successfully published to ${IMAGE_NAME}!"
+success "Pipeline execution finished successfully!"

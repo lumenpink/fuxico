@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (ci) integrate docker ci and publish workflows with rust support (closes #6)
   - (compiler) add single-file bundler compile.php generating fuxico.php (closes #10)
   - (rebrand) rebrand application to fuxico with zine aesthetics and fux cli (closes #9)
   - (docker) add publish script and simplify dockerfile to single stage (closes #5)

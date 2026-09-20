@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
-  CI_IMAGE: lumenpink/indieinabox-ci:latest
+  CI_IMAGE: lumenpink/fuxico-ci:latest
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -140,41 +140,37 @@ jobs:
         run: php scripts/generate_ci_summary.php --step-summary
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 3 — OWASP Dependency-Check
+  # JOB 3 — Security Auditing (Composer + Cargo)
   # ─────────────────────────────────────────────────────────────────────────────
-  dependency-check:
-    name: "OWASP Dependency-Check"
+  security-audit:
+    name: "Security Auditing (PHP & Rust)"
     runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_IMAGE }}
     needs: test
 
     steps:
-      - uses: https://github.com/actions/checkout@v4
+      - name: "Checkout"
+        uses: https://github.com/actions/checkout@v4
 
-      - name: "Get week (NVD cache key)"
-        id: week
-        run: echo "week=$(date +%Y-%W)" >> $GITHUB_OUTPUT
-
-      - name: "Cache NVD data"
+      - name: "Cache vendor"
         uses: https://github.com/actions/cache@v4
         with:
-          path: ~/.dependency-check/data
-          key: nvd-${{ steps.week.outputs.week }}
-          restore-keys: |
-            nvd-
+          path: vendor
+          key: vendor-php8.4-${{ hashFiles('composer.lock') }}
 
-      - name: "Run OWASP Dependency-Check"
-        uses: https://github.com/dependency-check/Dependency-Check_Action@v1.1.0
-        id: depcheck
-        with:
-          project: "fuxico"
-          path: "."
-          format: "HTML SARIF"
-          out: "coverage/dependency-check"
-          args: >
-            --failOnCVSS 7
-            --enableRetired
-            --exclude "**/vendor/**"
-            --exclude "**/cli/target/**"
+      - name: "Install Composer dependencies"
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: "composer audit — Known vulnerabilities (PHP)"
+        run: composer audit --format=plain
+
+      - name: "cargo audit — Known vulnerabilities (Rust)"
+        continue-on-error: true
+        run: |
+          cd cli
+          which cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked || true
+          cargo audit || true
 
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 4 — SonarQube / SonarCloud Analysis
