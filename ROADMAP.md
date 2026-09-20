@@ -40,7 +40,7 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
 
 - [x] **Phase 5: Client Tooling & Documentation**
   - [x] 5.1 Native Bash CLI (`bin/fux` and `bin/picoshare` wrapper) with cURL wrapper and clipboard integration.
-  - [x] 5.2 Standalone Rust CLI (`cli/`) with clap and ureq.
+  - [x] 5.2 Standalone Rust CLI (`cli/`) upgraded to Rust 2024 spec and ureq 3.4.
   - [x] 5.3 Complete API documentation (`docs/API.md`) and deployment guide (`docs/DEPLOYMENT.md`).
 
 - [x] **Phase 6: 12-Factor Docker & Publishing Pipeline**
@@ -53,3 +53,7 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
   - [x] 7.2 Dual Language i18n (`src/I18n.php`) supporting PT-BR and EN with streetwise microcopy.
   - [x] 7.3 `fux` CLI ergonomics (deboche no stderr, clean URL no stdout, `-q` queima-de-arquivo, stdin pipe).
   - [x] 7.4 Migration of repository and environment configurations to `fuxico`.
+
+- [x] **Phase 8: Single-File Compiler & Standalone Distribution (closes #10)**
+  - [x] 8.1 Standalone bundler `compile.php` generating portable single-file `fuxico.php`.
+  - [x] 8.2 Runtime environment validation, namespace aliasing, and test isolation.

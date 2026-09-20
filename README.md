@@ -149,6 +149,15 @@ url=$(./bin/fux segredo.pdf --quiet)
 
 *(O atalho `./bin/picoshare` é mantido como wrapper para retrocompatibilidade).*
 
+### 2. Native Rust CLI (`cli/`)
+Cliente nativo em Rust compilado na especificação **Rust 2024 spec** e `ureq 3.4`:
+```bash
+# Compilar e rodar binário nativo otimizado:
+cd cli && cargo build --release
+./target/release/picoshare-cli foto.png
+./target/release/picoshare-cli -u https://example.com
+```
+
 ---
 
 ## ⚙️ Configuration
