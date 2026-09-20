@@ -1,18 +1,3 @@
-# ── Stage 1: Build Dependencies ──────────────────────────────────────────────
-FROM composer:2 AS vendor
-
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-
-RUN composer install \
-    --no-dev \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-interaction \
-    --no-progress
-
-# ── Stage 2: Lightweight Production Runtime ──────────────────────────────────
 FROM dunglas/frankenphp:alpine
 
 LABEL maintainer="Lumen Pink <hi@lumen.pink>"
@@ -34,8 +19,7 @@ RUN echo "upload_max_filesize = 512M" > "$PHP_INI_DIR/conf.d/picoshare.ini" && \
 
 WORKDIR /app
 
-# Copy application source and optimized vendor bundle
-COPY --from=vendor /app/vendor /app/vendor
+# Zero external runtime dependencies: native PSR-4 autoloader in index.php
 COPY src/ /app/src/
 COPY bin/ /app/bin/
 COPY index.php /app/index.php

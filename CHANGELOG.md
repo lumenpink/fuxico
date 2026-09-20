@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (docker) add publish script and simplify dockerfile to single stage (closes #5)
   - (docker) add 12-factor dockerfile and compose with frankenphp (closes #3)
   - (api) implement 0x0.st and rustypaste protocols, sqlite engine and clients (closes #1)
   - (api) add authorization header check for uploads
