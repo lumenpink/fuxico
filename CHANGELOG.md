@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Routine maintenance, documentation updates, and operational improvements.
+
+## Previous Releases
+
+### [v0.1.0] - Fuxico Initial Release
+
 ### Features
   - (release) generate release bundles for server and clients (closes #7)
   - (cli) unify bash and rust clients with dual dialects, shared config, and pt-br flags (closes #8)
@@ -18,6 +24,4 @@
 ### Bug Fixes
   - (ci) publish fuxico-ci image and guard docker publish against missing secrets
   - (api) add video and audio content types to inline disposition
-
-## Previous Releases
 
