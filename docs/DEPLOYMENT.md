@@ -1,12 +1,12 @@
-# PicoShare Production Deployment Guide
+# Fuxico Production Deployment Guide
 
-This guide describes how to deploy **PicoShare** with high security and performance using popular web servers.
+This guide describes how to deploy **Fuxico** with high security and performance using popular web servers.
 
 ---
 
 ## 1. Docker & Docker Compose (Recommended)
 
-The easiest and most reliable way to run PicoShare in production is via the 12-factor Docker container powered by **FrankenPHP**.
+The easiest and most reliable way to run Fuxico in production is via the 12-factor Docker container powered by **FrankenPHP**.
 
 ### `docker-compose.yml`
 The included `docker-compose.yml` provides a production-ready setup with persistent storage and automated background image updates:
@@ -17,17 +17,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: lumenpink/picoshare:latest
-    container_name: picoshare
+    image: lumenpink/fuxico:latest
+    container_name: fuxico
     restart: unless-stopped
     ports:
       - "${PORT:-8080}:8080"
     environment:
-      - PICOSHARE_PUBLIC_MODE=${PICOSHARE_PUBLIC_MODE:-false}
-      - PICOSHARE_AUTH_TOKENS=${PICOSHARE_AUTH_TOKENS:-tatanka}
-      - PICOSHARE_BASE_URL=${PICOSHARE_BASE_URL:-}
-      - PICOSHARE_MAX_UPLOAD_SIZE=${PICOSHARE_MAX_UPLOAD_SIZE:-524288000}
-      - PICOSHARE_DATA_DIR=/data
+      - FUXICO_PUBLIC_MODE=${FUXICO_PUBLIC_MODE:-false}
+      - FUXICO_AUTH_TOKENS=${FUXICO_AUTH_TOKENS:-tatanka}
+      - FUXICO_BASE_URL=${FUXICO_BASE_URL:-}
+      - FUXICO_MAX_UPLOAD_SIZE=${FUXICO_MAX_UPLOAD_SIZE:-524288000}
+      - FUXICO_DATA_DIR=/data
     volumes:
       - ./data:/data
     labels:
@@ -35,7 +35,7 @@ services:
 
   watchtower:
     image: containrrr/watchtower:latest
-    container_name: picoshare_watchtower
+    container_name: fuxico_watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -50,7 +50,7 @@ services:
 Watchtower runs in a scoped mode (`WATCHTOWER_LABEL_ENABLE=true`) checking every 24 hours for new image digests. Only containers labeled with `com.centurylinklabs.watchtower.enable=true` are monitored and restarted, keeping host services undisturbed.
 
 ### Reverse Proxy Setup (No Internal HTTPS)
-By default, the internal FrankenPHP Caddy server has `auto_https off` and `admin off` configured in its `Caddyfile`. This allows you to place PicoShare behind your existing reverse proxy (Traefik, Nginx, Host Caddy, or Cloudflare Tunnel) on port `8080` without certificate conflicts or redundant TLS handshakes:
+By default, the internal FrankenPHP Caddy server has `auto_https off` and `admin off` configured in its `Caddyfile`. This allows you to place Fuxico behind your existing reverse proxy (Traefik, Nginx, Host Caddy, or Cloudflare Tunnel) on port `8080` without certificate conflicts or redundant TLS handshakes:
 
 ```nginx
 # Example Nginx Reverse Proxy snippet
@@ -103,22 +103,22 @@ chmod -R 755 data
 Ensure `mod_rewrite` and `mod_authz_core` are enabled:
 ```apache
 <VirtualHost *:80>
-    ServerName pico.example.com
-    DocumentRoot /var/www/picoshare
+    ServerName fux.example.com
+    DocumentRoot /var/www/fuxico
 
-    <Directory /var/www/picoshare>
+    <Directory /var/www/fuxico>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
     </Directory>
 
     # Protect data directory
-    <Directory /var/www/picoshare/data>
+    <Directory /var/www/fuxico/data>
         Require all denied
     </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/picoshare_error.log
-    CustomLog ${APACHE_LOG_DIR}/picoshare_access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/fuxico_error.log
+    CustomLog ${APACHE_LOG_DIR}/fuxico_access.log combined
 </VirtualHost>
 ```
 
@@ -128,8 +128,8 @@ Ensure `mod_rewrite` and `mod_authz_core` are enabled:
 ```nginx
 server {
     listen 80;
-    server_name pico.example.com;
-    root /var/www/picoshare;
+    server_name fux.example.com;
+    root /var/www/fuxico;
     index index.php;
 
     client_max_body_size 512M;
@@ -161,8 +161,8 @@ server {
 
 ### Caddy
 ```caddy
-pico.example.com {
-    root * /var/www/picoshare
+fux.example.com {
+    root * /var/www/fuxico
     encode zstd gzip
 
     # Block direct access to data
@@ -183,5 +183,5 @@ While expired files are automatically removed upon access, you can run a periodi
 
 ```bash
 # Clean expired files once every hour
-0 * * * * php /var/www/picoshare/index.php > /dev/null 2>&1
+0 * * * * php /var/www/fuxico/index.php > /dev/null 2>&1
 ```

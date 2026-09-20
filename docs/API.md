@@ -1,6 +1,6 @@
-# PicoShare API Specification
+# Fuxico API Specification
 
-PicoShare implements complete protocol parity with **0x0.st (The Null Pointer)** and **rustypaste**, alongside custom REST endpoints for the embedded Web Dashboard.
+Fuxico implements complete protocol parity with **0x0.st (The Null Pointer)** and **rustypaste**, alongside custom REST endpoints for the embedded Web Dashboard.
 
 ---
 

@@ -1,6 +1,6 @@
-# PicoShare Roadmap
+# FUXICO Roadmap
 
-This roadmap breaks down the modernization of **picoshare** (Ticket #1) into discrete, incremental, and verifiable phases.
+This roadmap breaks down the evolution and modernization of **Fuxico** into discrete, incremental, and verifiable phases.
 
 ---
 
@@ -8,7 +8,7 @@ This roadmap breaks down the modernization of **picoshare** (Ticket #1) into dis
 
 - [x] **Phase 1: Architecture, Storage Lockdown & SQLite Engine**
   - [x] 1.1 Secure storage structure (`data/files/` locked with `.htaccess` `Require all denied`).
-  - [x] 1.2 SQLite database engine (`data/picoshare.sqlite`) with migrations and indexed schema.
+  - [x] 1.2 SQLite database engine (`data/fuxico.sqlite`) with migrations and indexed schema.
   - [x] 1.3 Configuration system (Public vs. Private mode, Auth tokens, limits, retention defaults).
   - [x] 1.4 Strict MIME-type vs. extension validation with `.gpg` cryptographic exemption.
 
@@ -22,30 +22,34 @@ This roadmap breaks down the modernization of **picoshare** (Ticket #1) into dis
   - [x] 2.7 Automated expiration cleanup and oneshot self-destruction.
 
 - [x] **Phase 3: Embedded Modern Web UI & Management Dashboard**
-  - [x] 3.1 Lumen Pink dark-mode design system with responsive layout and micro-animations.
+  - [x] 3.1 Dark-mode design system with responsive layout and micro-animations.
   - [x] 3.2 File Upload view (drag & drop, custom slug, expiration dropdown, oneshot switch, secret URL switch).
   - [x] 3.3 URL Shortener view (target URL, custom slug, expiration, oneshot).
   - [x] 3.4 File Manager Dashboard view:
     - [x] Authenticated file and URL list with search and filtering.
     - [x] Media preview player (audio, video, images, syntax/text).
-    - [x] Expiration countdown badges and oneshot indicators.
-    - [x] Copy link, edit expiration, and single/bulk delete actions.
-    - [x] Storage usage statistics.
-  - [x] 3.5 Client-side token persistence in `localStorage`.
+    - [x] Real-time expiration countdown and view statistics.
+    - [x] One-click deletion and clipboard actions.
+    - [x] Token persistence in `localStorage`.
 
-- [x] **Phase 4: Automated Test Suite with Pest**
-  - [x] 4.1 Setup Pest (`pestphp/pest`) in `composer.json`.
-  - [x] 4.2 Unit Tests: MIME validator, cryptographic exemption, slug generator, expiration parser.
-  - [x] 4.3 Functional Tests: File upload, URL shortener, stream headers, oneshot burn-on-read, expiration.
-  - [x] 4.4 Integration Tests: 0x0.st protocol conformity, rustypaste endpoint conformity, management API.
+- [x] **Phase 4: Test Suite & Code Quality**
+  - [x] 4.1 Unit tests for Config, Database, Storage, MIME validator, and I18n.
+  - [x] 4.2 Feature/Integration tests for 0x0.st and rustypaste protocols end-to-end.
+  - [x] 4.3 Static analysis with Psalm (Level 1 / 97%+ type coverage).
+  - [x] 4.4 Code style enforcement with Laravel Pint.
 
-- [x] **Phase 5: Client CLIs (Bash & Rust)**
-  - [x] 5.1 Native Bash CLI (`bin/picoshare`) with cURL wrapper and clipboard integration.
-  - [x] 5.2 Native Rust CLI (`cli/`) with progress bar and configuration profile support.
-  - [x] 5.3 Verify compatibility with upstream `rustypaste-cli`.
+- [x] **Phase 5: Client Tooling & Documentation**
+  - [x] 5.1 Native Bash CLI (`bin/fux` and `bin/picoshare` wrapper) with cURL wrapper and clipboard integration.
+  - [x] 5.2 Standalone Rust CLI (`cli/`) with clap and ureq.
+  - [x] 5.3 Complete API documentation (`docs/API.md`) and deployment guide (`docs/DEPLOYMENT.md`).
 
-- [x] **Phase 6: Documentation & Specification Parity**
-  - [x] 6.1 Complete `README.md` with cURL usage guide, self-hosting, and architecture.
-  - [x] 6.2 `docs/API.md` documenting both 0x0.st and rustypaste protocols.
-  - [x] 6.3 `docs/DEPLOYMENT.md` for Apache, Nginx, and Caddy with PHP-FPM.
-  - [x] 6.4 Code styling pass with Laravel Pint.
+- [x] **Phase 6: 12-Factor Docker & Publishing Pipeline**
+  - [x] 6.1 Multi-stage / single-stage FrankenPHP Alpine container on port `:8080` with `auto_https off`.
+  - [x] 6.2 Pre-configured `docker-compose.yml` with persistent storage and scoped Watchtower auto-updates.
+  - [x] 6.3 Automated build and publish script (`scripts/docker_publish.sh`) with semantic versioning.
+
+- [x] **Phase 7: Rebranding to FUXICO: Zine Aesthetic, Dual Language & fux CLI**
+  - [x] 7.1 Zine and independent risography visual identity with acid contrast palette (`#e2f835`, `#121016`, `#ff2a85`).
+  - [x] 7.2 Dual Language i18n (`src/I18n.php`) supporting PT-BR and EN with streetwise microcopy.
+  - [x] 7.3 `fux` CLI ergonomics (deboche no stderr, clean URL no stdout, `-q` queima-de-arquivo, stdin pipe).
+  - [x] 7.4 Migration of repository and environment configurations to `fuxico`.

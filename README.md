@@ -6,7 +6,7 @@
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL-3.0-or-later_1.0-lightgrey.svg)](LICENSE)
 [![Tests: Pest](https://img.shields.io/badge/tests-Pest%20PHP-ff2d20.svg)](https://pestphp.com/)
 [![Code Style: Pint](https://img.shields.io/badge/code%20style-Laravel%20Pint-orange.svg)](https://github.com/laravel/pint)
-[![CI](https://codeberg.org/lumenpink/picoshare/workflows/ci.yml/badge.svg)](https://codeberg.org/lumenpink/picoshare/actions)
+[![CI](https://codeberg.org/lumenpink/fuxico/workflows/ci.yml/badge.svg)](https://codeberg.org/lumenpink/fuxico/actions)
 
 ---
 
@@ -36,9 +36,9 @@
 ### 1. Run with Docker Compose (Recommended)
 ```bash
 # Clone the repository
-git clone https://codeberg.org/lumenpink/picoshare.git && cd picoshare
+git clone https://codeberg.org/lumenpink/fuxico.git && cd fuxico
 
-# Start PicoShare and automated image updater (Watchtower)
+# Start Fuxico and automated image updater (Watchtower)
 docker compose up -d
 ```
 Visit [http://localhost:8080](http://localhost:8080) to access the service.
