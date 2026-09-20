@@ -84,13 +84,16 @@ beforeAll(function () use ($testEnv) {
     }
 
     $testEnv->bashBin = $rootDir.'/bin/fux';
-    $testEnv->rustBin = $rootDir.'/cli/target/release/picoshare-cli';
+    $rustFux = $rootDir.'/cli/target/release/fux';
+    $rustLegacy = $rootDir.'/cli/target/release/picoshare-cli';
+    $testEnv->rustBin = file_exists($rustFux) ? $rustFux : $rustLegacy;
 
     // Ensure rust binary exists if cargo is present in environment
     if (! file_exists($testEnv->rustBin)) {
         exec('which cargo 2>&1', $cargoCheck, $cargoExit);
         if ($cargoExit === 0) {
             exec("cargo build --release --manifest-path {$rootDir}/cli/Cargo.toml > /dev/null 2>&1");
+            $testEnv->rustBin = file_exists($rustFux) ? $rustFux : $rustLegacy;
         }
     }
 
@@ -403,4 +406,84 @@ test('rust cli deletes item via -d flag and management token', function () use (
 
     // Confirm deleted
     expect($testEnv->fetch($url)['status'])->toBe(404);
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
+
+test('bash cli supports PT-BR flags (--ficha, --caduca, --queima, --caladinho)', function () use ($testEnv) {
+    $sample = $testEnv->tempDir.'/ptbr_bash.txt';
+    file_put_contents($sample, 'conteudo fuxico ptbr');
+
+    $res = $testEnv->runCmd("{$testEnv->bashBin} --servidor {$testEnv->host} --ficha tatanka --caduca 2h --queima --caladinho ".escapeshellarg($sample));
+    expect($res['code'])->toBe(0);
+    expect($res['stderr'])->toBe(''); // 100% silent with --caladinho
+
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith($testEnv->host);
+
+    // 1st download succeeds
+    $first = $testEnv->fetch($url);
+    expect($first['status'])->toBe(200);
+    expect($first['body'])->toBe('conteudo fuxico ptbr');
+
+    // 2nd download evaporates (oneshot)
+    expect($testEnv->fetch($url)['status'])->toBeIn([404, 410]);
+});
+
+test('bash cli supports dialects and custom TOML config via -C', function () use ($testEnv) {
+    $configFile = $testEnv->tempDir.'/fux_test_config.toml';
+    file_put_contents($configFile, <<<TOML
+server = "{$testEnv->host}"
+token = "tatanka"
+dialect = "rustypaste"
+expires = "30m"
+TOML);
+
+    $sample = $testEnv->tempDir.'/dialect_bash.txt';
+    file_put_contents($sample, 'rustypaste dialect upload via bash');
+
+    $res = $testEnv->runCmd("{$testEnv->bashBin} -C {$configFile} ".escapeshellarg($sample));
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith($testEnv->host);
+
+    $get = $testEnv->fetch($url);
+    expect($get['status'])->toBe(200);
+    expect($get['body'])->toBe('rustypaste dialect upload via bash');
+});
+
+test('rust cli supports PT-BR flags (--servidor, --ficha, --caduca, --calado)', function () use ($testEnv) {
+    $sample = $testEnv->tempDir.'/ptbr_rust.txt';
+    file_put_contents($sample, 'conteudo rust ptbr');
+
+    $res = $testEnv->runCmd("{$testEnv->rustBin} --servidor {$testEnv->host} --ficha tatanka --caduca 2h --calado ".escapeshellarg($sample));
+    expect($res['code'])->toBe(0);
+    expect($res['stderr'])->toBe(''); // silent stderr
+
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith($testEnv->host);
+
+    $get = $testEnv->fetch($url);
+    expect($get['status'])->toBe(200);
+    expect($get['body'])->toBe('conteudo rust ptbr');
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
+
+test('rust cli supports dialects and custom TOML config via -C', function () use ($testEnv) {
+    $configFile = $testEnv->tempDir.'/fux_rust_config.toml';
+    file_put_contents($configFile, <<<TOML
+server = "{$testEnv->host}"
+token = "tatanka"
+dialect = "rustypaste"
+expires = "45m"
+TOML);
+
+    $sample = $testEnv->tempDir.'/dialect_rust.txt';
+    file_put_contents($sample, 'rustypaste dialect upload via rust');
+
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -C {$configFile} ".escapeshellarg($sample));
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith($testEnv->host);
+
+    $get = $testEnv->fetch($url);
+    expect($get['status'])->toBe(200);
+    expect($get['body'])->toBe('rustypaste dialect upload via rust');
 })->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (cli) unify bash and rust clients with dual dialects, shared config, and pt-br flags (closes #8)
   - (ci) integrate docker ci and publish workflows with rust support (closes #6)
   - (compiler) add single-file bundler compile.php generating fuxico.php (closes #10)
   - (rebrand) rebrand application to fuxico with zine aesthetics and fux cli (closes #9)

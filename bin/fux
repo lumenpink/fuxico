@@ -3,13 +3,23 @@
 # fux - A malícia popular do boca a boca no terminal
 # ==============================================================================
 # Regra de ouro: deboche no stderr, URL pura no stdout!
+# Suporta dialetos: nullpointer (0x0.st) e rustypaste
 # ==============================================================================
 
 set -euo pipefail
 
-SERVER_URL="${FUXICO_URL:-${PICOSHARE_URL:-http://localhost:8080}}"
-AUTH_TOKEN="${FUXICO_TOKEN:-${PICOSHARE_TOKEN:-tatanka}}"
+# Visual formatting (stderr only)
+BOLD="$(printf '\033[1m')"
+YELLOW="$(printf '\033[0;33m')"
+PINK="$(printf '\033[0;35m')"
+CYAN="$(printf '\033[0;36m')"
+RESET="$(printf '\033[0m')"
 
+# Default values
+CONFIG_FILE=""
+SERVER_URL=""
+AUTH_TOKEN=""
+DIALECT="nullpointer"
 EXPIRATION="24"
 ONESHOT=false
 SECRET=false
@@ -20,12 +30,91 @@ LIST_FILES=false
 COPY_CLIPBOARD=false
 SILENT=false
 
-# Visual formatting (stderr only)
-BOLD="$(printf '\033[1m')"
-YELLOW="$(printf '\033[0;33m')"
-PINK="$(printf '\033[0;35m')"
-CYAN="$(printf '\033[0;36m')"
-RESET="$(printf '\033[0m')"
+# First pre-pass to check for --config / -C / --conf
+ARGS=("$@")
+for ((i=0; i<${#ARGS[@]}; i++)); do
+    case "${ARGS[i]}" in
+        -C|--config|--conf)
+            if (( i + 1 < ${#ARGS[@]} )); then
+                CONFIG_FILE="${ARGS[i+1]}"
+            fi
+            ;;
+        --config=*|--conf=*)
+            CONFIG_FILE="${ARGS[i]#*=}"
+            ;;
+    esac
+done
+
+# Load configuration file if present
+load_config() {
+    local file="$1"
+    if [[ -f "$file" ]]; then
+        while IFS='=' read -r key val || [[ -n "$key" ]]; do
+            # Strip comments and trim whitespace
+            key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/#.*//')
+            val=$(echo "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/#.*//')
+            # Remove surrounding quotes
+            val="${val#\"}"
+            val="${val%\"}"
+            val="${val#\'}"
+            val="${val%\'}"
+
+            [[ -z "$key" ]] && continue
+
+            case "$(echo "$key" | tr '[:upper:]' '[:lower:]')" in
+                server|servidor|url|fuxico_url|picoshare_url)
+                    [[ -z "$SERVER_URL" ]] && SERVER_URL="$val"
+                    ;;
+                token|ficha|auth_token|fuxico_token|picoshare_token)
+                    [[ -z "$AUTH_TOKEN" ]] && AUTH_TOKEN="$val"
+                    ;;
+                dialect|dialeto|sotaque)
+                    DIALECT="$val"
+                    ;;
+                expires|caduca|expiration)
+                    EXPIRATION="$val"
+                    ;;
+                oneshot|queima)
+                    if [[ "$val" =~ ^(true|yes|1|sim|s)$ ]]; then
+                        ONESHOT=true
+                    fi
+                    ;;
+                secret|segredo)
+                    if [[ "$val" =~ ^(true|yes|1|sim|s)$ ]]; then
+                        SECRET=true
+                    fi
+                    ;;
+            esac
+        done < "$file"
+    fi
+}
+
+if [[ -n "$CONFIG_FILE" ]]; then
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo -e "${PINK}[fux]${RESET} arquivo de configuração não encontrado: $CONFIG_FILE" >&2
+        exit 1
+    fi
+    load_config "$CONFIG_FILE"
+elif [[ -n "${FUXICO_CONFIG:-}" && -f "$FUXICO_CONFIG" ]]; then
+    load_config "$FUXICO_CONFIG"
+else
+    # Default search paths
+    XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
+    for candidate in \
+        "$XDG_CONFIG/fux/config.toml" \
+        "$HOME/.fuxrc" \
+        "$XDG_CONFIG/picoshare/config.toml" \
+        "$HOME/.picosharerc"; do
+        if [[ -f "$candidate" ]]; then
+            load_config "$candidate"
+            break
+        fi
+    done
+fi
+
+# Fallback to Environment Variables or Defaults
+SERVER_URL="${SERVER_URL:-${FUXICO_URL:-${PICOSHARE_URL:-http://localhost:8080}}}"
+AUTH_TOKEN="${AUTH_TOKEN:-${FUXICO_TOKEN:-${PICOSHARE_TOKEN:-tatanka}}}"
 
 log() {
     if [[ "${SILENT}" == false ]]; then
@@ -35,34 +124,38 @@ log() {
 
 usage() {
     cat <<EOF
-fux - A malícia popular do boca a boca
+${BOLD}fux${RESET} - A malícia popular do boca a boca no terminal
 
-Uso:
+${BOLD}Uso:${RESET}
     fux [opções] <arquivo>
     cat dump.sql | fux [opções]
-    fux -q <arquivo>          (queima de arquivo: some no 1º download)
-    fux -u <url>              (encurtar fofoca)
-    fux -d <slug>             (queimar fofoca com token)
-    fux -l                    (listar fofocas ativas)
+    fux -q <arquivo>               (queima de arquivo: some no 1º download)
+    fux -u <url>                   (encurtar fofoca)
+    fux -d <slug>                  (queimar fofoca com token)
+    fux -l                         (listar fofocas ativas)
 
-Opções:
-    -q, -1, --queima    Queima-de-arquivo (destruição no primeiro GET)
-    -e <tempo>          Validade do bafão (ex: 2h, 24, 7d, 30d)
-    -s, --segredo       Fofoca cifrada (slug de 16 caracteres indecifrável)
-    -u <url>            Encurtar URL de destino
-    -n <nome>           Apelido customizado / slug
-    -t <token>          Token de autorização (ou env FUXICO_TOKEN)
-    -S <servidor>       URL do servidor (padrão: \$FUXICO_URL ou http://localhost:8080)
-    -d <slug>           Apagar / queimar fofoca
-    -l                  Listar fofocas ativas
-    -c                  Copiar link pro clipboard (xclip/wl-copy/pbcopy)
-    --quiet             Modo silencioso: silencia o stderr
-    -h, --help          Mostra esta ajuda
+${BOLD}Opções (EN & PT-BR):${RESET}
+    -S, --server, --servidor <url>     URL do servidor (padrão: \$FUXICO_URL ou http://localhost:8080)
+    -t, --token, --ficha <token>       Token/Ficha de autorização (ou \$FUXICO_TOKEN)
+    -D, -m, --dialect, --dialeto <d>   Dialeto: 'nullpointer' (0x0) ou 'rustypaste' (rpaste)
+    -e, --expires, --caduca <tempo>    Validade do bafão (ex: 2h, 24, 7d, 30d)
+    -q, -1, -o, --queima, --oneshot    Queima-de-arquivo (destruição no primeiro GET)
+    -s, --secret, --segredo            Fofoca cifrada (slug de 16 caracteres indecifrável)
+    -n, --name, --nome, --apelido <n>  Apelido customizado / slug
+    -u, --url, --shorten, --encurta <u> Encurtar URL de destino
+    -d, --delete, --apaga <slug>       Apagar / queimar fofoca
+    -l, --list, --lista                Listar fofocas ativas (JSON)
+    -c, --copy, --copia                Copiar link pro clipboard (xclip/wl-copy/pbcopy)
+    -C, --config, --conf <arquivo>     Caminho para arquivo de configuração TOML
+    --quiet, --calado, --caladinho     Modo silencioso: silencia o stderr
+    -h, --help, --ajuda, --socorro     Mostra esta ajuda
 
-Exemplos:
+${BOLD}Exemplos:${RESET}
     fux segredo.pdf -q
+    fux fofoca.png --caduca 2h --copia
     cat dump.sql | fux -e 2h
-    url=\$(fux bafao.png --quiet)
+    fux --encurta https://exemplo.com --segredo
+    url=\$(fux bafao.png --calado)
 EOF
 }
 
@@ -70,51 +163,90 @@ POSITIONAL_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -q|-1|--queima)
+        -q|-1|-o|--queima|--oneshot)
             ONESHOT=true
             shift
             ;;
-        -e|--expires)
+        -e|--expires|--caduca)
             EXPIRATION="${2:-}"
             shift 2
             ;;
-        -s|--segredo)
+        --expires=*|--caduca=*)
+            EXPIRATION="${1#*=}"
+            shift
+            ;;
+        -s|--secret|--segredo)
             SECRET=true
             shift
             ;;
-        -u|--url)
+        -u|--url|--shorten|--encurta)
             TARGET_URL="${2:-}"
             shift 2
             ;;
-        -n|--name)
+        --url=*|--shorten=*|--encurta=*)
+            TARGET_URL="${1#*=}"
+            shift
+            ;;
+        -n|--name|--alias|--nome|--apelido)
             CUSTOM_NAME="${2:-}"
             shift 2
             ;;
-        -t|--token)
+        --name=*|--alias=*|--nome=*|--apelido=*)
+            CUSTOM_NAME="${1#*=}"
+            shift
+            ;;
+        -t|--token|--ficha)
             AUTH_TOKEN="${2:-}"
             shift 2
             ;;
-        -S|--server)
+        --token=*|--ficha=*)
+            AUTH_TOKEN="${1#*=}"
+            shift
+            ;;
+        -S|--server|--servidor)
             SERVER_URL="${2:-}"
             shift 2
             ;;
-        -d|--delete)
+        --server=*|--servidor=*)
+            SERVER_URL="${1#*=}"
+            shift
+            ;;
+        -D|-m|--dialect|--dialeto|--sotaque)
+            DIALECT="${2:-}"
+            shift 2
+            ;;
+        --dialect=*|--dialeto=*|--sotaque=*)
+            DIALECT="${1#*=}"
+            shift
+            ;;
+        -d|--delete|--apaga)
             DELETE_TARGET="${2:-}"
             shift 2
             ;;
-        -l|--list)
+        --delete=*|--apaga=*)
+            DELETE_TARGET="${1#*=}"
+            shift
+            ;;
+        -l|--list|--lista)
             LIST_FILES=true
             shift
             ;;
-        -c|--copy)
+        -c|--copy|--copia)
             COPY_CLIPBOARD=true
             shift
             ;;
-        --quiet)
+        -C|--config|--conf)
+            # Already parsed in pre-pass
+            shift 2
+            ;;
+        --config=*|--conf=*)
+            shift
+            ;;
+        --quiet|--calado|--caladinho)
             SILENT=true
             shift
             ;;
-        -h|--help)
+        -h|--help|--ajuda|--socorro)
             usage
             exit 0
             ;;
@@ -124,6 +256,20 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Normalize dialect
+case "$(echo "$DIALECT" | tr '[:upper:]' '[:lower:]')" in
+    rustypaste|rpaste|rusty)
+        DIALECT="rustypaste"
+        ;;
+    nullpointer|0x0|0x0.st|default)
+        DIALECT="nullpointer"
+        ;;
+    *)
+        echo -e "${PINK}[fux]${RESET} sotaque desconhecido: ${DIALECT} (use 'nullpointer' ou 'rustypaste')" >&2
+        exit 1
+        ;;
+esac
 
 copy_to_clipboard() {
     local text="$1"
@@ -146,6 +292,21 @@ fi
 # 2. Queimar / Apagar fofoca
 if [[ -n "${DELETE_TARGET}" ]]; then
     log "queimando a fofoca '${DELETE_TARGET}'..."
+    if [[ "${DIALECT}" == "nullpointer" ]]; then
+        # 0x0.st specification: POST /<slug> -F token=<token> -F delete=
+        RES=$(curl -s -w "\n%{http_code}" -X POST \
+            -F "token=${AUTH_TOKEN}" \
+            -F "delete=" \
+            "${SERVER_URL%/}/${DELETE_TARGET}")
+        HTTP_CODE=$(echo "$RES" | tail -n 1)
+        BODY=$(echo "$RES" | sed '$d')
+        if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+            log "segredo incinerado com sucesso."
+            exit 0
+        fi
+    fi
+
+    # Rustypaste style or fallback: DELETE /<slug>
     RES=$(curl -s -w "\n%{http_code}" -X DELETE -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/${DELETE_TARGET}")
     HTTP_CODE=$(echo "$RES" | tail -n 1)
     BODY=$(echo "$RES" | sed '$d')
@@ -161,17 +322,36 @@ fi
 # 3. Encurtar URL
 if [[ -n "${TARGET_URL}" ]]; then
     log "espalhando o link quente..."
-    CURL_ARGS=("-s" "-f" "-F" "shorten=${TARGET_URL}")
-    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+    CURL_ARGS=("-s" "-f" "-D" "-")
+
+    if [[ "${DIALECT}" == "rustypaste" ]]; then
+        CURL_ARGS+=("-F" "url=${TARGET_URL}")
+        if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-H" "expire: ${EXPIRATION}"); fi
+        if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-H" "oneshot: true"); fi
+    else
+        # Nullpointer style
+        CURL_ARGS+=("-F" "shorten=${TARGET_URL}")
+        if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+        if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+    fi
+
     if [[ "${SECRET}" == true ]]; then CURL_ARGS+=("-F" "secret="); fi
     if [[ -n "${CUSTOM_NAME}" ]]; then CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}"); fi
-    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
     if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
 
-    URL_RESULT=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+
+    # Extract headers and body
+    BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+    X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+    if [[ -n "$X_TOKEN" ]]; then
+        log "ficha de gerência (X-Token): ${X_TOKEN}"
+    fi
+
     log "tá na rua! link encurtado:"
-    echo "${URL_RESULT}"
-    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${URL_RESULT}"; fi
+    echo "${BODY}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${BODY}"; fi
     exit 0
 fi
 
@@ -216,34 +396,41 @@ fi
 
 log "espalhando o bafão..."
 
-CURL_ARGS=("-s" "-f")
+CURL_ARGS=("-s" "-f" "-D" "-")
+
 if [[ -n "${CUSTOM_NAME}" ]]; then
     CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD};filename=${CUSTOM_NAME}")
+    CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}")
 else
     CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD}")
 fi
 
-if [[ -n "${CUSTOM_NAME}" ]]; then
-    CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}")
-fi
-
-if [[ "${ONESHOT}" == true ]]; then
-    CURL_ARGS+=("-F" "oneshot=true")
+if [[ "${DIALECT}" == "rustypaste" ]]; then
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-H" "expire: ${EXPIRATION}"); fi
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-H" "oneshot: true"); fi
+else
+    # Nullpointer style
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
 fi
 
 if [[ "${SECRET}" == true ]]; then
     CURL_ARGS+=("-F" "secret=")
 fi
 
-if [[ -n "${EXPIRATION}" ]]; then
-    CURL_ARGS+=("-F" "expires=${EXPIRATION}")
-fi
-
 if [[ -n "${AUTH_TOKEN}" ]]; then
     CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}")
 fi
 
-URL_RESULT=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+
+# Split headers and body
+BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+if [[ -n "$X_TOKEN" ]]; then
+    log "ficha de gerência (X-Token): ${X_TOKEN}"
+fi
 
 if [[ "${ONESHOT}" == true ]]; then
     log "tá na rua! modo queima-de-arquivo ativado (evapora no 1º download)."
@@ -252,9 +439,9 @@ else
 fi
 
 # Regra de ouro: apenas a URL pura no stdout!
-echo "${URL_RESULT}"
+echo "${BODY}"
 
 if [[ "${COPY_CLIPBOARD}" == true ]]; then
-    copy_to_clipboard "${URL_RESULT}"
+    copy_to_clipboard "${BODY}"
     log "link copiado pro clipboard."
 fi

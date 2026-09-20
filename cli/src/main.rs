@@ -1,99 +1,306 @@
 use clap::Parser;
+use serde::Deserialize;
 use std::fs::File;
-use std::io::{self, Read};
-use std::path::PathBuf;
+use std::io::{self, Read, Write};
+use std::path::{Path, PathBuf};
 
-#[derive(Parser)]
-#[command(name = "picoshare")]
-#[command(about = "Fast, minimalist CLI client for PicoShare", long_about = None)]
+#[derive(Debug, Deserialize, Default)]
+struct FileConfig {
+    server: Option<String>,
+    servidor: Option<String>,
+    token: Option<String>,
+    ficha: Option<String>,
+    dialect: Option<String>,
+    dialeto: Option<String>,
+    sotaque: Option<String>,
+    expires: Option<String>,
+    caduca: Option<String>,
+    oneshot: Option<bool>,
+    queima: Option<bool>,
+    secret: Option<bool>,
+    segredo: Option<bool>,
+}
+
+#[derive(Parser, Debug)]
+#[command(
+    name = "fux",
+    about = "fux - A malícia popular do boca a boca no terminal",
+    long_about = None
+)]
 struct Cli {
-    /// Target file to upload (or omit when shortening URL or managing)
+    /// Target file to upload (or omit when reading from stdin, shortening URL or managing)
     #[arg(value_name = "FILE")]
     file: Option<PathBuf>,
 
     /// Server URL
     #[arg(
         short = 'S',
-        long,
-        env = "PICOSHARE_URL",
-        default_value = "http://localhost:8080"
+        long = "server",
+        visible_alias = "servidor",
+        env = "FUXICO_URL"
     )]
-    server: String,
+    server: Option<String>,
 
     /// Authorization token
-    #[arg(short = 't', long, env = "PICOSHARE_TOKEN", default_value = "tatanka")]
-    token: String,
+    #[arg(
+        short = 't',
+        long = "token",
+        visible_alias = "ficha",
+        env = "FUXICO_TOKEN"
+    )]
+    token: Option<String>,
 
-    /// Shorten a destination URL instead of uploading a file
-    #[arg(short = 'u', long)]
-    shorten: Option<String>,
+    /// Protocol dialect ('nullpointer' / '0x0' or 'rustypaste' / 'rpaste')
+    #[arg(
+        short = 'D',
+        visible_short_alias = 'm',
+        long = "dialect",
+        visible_alias = "dialeto",
+        alias = "sotaque"
+    )]
+    dialect: Option<String>,
 
-    /// Set expiration (e.g. "24" for 24 hours, "10m", "7d", "1y")
-    #[arg(short = 'e', long)]
+    /// Set expiration (e.g. "2h", "24", "7d", "1y")
+    #[arg(
+        short = 'e',
+        long = "expires",
+        visible_alias = "caduca"
+    )]
     expires: Option<String>,
 
     /// Burn after reading (delete after single access)
-    #[arg(short = 'o', long)]
+    #[arg(
+        short = 'q',
+        visible_short_alias = 'o',
+        long = "oneshot",
+        visible_alias = "queima",
+        alias = "1"
+    )]
     oneshot: bool,
 
     /// Generate an unguessable 16-character secret slug
-    #[arg(short = 's', long)]
+    #[arg(
+        short = 's',
+        long = "secret",
+        visible_alias = "segredo"
+    )]
     secret: bool,
 
-    /// Custom slug name
-    #[arg(short = 'n', long)]
+    /// Custom slug / alias filename
+    #[arg(
+        short = 'n',
+        long = "name",
+        visible_alias = "nome",
+        alias = "alias",
+        alias = "apelido"
+    )]
     name: Option<String>,
 
+    /// Shorten a destination URL instead of uploading a file
+    #[arg(
+        short = 'u',
+        long = "url",
+        visible_alias = "encurta",
+        alias = "shorten"
+    )]
+    url: Option<String>,
+
     /// Delete an item by slug
-    #[arg(short = 'd', long)]
+    #[arg(
+        short = 'd',
+        long = "delete",
+        visible_alias = "apaga"
+    )]
     delete: Option<String>,
 
     /// List active files in JSON
-    #[arg(short = 'l', long)]
+    #[arg(
+        short = 'l',
+        long = "list",
+        visible_alias = "lista"
+    )]
     list: bool,
+
+    /// Copy returned URL to clipboard (xclip, wl-copy, pbcopy)
+    #[arg(
+        short = 'c',
+        long = "copy",
+        visible_alias = "copia"
+    )]
+    copy: bool,
+
+    /// Custom path to config TOML file
+    #[arg(
+        short = 'C',
+        long = "config",
+        visible_alias = "conf"
+    )]
+    config: Option<PathBuf>,
+
+    /// Quiet mode (suppress stderr messages, URL only on stdout)
+    #[arg(
+        long = "quiet",
+        visible_alias = "calado",
+        alias = "caladinho"
+    )]
+    quiet: bool,
+}
+
+fn load_file_config(cli_config: Option<&Path>) -> FileConfig {
+    if let Some(path) = cli_config {
+        if let Ok(content) = std::fs::read_to_string(path) {
+            return toml::from_str(&content).unwrap_or_default();
+        }
+        return FileConfig::default();
+    }
+
+    if let Ok(env_path) = std::env::var("FUXICO_CONFIG") {
+        if let Ok(content) = std::fs::read_to_string(&env_path) {
+            return toml::from_str(&content).unwrap_or_default();
+        }
+    }
+
+    let home = std::env::var("HOME").unwrap_or_default();
+    let xdg = std::env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| format!("{}/.config", home));
+
+    let candidates = [
+        format!("{}/fux/config.toml", xdg),
+        format!("{}/.fuxrc", home),
+        format!("{}/picoshare/config.toml", xdg),
+        format!("{}/.picosharerc", home),
+    ];
+
+    for path in &candidates {
+        if let Ok(content) = std::fs::read_to_string(path) {
+            if let Ok(cfg) = toml::from_str(&content) {
+                return cfg;
+            }
+        }
+    }
+
+    FileConfig::default()
+}
+
+fn copy_to_clipboard(text: &str) {
+    let candidates = [
+        ("wl-copy", vec![]),
+        ("xclip", vec!["-selection", "clipboard"]),
+        ("pbcopy", vec![]),
+    ];
+
+    for (cmd, args) in candidates {
+        if let Ok(mut child) = std::process::Command::new(cmd)
+            .args(&args)
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+        {
+            if let Some(mut stdin) = child.stdin.take() {
+                let _ = stdin.write_all(text.as_bytes());
+            }
+            let _ = child.wait();
+            return;
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--ajuda" || a == "--socorro") {
+        use clap::CommandFactory;
+        let mut cmd = Cli::command();
+        cmd.print_help()?;
+        println!();
+        return Ok(());
+    }
+
     let cli = Cli::parse();
-    let server = cli.server.trim_end_matches('/');
+    let file_cfg = load_file_config(cli.config.as_deref());
+
+    // Resolve merged settings (CLI > Env > Config File > Default)
+    let server_raw = cli
+        .server
+        .or_else(|| std::env::var("PICOSHARE_URL").ok())
+        .or(file_cfg.server)
+        .or(file_cfg.servidor)
+        .unwrap_or_else(|| "http://localhost:8080".to_string());
+    let server = server_raw.trim_end_matches('/');
+
+    let token = cli
+        .token
+        .or_else(|| std::env::var("PICOSHARE_TOKEN").ok())
+        .or(file_cfg.token)
+        .or(file_cfg.ficha)
+        .unwrap_or_else(|| "tatanka".to_string());
+
+    let dialect_raw = cli
+        .dialect
+        .or(file_cfg.dialect)
+        .or(file_cfg.dialeto)
+        .or(file_cfg.sotaque)
+        .unwrap_or_else(|| "nullpointer".to_string());
+
+    let is_rustypaste = matches!(
+        dialect_raw.to_lowercase().as_str(),
+        "rustypaste" | "rpaste" | "rusty"
+    );
+
+    let expires = cli
+        .expires
+        .or(file_cfg.expires)
+        .or(file_cfg.caduca);
+
+    let oneshot = cli.oneshot
+        || file_cfg.oneshot.unwrap_or(false)
+        || file_cfg.queima.unwrap_or(false);
+
+    let secret = cli.secret
+        || file_cfg.secret.unwrap_or(false)
+        || file_cfg.segredo.unwrap_or(false);
+
+    let quiet = cli.quiet;
 
     // 1. Delete operation
     if let Some(slug) = cli.delete {
         let url = format!("{}/{}", server, slug);
+
+        if !is_rustypaste {
+            // Nullpointer (0x0.st) management deletion: POST /<slug> with token & delete
+            let boundary = "------------------------fux_boundary";
+            let mut body = Vec::new();
+            append_field(&mut body, boundary, "token", &token);
+            append_field(&mut body, boundary, "delete", "");
+            body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+
+            let post_resp = ureq::post(&url)
+                .header(
+                    "Content-Type",
+                    format!("multipart/form-data; boundary={}", boundary),
+                )
+                .send(body.as_slice());
+
+            if post_resp.is_ok() {
+                if !quiet {
+                    println!("Successfully deleted: {}", slug);
+                }
+                return Ok(());
+            }
+        }
+
+        // Rustypaste style or fallback: DELETE /<slug>
         let resp = ureq::delete(&url)
-            .header("Authorization", format!("Bearer {}", cli.token))
+            .header("Authorization", format!("Bearer {}", token))
             .call();
 
         match resp {
             Ok(_) => {
-                println!("Successfully deleted: {}", slug);
+                if !quiet {
+                    println!("Successfully deleted: {}", slug);
+                }
                 return Ok(());
             }
             Err(e) => {
-                // Try 0x0.st POST management deletion as fallback
-                let boundary = "------------------------picoshare_boundary";
-                let mut body = Vec::new();
-                append_field(&mut body, boundary, "token", &cli.token);
-                append_field(&mut body, boundary, "delete", "");
-                body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
-
-                let post_resp = ureq::post(&url)
-                    .header(
-                        "Content-Type",
-                        format!("multipart/form-data; boundary={}", boundary),
-                    )
-                    .send(body.as_slice());
-
-                match post_resp {
-                    Ok(_) => {
-                        println!("Successfully deleted: {}", slug);
-                        return Ok(());
-                    }
-                    Err(_) => {
-                        eprintln!("Error deleting {}: {}", slug, e);
-                        std::process::exit(1);
-                    }
-                }
+                eprintln!("Error deleting {}: {}", slug, e);
+                std::process::exit(1);
             }
         }
     }
@@ -102,46 +309,69 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if cli.list {
         let url = format!("{}/list", server);
         let mut resp = ureq::get(&url)
-            .header("Authorization", format!("Bearer {}", cli.token))
+            .header("Authorization", format!("Bearer {}", token))
             .call()?;
         let body: String = resp.body_mut().read_to_string()?;
-        println!("{}", body);
+        print!("{}", body);
         return Ok(());
     }
 
     // 3. Shorten URL
-    if let Some(target_url) = cli.shorten {
-        let boundary = "------------------------picoshare_boundary";
+    if let Some(target_url) = cli.url {
+        let boundary = "------------------------fux_boundary";
         let mut body = Vec::new();
-        append_field(&mut body, boundary, "shorten", &target_url);
 
-        if let Some(exp) = cli.expires {
-            append_field(&mut body, boundary, "expires", &exp);
-        }
-        if cli.oneshot {
-            append_field(&mut body, boundary, "oneshot", "true");
-        }
-        if let Some(name) = cli.name {
-            append_field(&mut body, boundary, "customName", &name);
-        }
-        body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
-
-        let mut resp = ureq::post(server)
-            .header("Authorization", format!("Bearer {}", cli.token))
+        let mut req = ureq::post(server)
+            .header("Authorization", format!("Bearer {}", token))
             .header(
                 "Content-Type",
                 format!("multipart/form-data; boundary={}", boundary),
-            )
-            .send(body.as_slice())?;
+            );
 
-        if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
-            eprintln!("Management Token (X-Token): {}", x_token);
+        if is_rustypaste {
+            append_field(&mut body, boundary, "url", &target_url);
+            if let Some(ref exp) = expires {
+                req = req.header("expire", exp);
+            }
+            if oneshot {
+                req = req.header("oneshot", "true");
+            }
+        } else {
+            append_field(&mut body, boundary, "shorten", &target_url);
+            if let Some(ref exp) = expires {
+                append_field(&mut body, boundary, "expires", exp);
+            }
+            if oneshot {
+                append_field(&mut body, boundary, "oneshot", "true");
+            }
         }
-        print!("{}", resp.body_mut().read_to_string()?);
+
+        if secret {
+            append_field(&mut body, boundary, "secret", "");
+        }
+        if let Some(ref name) = cli.name {
+            append_field(&mut body, boundary, "customName", name);
+        }
+        body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+
+        let mut resp = req.send(body.as_slice())?;
+
+        if !quiet {
+            if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
+                eprintln!("Management Token (X-Token): {}", x_token);
+            }
+        }
+
+        let result_url = resp.body_mut().read_to_string()?;
+        print!("{}", result_url);
+
+        if cli.copy {
+            copy_to_clipboard(result_url.trim());
+        }
         return Ok(());
     }
 
-    // 4. File Upload
+    // 4. File Upload (from file argument or stdin)
     let (file_data, file_name) = match cli.file {
         Some(path) => {
             let mut file = File::open(&path)?;
@@ -154,7 +384,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             (data, name)
         }
         None => {
-            // Read from stdin
             let mut data = Vec::new();
             io::stdin().read_to_end(&mut data)?;
             if data.is_empty() {
@@ -165,20 +394,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let boundary = "------------------------picoshare_boundary";
+    let boundary = "------------------------fux_boundary";
     let mut body = Vec::new();
 
-    if let Some(exp) = cli.expires {
-        append_field(&mut body, boundary, "expires", &exp);
+    let mut req = ureq::post(server)
+        .header("Authorization", format!("Bearer {}", token))
+        .header(
+            "Content-Type",
+            format!("multipart/form-data; boundary={}", boundary),
+        );
+
+    if is_rustypaste {
+        if let Some(ref exp) = expires {
+            req = req.header("expire", exp);
+        }
+        if oneshot {
+            req = req.header("oneshot", "true");
+        }
+    } else {
+        if let Some(ref exp) = expires {
+            append_field(&mut body, boundary, "expires", exp);
+        }
+        if oneshot {
+            append_field(&mut body, boundary, "oneshot", "true");
+        }
     }
-    if cli.oneshot {
-        append_field(&mut body, boundary, "oneshot", "true");
-    }
-    if cli.secret {
+
+    if secret {
         append_field(&mut body, boundary, "secret", "");
     }
-    if let Some(name) = cli.name {
-        append_field(&mut body, boundary, "customName", &name);
+    if let Some(ref name) = cli.name {
+        append_field(&mut body, boundary, "customName", name);
     }
 
     // Append file field
@@ -193,18 +439,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     body.extend_from_slice(b"\r\n");
     body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
-    let mut resp = ureq::post(server)
-        .header("Authorization", format!("Bearer {}", cli.token))
-        .header(
-            "Content-Type",
-            format!("multipart/form-data; boundary={}", boundary),
-        )
-        .send(body.as_slice())?;
+    let mut resp = req.send(body.as_slice())?;
 
-    if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
-        eprintln!("Management Token (X-Token): {}", x_token);
+    if !quiet {
+        if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
+            eprintln!("Management Token (X-Token): {}", x_token);
+        }
     }
-    print!("{}", resp.body_mut().read_to_string()?);
+
+    let result_url = resp.body_mut().read_to_string()?;
+    print!("{}", result_url);
+
+    if cli.copy {
+        copy_to_clipboard(result_url.trim());
+    }
 
     Ok(())
 }
@@ -218,4 +466,43 @@ fn append_field(body: &mut Vec<u8>, boundary: &str, name: &str, value: &str) {
         )
         .as_bytes(),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_config_en_and_pt() {
+        let toml_str = r#"
+            servidor = "http://test.local:8080"
+            ficha = "token123"
+            dialeto = "rustypaste"
+            caduca = "2h"
+            queima = true
+        "#;
+        let cfg: FileConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(cfg.servidor.as_deref(), Some("http://test.local:8080"));
+        assert_eq!(cfg.ficha.as_deref(), Some("token123"));
+        assert_eq!(cfg.dialeto.as_deref(), Some("rustypaste"));
+        assert_eq!(cfg.caduca.as_deref(), Some("2h"));
+        assert_eq!(cfg.queima, Some(true));
+    }
+
+    #[test]
+    fn test_deserialize_config_standard_en() {
+        let toml_str = r#"
+            server = "https://fuxico.cc"
+            token = "secret-token"
+            dialect = "nullpointer"
+            expires = "24h"
+            oneshot = false
+        "#;
+        let cfg: FileConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(cfg.server.as_deref(), Some("https://fuxico.cc"));
+        assert_eq!(cfg.token.as_deref(), Some("secret-token"));
+        assert_eq!(cfg.dialect.as_deref(), Some("nullpointer"));
+        assert_eq!(cfg.expires.as_deref(), Some("24h"));
+        assert_eq!(cfg.oneshot, Some(false));
+    }
 }

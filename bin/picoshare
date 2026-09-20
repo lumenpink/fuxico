@@ -1,4 +1,1 @@
-#!/usr/bin/env bash
-# Compatibility wrapper for picoshare -> fux
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "${DIR}/fux" "$@"
+fux
