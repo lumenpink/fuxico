@@ -65,10 +65,19 @@ composer compile
 php compile.php --check
 ```
 
-### 5. Build & Publish Docker Image
+### 5. Build & Publish Docker Images
 ```bash
-# Build and publish to Docker Hub with automatic version tagging
+# Test building and tagging locally without pushing
 ./scripts/docker_publish.sh --dry-run
+
+# Build and push production image (lumenpink/fuxico)
+./scripts/docker_publish.sh
+
+# Build and push CI test runner image (lumenpink/fuxico-ci)
+./scripts/docker_publish.sh --ci
+
+# Build and push both images
+./scripts/docker_publish.sh --all
 ```
 
 ---

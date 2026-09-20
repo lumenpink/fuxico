@@ -71,14 +71,26 @@ Use the included automated build and publish script to build and push Docker ima
 # Test building and tagging locally without pushing
 ./scripts/docker_publish.sh --dry-run
 
-# Build and push with automatic semantic versioning and :latest tag
+# Build and push production image with automatic semantic versioning and :latest tag
 ./scripts/docker_publish.sh
+
+# Build and push the CI image (lumenpink/fuxico-ci:latest)
+./scripts/docker_publish.sh --ci
+
+# Build and push BOTH production and CI images
+./scripts/docker_publish.sh --all
 
 # Build with a custom tag and push
 ./scripts/docker_publish.sh -t v0.1.0 --latest
 ```
 
 When automated authentication is needed (e.g. in CI or batch jobs), export `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` in your environment.
+
+### Automated Forgejo Actions Workflows
+The repository includes automated CI/CD workflows under `.forgejo/workflows/`:
+1. **`ci.yml`**: Runs linting (`pint`), static analysis (`psalm`), unit & feature tests (`pest`), and dependency security auditing (`composer audit` + `cargo audit`) inside `lumenpink/fuxico-ci:latest`.
+2. **`docker-publish.yml`**: Automatically builds and publishes multi-tag production images (`lumenpink/fuxico`) to Docker Hub whenever a release is published or changes land on `main`.
+3. **`docker-ci-image.yml`**: Automatically builds and publishes the testing image (`lumenpink/fuxico-ci`) when `docker/Dockerfile.ci` is modified or when triggered via manual dispatch.
 
 ---
 

@@ -46,7 +46,8 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
 - [x] **Phase 6: 12-Factor Docker & Publishing Pipeline**
   - [x] 6.1 Multi-stage / single-stage FrankenPHP Alpine container on port `:8080` with `auto_https off`.
   - [x] 6.2 Pre-configured `docker-compose.yml` with persistent storage and scoped Watchtower auto-updates.
-  - [x] 6.3 Automated build and publish script (`scripts/docker_publish.sh`) with semantic versioning.
+  - [x] 6.3 Automated build and publish script (`scripts/docker_publish.sh`) with semantic versioning and `--ci` support.
+  - [x] 6.4 Forgejo CI & Docker Hub automated publishing workflows (`docker-publish.yml`, `docker-ci-image.yml`, and `lumenpink/fuxico-ci:latest`) (closes #6).
 
 - [x] **Phase 7: Rebranding to FUXICO: Zine Aesthetic, Dual Language & fux CLI**
   - [x] 7.1 Zine and independent risography visual identity with acid contrast palette (`#e2f835`, `#121016`, `#ff2a85`).
