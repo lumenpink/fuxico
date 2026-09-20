@@ -1,6 +1,6 @@
-# 🪶 PicoShare
+# ⚡ FUXICO
 
-> Minimalist, high-performance file sharing, temporary vault, and URL shortener supporting **100% of the 0x0.st (nullpointer)** and **rustypaste** protocols, paired with a sleek Web UI and file management dashboard.
+> **A malícia popular do boca a boca.** Compartilhar arquivo na borda não precisa parecer um manifesto de guerra fria; pode ser a esperteza de passar a informação adiante pelo puro prazer de fazer a roda girar. Estética de zine e risografia independente, 100% de compatibilidade com os protocolos **0x0.st (nullpointer)** e **rustypaste**, e a CLI mais rápida de digitar: `fux`.
 
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.2-blue.svg)](https://php.net/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL-3.0-or-later_1.0-lightgrey.svg)](LICENSE)
@@ -15,20 +15,19 @@
 - **⚡ Dual Protocol Engine:** 100% drop-in compatibility with:
   - **The Null Pointer (`0x0.st`)**: `file`, `url` (remote download), `shorten` (URL redirect), `secret` (16-char slugs), `expires` (hours or ms epoch), and `X-Token` management endpoints (`POST /<slug>` to delete or adjust retention).
   - **`rustypaste`**: `curl -F "file=@..."`, `url` shortening, `expire: 10m` headers, `oneshot: true`, `GET /list` JSON endpoint, and `DELETE /<slug>` method.
-- **🛡️ Direct Access Lockdown:** All stored files are shielded via `.htaccess` (`Require all denied`). Every request is strictly authenticated, validated, and streamed through the PHP engine with `X-Content-Type-Options: nosniff`.
+- **🎨 Estética Zine & Risografia Independente:**
+  - Visual ácido e marcante: amarelo-marca-texto (`#e2f835`), roxo-berinjela (`#121016`), magenta elétrico (`#ff2a85`) e texturas de meio-tom (*halftone*).
+  - Tipografia de alto contraste (`Anton` + `Space Mono`).
+  - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica e acolhedora (*"Despeja o podre aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
+- **💻 CLI `fux` (Ergonomia Máxima):**
+  - **Regra de ouro:** deboche no `stderr` (`[fux] espalhando o bafão...`), URL pura no `stdout` para nunca quebrar pipes (`xclip`, `wl-copy`, scripts).
+  - Suporte a `-q` (queima de arquivo) e piping direto de `stdin` (`cat dump.sql | fux`).
+- **🛡️ Direct Access Lockdown:** Todos os arquivos são blindados. Acesso sempre intermediado e validado via streaming PHP com `X-Content-Type-Options: nosniff`.
 - **🔍 Strict MIME Verification with Crypto Exemption:**
-  - Enforces strict matching between file extensions and true magic-byte MIME types.
-  - Blacklists executable and script formats (`.php`, `.sh`, `.exe`, `.cgi`, etc.).
-  - **Cryptographic Exemption:** Encrypted `.gpg`, `.asc`, and `.pgp` streams are recognized as valid cryptographic payloads regardless of binary randomness.
-- **🗄️ SQLite Metadata Engine:** Instant indexing, view counters, expiration purging, and atomic file lookups via `pdo_sqlite` (zero external database daemon required).
-- **🎨 Modern Web UI & Management Dashboard:**
-  - Embedded single-page application with a sleek dark-mode aesthetic and Lumen Pink (`#db2777`) branding.
-  - Drag-and-drop file uploader and URL shortener.
-  - Interactive **Dashboard** to search, preview media (images, audio, video), monitor expiration countdowns, copy links, and delete items.
-  - Local authentication persistence via `localStorage`.
-- **💻 Native Client Tooling:**
-  - **Bash CLI** (`bin/picoshare`) with clipboard integration and standard Unix flags.
-  - **Rust CLI** (`cli/`) standalone binary built with `clap` and `ureq`.
+  - Verificação estrita de magic bytes vs extensão.
+  - Bloqueio de executáveis e scripts (`.php`, `.sh`, `.exe`, etc.).
+  - **Isenção Criptográfica:** Payloads encriptados `.gpg`, `.asc` e `.pgp` são aceitos sem restrições.
+- **🗄️ SQLite Metadata Engine:** Indexação instantânea, contagem de views, purga atômica e zero necessidade de banco externo.
 
 ---
 
@@ -105,41 +104,34 @@ curl -X DELETE -H 'Authorization: Bearer <token>' http://localhost:8080/abcde.pn
 
 ## 🛠️ Client CLIs
 
-### 1. Bash CLI (`bin/picoshare`)
+### 1. `fux` CLI (`bin/fux`)
 ```bash
-# Upload a file
-./bin/picoshare photo.png
+# Upload de arquivo padrão (TTL default 24h)
+./bin/fux photo.png
 
-# Upload with 24-hour expiration, secret slug, and copy link to clipboard
-./bin/picoshare -e 24 -s -c document.pdf
+# Modo Queima de Arquivo (-q: auto-destruição no 1º download)
+./bin/fux -q relatorio.pdf
 
-# Pipe standard input
-cat ~/.bashrc | ./bin/picoshare -n bashrc.txt
+# Definir expiração explícita e copiar link pro clipboard
+./bin/fux -e 2h -c backup.gpg
 
-# Shorten a URL
-./bin/picoshare -u https://example.com -n mylink
+# Suporte a stdin pipe (sem gerar arquivo temporário manual)
+cat dump.sql | ./bin/fux -e 2h
 
-# Delete an item
-./bin/picoshare -d abcde -t <X-Token>
+# Regra de ouro: deboche no stderr, URL limpa no stdout!
+url=$(./bin/fux segredo.pdf --quiet)
 
-# List files
-./bin/picoshare -l
+# Encurtar uma URL
+./bin/fux -u https://example.com -n meulink
+
+# Queimar/Apagar fofoca com token
+./bin/fux -d abcde -t <X-Token>
+
+# Listar fofocas ativas
+./bin/fux -l
 ```
 
-### 2. Rust CLI (`cli/`)
-```bash
-# Build the binary
-cargo build --release --manifest-path cli/Cargo.toml
-
-# Upload a file
-./cli/target/release/picoshare-cli photo.png
-
-# Shorten URL
-./cli/target/release/picoshare-cli -u https://news.ycombinator.com -n hn
-
-# List files
-./cli/target/release/picoshare-cli -l
-```
+*(O atalho `./bin/picoshare` é mantido como wrapper para retrocompatibilidade).*
 
 ---
 
@@ -149,13 +141,16 @@ Set any of the following environment variables (or export them in your web serve
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `PICOSHARE_PUBLIC_MODE` | `false` | When `true`, uploads are open to everyone (0x0.st public mode). When `false`, uploads require a master token. |
-| `PICOSHARE_AUTH_TOKENS` | `tatanka` | Comma-separated list of valid master tokens. |
-| `PICOSHARE_DATA_DIR` | `__DIR__/data` | Root directory for SQLite database and uploaded files. |
-| `PICOSHARE_MAX_UPLOAD_SIZE`| `524288000` | Max file size in bytes (default: 500 MB). |
-| `PICOSHARE_SLUG_LENGTH` | `5` | Length of standard random slugs. |
-| `PICOSHARE_SECRET_SLUG_LENGTH` | `16` | Length of secret slugs. |
-| `PICOSHARE_BASE_URL` | *(auto)* | Override base URL (e.g. `https://pico.example.com`). |
+| `FUXICO_PUBLIC_MODE` | `false` | When `true`, uploads are open to everyone (0x0.st public mode). When `false`, uploads require a master token. |
+| `FUXICO_AUTH_TOKENS` | `tatanka` | Comma-separated list of valid master tokens. |
+| `FUXICO_DATA_DIR` | `__DIR__/data` | Root directory for SQLite database and uploaded files. |
+| `FUXICO_MAX_UPLOAD_SIZE`| `524288000` | Max file size in bytes (default: 500 MB). |
+| `FUXICO_SLUG_LENGTH` | `5` | Length of standard random slugs. |
+| `FUXICO_SECRET_SLUG_LENGTH` | `16` | Length of secret slugs. |
+| `FUXICO_BASE_URL` | *(auto)* | Override base URL (e.g. `https://fux.example.com`). |
+| `FUXICO_LANG` | `en` *(or auto)*| Force default UI language (`pt` or `en`). |
+
+*(Legacy `PICOSHARE_*` environment variables remain supported as fallbacks).*
 
 ---
 
