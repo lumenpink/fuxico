@@ -12,7 +12,12 @@ struct Cli {
     file: Option<PathBuf>,
 
     /// Server URL
-    #[arg(short = 'S', long, env = "PICOSHARE_URL", default_value = "http://localhost:8080")]
+    #[arg(
+        short = 'S',
+        long,
+        env = "PICOSHARE_URL",
+        default_value = "http://localhost:8080"
+    )]
     server: String,
 
     /// Authorization token
@@ -73,7 +78,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
                 let post_resp = ureq::post(&url)
-                    .set("Content-Type", &format!("multipart/form-data; boundary={}", boundary))
+                    .set(
+                        "Content-Type",
+                        &format!("multipart/form-data; boundary={}", boundary),
+                    )
                     .send_bytes(&body);
 
                 match post_resp {
@@ -120,7 +128,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let resp = ureq::post(server)
             .set("Authorization", &format!("Bearer {}", cli.token))
-            .set("Content-Type", &format!("multipart/form-data; boundary={}", boundary))
+            .set(
+                "Content-Type",
+                &format!("multipart/form-data; boundary={}", boundary),
+            )
             .send_bytes(&body)?;
 
         if let Some(x_token) = resp.header("x-token") {
@@ -136,7 +147,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut file = File::open(&path)?;
             let mut data = Vec::new();
             file.read_to_end(&mut data)?;
-            let name = path.file_name()
+            let name = path
+                .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| "upload.bin".to_string());
             (data, name)
@@ -183,7 +195,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let resp = ureq::post(server)
         .set("Authorization", &format!("Bearer {}", cli.token))
-        .set("Content-Type", &format!("multipart/form-data; boundary={}", boundary))
+        .set(
+            "Content-Type",
+            &format!("multipart/form-data; boundary={}", boundary),
+        )
         .send_bytes(&body)?;
 
     if let Some(x_token) = resp.header("x-token") {
@@ -197,6 +212,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn append_field(body: &mut Vec<u8>, boundary: &str, name: &str, value: &str) {
     body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
     body.extend_from_slice(
-        format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n{}\r\n", name, value).as_bytes()
+        format!(
+            "Content-Disposition: form-data; name=\"{}\"\r\n\r\n{}\r\n",
+            name, value
+        )
+        .as_bytes(),
     );
 }

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (compiler) add single-file bundler compile.php generating fuxico.php (closes #10)
   - (rebrand) rebrand application to fuxico with zine aesthetics and fux cli (closes #9)
   - (docker) add publish script and simplify dockerfile to single stage (closes #5)
   - (docker) add 12-factor dockerfile and compose with frankenphp (closes #3)
