@@ -1,0 +1,50 @@
+# ── Stage 1: Build Dependencies ──────────────────────────────────────────────
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-progress
+
+# ── Stage 2: Lightweight Production Runtime ──────────────────────────────────
+FROM dunglas/frankenphp:alpine
+
+LABEL maintainer="Lumen Pink <hi@lumen.pink>"
+LABEL org.opencontainers.image.title="PicoShare"
+LABEL org.opencontainers.image.description="12-Factor Minimalist File Sharing & URL Shortener"
+
+ENV SERVER_NAME=":8080" \
+    CADDYFILE="/etc/caddy/Caddyfile" \
+    PICOSHARE_DATA_DIR="/data" \
+    PICOSHARE_PUBLIC_MODE="false"
+
+# Configure PHP runtime parameters for large uploads
+RUN echo "upload_max_filesize = 512M" > "$PHP_INI_DIR/conf.d/picoshare.ini" && \
+    echo "post_max_size = 512M" >> "$PHP_INI_DIR/conf.d/picoshare.ini" && \
+    echo "memory_limit = 512M" >> "$PHP_INI_DIR/conf.d/picoshare.ini" && \
+    echo "max_execution_time = 300" >> "$PHP_INI_DIR/conf.d/picoshare.ini" && \
+    mkdir -p /data && \
+    chown -R www-data:www-data /data
+
+WORKDIR /app
+
+# Copy application source and optimized vendor bundle
+COPY --from=vendor /app/vendor /app/vendor
+COPY src/ /app/src/
+COPY bin/ /app/bin/
+COPY index.php /app/index.php
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Native container healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+EXPOSE 8080
+
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]

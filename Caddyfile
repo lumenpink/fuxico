@@ -1,0 +1,20 @@
+{
+    auto_https off
+    admin off
+}
+
+:8080 {
+    root * /app
+    encode zstd gzip
+
+    # Strict lockdown of data directory, sqlite db, and dotfiles
+    @blocked {
+        path /data/* /data
+        path /.*
+    }
+    respond @blocked 403
+
+    php_server {
+        index index.php
+    }
+}

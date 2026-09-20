@@ -1,0 +1,11 @@
+.git
+.antigravity
+tests/
+cli/target/
+vendor/
+data/
+coverage/
+public_reports/
+.psalm-cache/
+.phpunit.result.cache
+*.log
