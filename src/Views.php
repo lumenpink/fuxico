@@ -102,6 +102,25 @@ class Views
             margin-top: 10px;
         }
 
+        /* Trans Pride Stripe */
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 10px;
+            flex-shrink: 0;
+            border-bottom: 1px solid #000;
+        }
+
+        .trans-stripe-line {
+            flex: 1;
+            width: 100%;
+        }
+
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+
         /* Top Header */
         .top-bar {
             background: var(--tape-black);
@@ -656,6 +675,13 @@ class Views
 </head>
 <body>
     <div class="container">
+        <div class="trans-stripe" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
         <div class="duct-tape">MALÍCIA POPULAR // GOSSIP PROTOCOL</div>
 
         <!-- Header -->
@@ -834,6 +860,14 @@ class Views
             <button class="modal-close" onclick="closeModal()">×</button>
             <div id="modalBody"></div>
         </div>
+    </div>
+
+    <div class="trans-stripe" style="max-width:840px; margin-top:24px; border:1px solid #000; box-shadow:2px 2px 0px #000;" role="img" aria-label="Faixa do Orgulho Trans">
+        <div class="trans-stripe-line blue"></div>
+        <div class="trans-stripe-line pink"></div>
+        <div class="trans-stripe-line white"></div>
+        <div class="trans-stripe-line pink"></div>
+        <div class="trans-stripe-line blue"></div>
     </div>
 
     <footer class="footer">
@@ -1219,6 +1253,21 @@ HTML;
             max-width: 540px;
             text-align: center;
         }
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #000;
+        }
+        .trans-stripe-line {
+            flex: 1;
+            width: 100%;
+        }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
         .error-code {
             font-family: 'Anton', sans-serif;
             font-size: 5rem;
@@ -1259,6 +1308,13 @@ HTML;
 </head>
 <body>
     <div class="error-card">
+        <div class="trans-stripe" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
         <div class="error-code">{$statusCode}</div>
         <h1 class="error-title">{$title}</h1>
         <p class="error-desc">{$desc}</p>

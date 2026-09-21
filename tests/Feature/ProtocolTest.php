@@ -6,6 +6,7 @@ use Fuxico\App;
 use Fuxico\Config;
 use Fuxico\Database;
 use Fuxico\Storage;
+use Fuxico\Views;
 
 $testEnv = new class
 {
@@ -249,8 +250,9 @@ test('handles rustypaste list and delete endpoints', function () use ($testEnv) 
 test('dashTab is hidden on private instances and protected by auth', function () use ($testEnv) {
     // 1. Private mode Web UI rendering
     $testEnv->config->publicMode = false;
-    $html = \Fuxico\Views::renderWebUI($testEnv->config);
+    $html = Views::renderWebUI($testEnv->config);
     expect($html)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" style="display:none;"');
+    expect($html)->toContain('class="trans-stripe"');
 
     // 2. Private mode API /api/stats without token returns 401
     $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -268,7 +270,7 @@ test('dashTab is hidden on private instances and protected by auth', function ()
 
     // 3. Public mode Web UI rendering reveals tab
     $testEnv->config->publicMode = true;
-    $htmlPublic = \Fuxico\Views::renderWebUI($testEnv->config);
+    $htmlPublic = Views::renderWebUI($testEnv->config);
     expect($htmlPublic)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" >');
 
     // 4. Public mode API /api/stats is readable without token
@@ -282,4 +284,3 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     // Reset back to private
     $testEnv->config->publicMode = false;
 });
-
