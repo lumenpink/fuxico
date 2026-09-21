@@ -20,6 +20,7 @@
   - **Faixa do Orgulho Trans:** Faixa de 5 listras em azul bebê (`#5bcefa`), rosa (`#f5a9b8`) e branco (`#ffffff`) coroando o card principal e telas de erro.
   - Tipografia de alto contraste (`Anton` + `Space Mono`).
   - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica, acolhedora e identificação explícita de compartilhamento efêmero de arquivos e encurtador de links (*"Larga a pedrada aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
+  - **Crédito Travesti no Rodapé:** Inscrição multilíngue (*"Orgulhosamente produzido por uma travesti :)"* / *"Proudly produced by a travesti :)"*) com links contextuais para os verbetes de identidade de gênero na Wikipédia.
 - **💻 CLI `fux` (Ergonomia Máxima):**
   - **Regra de ouro:** deboche no `stderr` (`[fux] espalhando o bafão...`), URL pura no `stdout` para nunca quebrar pipes (`xclip`, `wl-copy`, scripts).
   - Suporte a `-q` (queima de arquivo) e piping direto de `stdin` (`cat dump.sql | fux`).
