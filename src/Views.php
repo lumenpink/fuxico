@@ -20,6 +20,7 @@ class Views
         $activeEn = $lang === 'en' ? 'active' : '';
         $publicNotice = $config->publicMode ? $t('token_public') : '';
         $dashTabStyle = $config->publicMode ? '' : 'style="display:none;"';
+        $footerTravestiLink = htmlspecialchars($i18n->t('footer_travesti_link'), ENT_QUOTES, 'UTF-8');
 
         return <<<HTML
 <!DOCTYPE html>
@@ -871,7 +872,8 @@ class Views
     </div>
 
     <footer class="footer">
-        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Codeberg</a> // 100% 0x0.st & rustypaste drop-in protocol</p>
+        <p style="margin-bottom: 8px;">{$t('footer_credit_prefix')} <a href="{$footerTravestiLink}" target="_blank" rel="noopener noreferrer" style="color:var(--electric-pink); font-weight:700;">travesti</a> :)</p>
+        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank" rel="noopener noreferrer">Codeberg</a> // 100% 0x0.st &amp; rustypaste drop-in protocol</p>
     </footer>
 
     <script>

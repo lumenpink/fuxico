@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Fuxico\App;
 use Fuxico\Config;
 use Fuxico\Database;
+use Fuxico\I18n;
 use Fuxico\Storage;
 use Fuxico\Views;
 
@@ -253,6 +254,14 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     $html = Views::renderWebUI($testEnv->config);
     expect($html)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" style="display:none;"');
     expect($html)->toContain('class="trans-stripe"');
+    expect($html)->toContain('https://en.wikipedia.org/wiki/Travesti_(gender_identity)');
+    expect($html)->toContain('>travesti</a> :)');
+
+    $i18nPt = new I18n('pt');
+    $htmlPt = Views::renderWebUI($testEnv->config, $i18nPt);
+    expect($htmlPt)->toContain('Orgulhosamente produzido por uma');
+    expect($htmlPt)->toContain('https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)');
+    expect($htmlPt)->toContain('>travesti</a> :)');
 
     // 2. Private mode API /api/stats without token returns 401
     $_SERVER['REQUEST_METHOD'] = 'GET';

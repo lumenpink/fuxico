@@ -69,6 +69,8 @@ class I18n
             'back_home' => 'Voltar pro início e fuxicar outra coisa',
             'copy_success' => 'Link copiado! Vai lá espalhar.',
             'delete_confirm' => 'Tem certeza que quer queimar esse segredo pra sempre?',
+            'footer_credit_prefix' => 'Orgulhosamente produzido por uma',
+            'footer_travesti_link' => 'https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)',
         ],
         'en' => [
             'app_name' => 'FUXICO',
@@ -127,6 +129,8 @@ class I18n
             'back_home' => 'Back to home to spill something else',
             'copy_success' => 'Link copied! Go out there and spread the word.',
             'delete_confirm' => 'Are you sure you want to burn this secret forever?',
+            'footer_credit_prefix' => 'Proudly produced by a',
+            'footer_travesti_link' => 'https://en.wikipedia.org/wiki/Travesti_(gender_identity)',
         ],
     ];
 
