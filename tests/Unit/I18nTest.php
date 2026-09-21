@@ -18,7 +18,7 @@ test('detects portuguese from HTTP_ACCEPT_LANGUAGE header', function () {
 
     $i18n = new I18n;
     expect($i18n->getLang())->toBe('pt');
-    expect($i18n->t('drop_idle'))->toBe('Despeja o podre aqui.');
+    expect($i18n->t('drop_idle'))->toBe('Larga a pedrada aqui.');
     expect($i18n->t('btn_upload'))->toBe('Solta o verbo ⚡');
 });
 

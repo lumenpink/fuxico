@@ -149,7 +149,7 @@ ${BOLD}Opções (EN & PT-BR):${RESET}
     -h, --help, --ajuda, --socorro     Mostra esta ajuda
 
 ${BOLD}Exemplos:${RESET}
-    fux segredo.pdf -q
+    fux pedrada.pdf -q
     fux fofoca.png --caduca 2h --copia
     cat dump.sql | fux -e 2h
     fux --encurta https://exemplo.com --segredo
