@@ -17,6 +17,7 @@
   - **`rustypaste`**: `curl -F "file=@..."`, `url` shortening, `expire: 10m` headers, `oneshot: true`, `GET /list` JSON endpoint, and `DELETE /<slug>` method.
 - **🎨 Estética Zine & Risografia Independente:**
   - Visual ácido e marcante: amarelo-marca-texto (`#e2f835`), roxo-berinjela (`#121016`), magenta elétrico (`#ff2a85`) e texturas de meio-tom (*halftone*).
+  - **Faixa do Orgulho Trans:** Faixa de 5 listras em azul bebê (`#5bcefa`), rosa (`#f5a9b8`) e branco (`#ffffff`) coroando o card principal e telas de erro.
   - Tipografia de alto contraste (`Anton` + `Space Mono`).
   - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica, acolhedora e identificação explícita de compartilhamento efêmero de arquivos e encurtador de links (*"Larga a pedrada aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
 - **💻 CLI `fux` (Ergonomia Máxima):**
