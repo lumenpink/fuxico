@@ -584,7 +584,11 @@ class App
 
     private function handleApi(string $endpoint, string $method, ?string $authHeader): void
     {
-        if (! $this->config->isAuthorized($authHeader)) {
+        $isAuthorized = $this->config->isAuthorized($authHeader);
+
+        // In private mode, all API endpoints require authorization
+        // In public mode, GET stats and items are publicly readable
+        if (! $this->config->publicMode && ! $isAuthorized) {
             http_response_code(401);
             header('Content-Type: application/json');
             echo json_encode(['error' => 'Unauthorized']);
@@ -624,6 +628,14 @@ class App
         }
 
         if (str_starts_with($endpoint, 'items/') && $method === 'DELETE') {
+            if (! $isAuthorized) {
+                http_response_code(401);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Unauthorized']);
+
+                return;
+            }
+
             $slug = substr($endpoint, 6);
             $item = $this->db->findBySlug($slug);
             if (! $item) {

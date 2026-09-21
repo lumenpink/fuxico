@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- Routine maintenance, documentation updates, and operational improvements.
+### Features
+  - (web) hide active scoops tab on private instances until authenticated
 
 ## Previous Releases
 

@@ -19,6 +19,7 @@ class Views
         $activePt = $lang === 'pt' ? 'active' : '';
         $activeEn = $lang === 'en' ? 'active' : '';
         $publicNotice = $config->publicMode ? $t('token_public') : '';
+        $dashTabStyle = $config->publicMode ? '' : 'style="display:none;"';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -686,7 +687,7 @@ class Views
         <nav class="tabs">
             <button class="tab-btn active" onclick="switchTab('uploadTab', this)">📁 {$t('tab_file')}</button>
             <button class="tab-btn" onclick="switchTab('urlTab', this)">🔗 {$t('tab_url')}</button>
-            <button class="tab-btn" onclick="switchTab('dashTab', this)">👁️ {$t('tab_dash')}</button>
+            <button class="tab-btn" id="dashTabBtn" onclick="switchTab('dashTab', this)" {$dashTabStyle}>👁️ {$t('tab_dash')}</button>
         </nav>
 
         <!-- Content Area -->
@@ -840,6 +841,8 @@ class Views
 
     <script>
         const I18N = {$strings};
+        const IS_PUBLIC_MODE = {$publicMode};
+        const dashTabBtn = document.getElementById('dashTabBtn');
 
         function t(k) { return I18N[k] || k; }
 
@@ -856,9 +859,42 @@ class Views
             tokenInput.value = savedToken;
         }
 
+        async function updateAuthVisibility() {
+            if (IS_PUBLIC_MODE) {
+                if (dashTabBtn) dashTabBtn.style.display = '';
+                return;
+            }
+
+            const token = tokenInput.value.trim();
+            if (!token) {
+                if (dashTabBtn) dashTabBtn.style.display = 'none';
+                if (document.getElementById('dashTab').classList.contains('active')) {
+                    switchTab('uploadTab', document.querySelector('.tab-btn'));
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (res.ok) {
+                    if (dashTabBtn) dashTabBtn.style.display = '';
+                } else {
+                    if (dashTabBtn) dashTabBtn.style.display = 'none';
+                    if (document.getElementById('dashTab').classList.contains('active')) {
+                        switchTab('uploadTab', document.querySelector('.tab-btn'));
+                    }
+                }
+            } catch (e) {
+                if (dashTabBtn) dashTabBtn.style.display = 'none';
+            }
+        }
+
+        updateAuthVisibility();
+
         tokenInput.addEventListener('input', () => {
             const val = tokenInput.value.trim();
             localStorage.setItem('fuxico_token', val);
+            updateAuthVisibility();
             if (document.getElementById('dashTab').classList.contains('active')) {
                 loadDashboard();
             }
@@ -1016,17 +1052,18 @@ class Views
             const tbody = document.getElementById('dashTableBody');
             const token = tokenInput.value.trim();
 
-            if (!token) {
+            if (!IS_PUBLIC_MODE && !token) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + t('dash_auth_required') + '</td></tr>';
                 return;
             }
 
             const search = encodeURIComponent(document.getElementById('dashSearch').value.trim());
             const type = encodeURIComponent(document.getElementById('dashType').value);
+            const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
 
             try {
                 // Stats
-                const statsRes = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+                const statsRes = await fetch('/api/stats', { headers });
                 if (statsRes.ok) {
                     const stats = await statsRes.json();
                     document.getElementById('statFiles').innerText = stats.total_files;
@@ -1036,9 +1073,7 @@ class Views
                 }
 
                 // Items
-                const res = await fetch('/api/items?search=' + search + '&type=' + type, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
+                const res = await fetch('/api/items?search=' + search + '&type=' + type, { headers });
 
                 if (!res.ok) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';

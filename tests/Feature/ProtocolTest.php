@@ -245,3 +245,41 @@ test('handles rustypaste list and delete endpoints', function () use ($testEnv) 
     expect($delOutput)->toBe("File deleted.\n");
     expect($testEnv->db()->findBySlug('rpfile'))->toBeNull();
 });
+
+test('dashTab is hidden on private instances and protected by auth', function () use ($testEnv) {
+    // 1. Private mode Web UI rendering
+    $testEnv->config->publicMode = false;
+    $html = \Fuxico\Views::renderWebUI($testEnv->config);
+    expect($html)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" style="display:none;"');
+
+    // 2. Private mode API /api/stats without token returns 401
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = '/api/stats';
+    unset($_SERVER['HTTP_AUTHORIZATION']);
+    $_POST = [];
+    $_FILES = [];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $resPrivate = ob_get_clean();
+    $dataPrivate = json_decode((string) $resPrivate, true);
+    expect($dataPrivate)->toHaveKey('error');
+    expect($dataPrivate['error'])->toBe('Unauthorized');
+
+    // 3. Public mode Web UI rendering reveals tab
+    $testEnv->config->publicMode = true;
+    $htmlPublic = \Fuxico\Views::renderWebUI($testEnv->config);
+    expect($htmlPublic)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" >');
+
+    // 4. Public mode API /api/stats is readable without token
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $resPublic = ob_get_clean();
+    $dataPublic = json_decode((string) $resPublic, true);
+    expect($dataPublic)->toHaveKey('total_files');
+    expect($dataPublic)->toHaveKey('total_urls');
+
+    // Reset back to private
+    $testEnv->config->publicMode = false;
+});
+
