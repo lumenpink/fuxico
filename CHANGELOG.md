@@ -2,10 +2,14 @@
 
 ## [Unreleased]
 
-### Features
-  - (web) hide active scoops tab on private instances until authenticated
+- Routine maintenance, documentation updates, and operational improvements.
 
 ## Previous Releases
+
+### [v0.2.0] - Lexicon and Vault Access Update
+
+### Features
+  - (web) hide active scoops tab on private instances until authenticated
 
 ### [v0.1.0] - Fuxico Initial Release
 
