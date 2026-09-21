@@ -73,7 +73,7 @@ class Views
         /* Tape effect decor */
         .duct-tape {
             position: absolute;
-            top: -12px;
+            top: 0;
             left: 50%;
             transform: translateX(-50%) rotate(-1deg);
             background: rgba(226, 248, 53, 0.9);

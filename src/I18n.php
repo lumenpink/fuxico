@@ -15,7 +15,7 @@ class I18n
         'pt' => [
             'app_name' => 'FUXICO',
             'tagline' => 'A malícia popular do boca a boca',
-            'brand_sub' => 'Fuxico na borda',
+            'brand_sub' => 'Segredos na borda',
             'drop_idle' => 'Despeja o podre aqui.',
             'drop_sub' => 'ou clique para catar nos seus arquivos',
             'drop_drag' => 'Pode largar que a gente espalha!',
