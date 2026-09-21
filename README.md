@@ -18,7 +18,7 @@
 - **🎨 Estética Zine & Risografia Independente:**
   - Visual ácido e marcante: amarelo-marca-texto (`#e2f835`), roxo-berinjela (`#121016`), magenta elétrico (`#ff2a85`) e texturas de meio-tom (*halftone*).
   - Tipografia de alto contraste (`Anton` + `Space Mono`).
-  - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica e acolhedora (*"Larga a pedrada aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
+  - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica, acolhedora e identificação explícita de compartilhamento efêmero de arquivos e encurtador de links (*"Larga a pedrada aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
 - **💻 CLI `fux` (Ergonomia Máxima):**
   - **Regra de ouro:** deboche no `stderr` (`[fux] espalhando o bafão...`), URL pura no `stdout` para nunca quebrar pipes (`xclip`, `wl-copy`, scripts).
   - Suporte a `-q` (queima de arquivo) e piping direto de `stdin` (`cat dump.sql | fux`).
