@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- Routine maintenance, documentation updates, and operational improvements.
+### Features
+  - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
 ## Previous Releases
 

@@ -15,7 +15,7 @@ class I18n
         'pt' => [
             'app_name' => 'FUXICO',
             'tagline' => 'A malícia popular do boca a boca',
-            'brand_sub' => 'Segredos na borda',
+            'brand_sub' => 'Compartilhamento efêmero de arquivos & encurtador de links',
             'drop_idle' => 'Larga a pedrada aqui.',
             'drop_sub' => 'ou clique para catar nos seus arquivos',
             'drop_drag' => 'Pode largar que a gente espalha!',
@@ -72,8 +72,8 @@ class I18n
         ],
         'en' => [
             'app_name' => 'FUXICO',
-            'tagline' => 'Word-of-mouth mischief at the edge',
-            'brand_sub' => 'Edge file vault',
+            'tagline' => 'Word-of-mouth street mischief',
+            'brand_sub' => 'Ephemeral file sharing & URL shortener',
             'drop_idle' => 'Spill the beans here.',
             'drop_sub' => 'or click to browse your files',
             'drop_drag' => "Let it go — we'll spread the word!",

@@ -124,6 +124,7 @@ class Views
             display: flex;
             align-items: baseline;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .brand {
@@ -655,7 +656,7 @@ class Views
 </head>
 <body>
     <div class="container">
-        <div class="duct-tape">MALÍCIA NA BORDA // GOSSIP AT THE EDGE</div>
+        <div class="duct-tape">MALÍCIA POPULAR // GOSSIP PROTOCOL</div>
 
         <!-- Header -->
         <header class="top-bar">
