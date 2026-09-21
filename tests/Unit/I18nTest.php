@@ -37,3 +37,15 @@ test('falls back gracefully to english for missing keys', function () {
     $i18n = new I18n('pt');
     expect($i18n->t('non_existent_key_xyz'))->toBe('non_existent_key_xyz');
 });
+
+test('provides authentic pajubá and travesti cultural lexicon', function () {
+    $pt = new I18n('pt');
+    expect($pt->t('cultural_badge'))->toContain('tecnologia travesti latina');
+    expect($pt->t('opt_secret'))->toContain('Aquendar');
+    expect($pt->t('opt_burn'))->toContain('Desaquenda');
+    expect($pt->t('copy_success'))->toContain('Babado');
+
+    $en = new I18n('en');
+    expect($en->t('cultural_badge'))->toContain('Travesti & Latin tech');
+    expect($en->t('opt_secret'))->toContain('Aquendar');
+});

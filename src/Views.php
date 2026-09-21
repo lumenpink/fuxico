@@ -209,6 +209,21 @@ class Views
             margin-top: -6px;
         }
 
+        .cultural-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--tape-black);
+            color: #5BCEFA;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border: 1px solid #F5A9B8;
+            box-shadow: 2px 2px 0px #000;
+            margin-top: -6px;
+        }
+
         /* Token Section */
         .token-group {
             display: flex;
@@ -697,8 +712,9 @@ class Views
                     <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
                 </div>
             </div>
-            <div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <span class="tagline-badge">⚡ {$t('tagline')}</span>
+                <span class="cultural-badge">{$t('cultural_badge')}</span>
             </div>
 
             <!-- Token Section -->

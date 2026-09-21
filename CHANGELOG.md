@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (i18n) incorporate pajuba, latina, and travesti cultural lexicon across UI closes #14
   - (ui) add travesti footer attribution with localized wikipedia links closes #13
   - (ui) add trans pride ribbon stripe to container and error views closes #12
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
