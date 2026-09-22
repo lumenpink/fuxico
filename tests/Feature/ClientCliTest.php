@@ -261,6 +261,35 @@ test('bash cli supports custom alias name via -n flag', function () use ($testEn
     expect($resp['status'])->toBe(200);
 });
 
+test('bash cli shortens URLs with custom slug via -u and -n (named short)', function () use ($testEnv) {
+    $targetUrl = 'https://codeberg.org/lumenpink';
+    $customSlug = 'bafao_link_'.uniqid();
+
+    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} --quiet -u {$targetUrl} -n {$customSlug}");
+
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toBe("{$testEnv->host}/{$customSlug}");
+
+    $resp = $testEnv->fetch($url);
+    expect($resp['status'])->toBeIn([301, 302]);
+});
+
+test('bash cli supports defined lifetime via -e flag', function () use ($testEnv) {
+    $sample = $testEnv->tempDir.'/lifetime_bash.txt';
+    file_put_contents($sample, 'fuxico lifetime content');
+
+    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} --quiet -e 4h ".escapeshellarg($sample));
+
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith("{$testEnv->host}/");
+
+    $resp = $testEnv->fetch($url);
+    expect($resp['status'])->toBe(200);
+    expect($resp['body'])->toBe('fuxico lifetime content');
+});
+
 test('bash cli lists active files via -l flag', function () use ($testEnv) {
     $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t tatanka -l");
 
@@ -366,6 +395,51 @@ test('rust cli supports oneshot (-o): evaporates after 1st download', function (
     // 2nd download evaporates
     $second = $testEnv->fetch($url);
     expect($second['status'])->toBeIn([404, 410]);
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
+
+test('rust cli supports custom alias name via -n flag (named share)', function () use ($testEnv) {
+    $sample = $testEnv->tempDir.'/rust_named.txt';
+    file_put_contents($sample, 'rust custom name content');
+    $alias = 'rust_bafao_'.uniqid();
+
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} --quiet -n {$alias} ".escapeshellarg($sample));
+
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toContain("/{$alias}");
+
+    $resp = $testEnv->fetch($url);
+    expect($resp['status'])->toBe(200);
+    expect($resp['body'])->toBe('rust custom name content');
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
+
+test('rust cli shortens URLs with custom slug via -u and -n (named short)', function () use ($testEnv) {
+    $targetUrl = 'https://codeberg.org/lumenpink/fuxico';
+    $customSlug = 'rust_link_'.uniqid();
+
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} --quiet -u {$targetUrl} -n {$customSlug}");
+
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toBe("{$testEnv->host}/{$customSlug}");
+
+    $resp = $testEnv->fetch($url);
+    expect($resp['status'])->toBeIn([301, 302]);
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
+
+test('rust cli supports defined lifetime via -e flag', function () use ($testEnv) {
+    $sample = $testEnv->tempDir.'/rust_lifetime.txt';
+    file_put_contents($sample, 'rust lifetime content');
+
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} --quiet -e 6h ".escapeshellarg($sample));
+
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith("{$testEnv->host}/");
+
+    $resp = $testEnv->fetch($url);
+    expect($resp['status'])->toBe(200);
+    expect($resp['body'])->toBe('rust lifetime content');
 })->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli lists active items as structured JSON via -l flag', function () use ($testEnv) {
