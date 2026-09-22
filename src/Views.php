@@ -219,6 +219,7 @@ class Views
 
         .lang-switch {
             display: flex;
+            flex-direction: column;
             gap: 4px;
             background: var(--card-surface);
             padding: 4px;
@@ -232,9 +233,10 @@ class Views
             font-family: var(--font-mono);
             font-size: 0.75rem;
             font-weight: 700;
-            padding: 4px 8px;
+            padding: 6px 10px;
             cursor: pointer;
             transition: all 0.15s ease;
+            text-align: center;
         }
 
         .lang-btn:hover {
@@ -820,7 +822,7 @@ class Views
                     </p>
                 </div>
                 <div class="lang-switch">
-                    <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
+                    <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT</button>
                     <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
                 </div>
             </div>
