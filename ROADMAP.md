@@ -72,3 +72,11 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
   - [x] 10.2 Continuous integration of external clients in Forgejo Actions workflow (`.forgejo/workflows/ci.yml`).
   - [x] 10.3 End-to-end integration test suite (`tests/Feature/ThirdPartyClientsTest.php`) validating uploads, streams, URL shortening, deletion tokens, and case-insensitive header interop.
 
+- [x] **Phase 11: Multi-Platform Native Compilation & ARM32 SBC Support (closes #29)**
+  - [x] 11.1 Native cross-platform compilation script `scripts/build_clients.sh` with direct standalone binary distribution (unwrapped raw executables).
+  - [x] 11.2 First-class Linux ARM32 support (`armv7-unknown-linux-musleabihf` for Orange Pi, Banana Pi, NanoPi, BeagleBone; `arm-unknown-linux-musleabi` for ARMv6 legacy/Pi Zero 1).
+  - [x] 11.3 Linux x86_64 and ARM64 static musl binaries (`fux-linux-x86_64`, `fux-linux-aarch64`) and Windows 64-bit (`fux-windows-x86_64.exe`).
+  - [x] 11.4 Automated multi-platform matrix release workflow in Forgejo CI (`.forgejo/workflows/release-bundles.yml`).
+  - [x] 11.5 Automated test suite integration in `tests/Feature/CompiledArtifactTest.php` and composer scripts (`composer build:clients`).
+
+

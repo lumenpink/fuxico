@@ -25,13 +25,10 @@ echo "🐚 Packaging Bash CLI client..."
 cp "${ROOT_DIR}/bin/fux" "${DIST_DIR}/fux"
 chmod +x "${DIST_DIR}/fux"
 
-# 3. Compile Native Rust CLI client
+# 3. Compile Native Rust CLI client (multi-platform / static musl)
 if command -v cargo >/dev/null 2>&1; then
-    echo "🦀 Compiling native Rust CLI (release mode)..."
-    cargo build --release --manifest-path "${ROOT_DIR}/cli/Cargo.toml"
-    cp "${ROOT_DIR}/cli/target/release/fux" "${DIST_DIR}/fux-linux-x86_64"
-    cp "${DIST_DIR}/fux-linux-x86_64" "${DIST_DIR}/fux-rs"
-    chmod +x "${DIST_DIR}/fux-linux-x86_64" "${DIST_DIR}/fux-rs"
+    echo "🦀 Compiling native Rust CLI via scripts/build_clients.sh..."
+    bash "${ROOT_DIR}/scripts/build_clients.sh"
 else
     echo "⚠️ Cargo not found, skipping Rust CLI compilation"
 fi
@@ -41,7 +38,7 @@ TARBALL="fuxico-${VERSION}.tar.gz"
 echo "🗜️  Creating release tarball: ${TARBALL}..."
 (
     cd "${DIST_DIR}"
-    rm -f "${TARBALL}" "checksums.sha256"
+    rm -f fuxico-*.tar.gz checksums.sha256
     
     # Collect available artifacts into tarball
     FILES_TO_PACK=(fuxico.php fux)

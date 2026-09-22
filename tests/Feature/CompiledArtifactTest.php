@@ -195,9 +195,36 @@ test('scripts/build_bundles.sh produces full distribution suite with valid sha25
     $checksums = (string) file_get_contents($distDir.'/checksums.sha256');
     expect($checksums)->toContain('fuxico.php');
     expect($checksums)->toContain('fux');
+    expect($checksums)->toContain('fux-linux-x86_64');
 
     // Tarball must exist and be non-empty
     $tarballs = glob($distDir.'/fuxico-*.tar.gz');
     expect($tarballs)->not->toBeEmpty();
     expect(filesize($tarballs[0]))->toBeGreaterThan(1000);
+});
+
+test('scripts/build_clients.sh compiles native rust client standalone binary and checksums', function () {
+    $rootDir = dirname(__DIR__, 2);
+    $script = $rootDir.'/scripts/build_clients.sh';
+
+    $output = [];
+    $code = 0;
+    exec("bash {$script} 2>&1", $output, $code);
+
+    expect($code)->toBe(0);
+
+    $distDir = $rootDir.'/dist';
+    $binary = $distDir.'/fux-linux-x86_64';
+    expect(file_exists($binary))->toBeTrue();
+    expect(is_executable($binary))->toBeTrue();
+
+    // Execute the compiled standalone binary with --help
+    $binOutput = [];
+    $binCode = 0;
+    exec(escapeshellarg($binary).' --help 2>&1', $binOutput, $binCode);
+    expect($binCode)->toBe(0);
+    expect(implode("\n", $binOutput))->toContain('boca a boca');
+
+    $checksums = (string) file_get_contents($distDir.'/checksums.sha256');
+    expect($checksums)->toContain('fux-linux-x86_64');
 });

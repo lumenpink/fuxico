@@ -28,6 +28,8 @@
         "dev": "./scripts/dev.sh",
         "compile": "php compile.php",
         "fetch-clients": "./scripts/fetch_external_clients.sh",
+        "build:clients": "./scripts/build_clients.sh",
+        "build:clients:all": "./scripts/build_clients.sh --all",
         "bundle": "./scripts/build_bundles.sh",
         "ci": [
             "@lint",

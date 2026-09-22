@@ -187,16 +187,32 @@ cat dump.sql | ./bin/fux --caduca 2h
 ./bin/fux --lista
 ```
 
-### 2. `fux` CLI Nativo em Rust (`cli/`)
-Cliente compilado na especificação **Rust 2024 spec** com as mesmíssimas opções e aliases:
-```bash
-# Compilar binário nativo otimizado:
-cd cli && cargo build --release
+### 2. `fux` CLI Nativo em Rust Multiplataforma (`cli/`)
+Cliente compilado na especificação **Rust 2024 spec** com as mesmíssimas opções e aliases. Binários estáticos e independentes (sem glibc, sem compactação obrigatória — é baixar direto, dar `chmod +x` e rodar):
 
-# Uso idêntico ao script bash:
-./cli/target/release/fux foto.png --caduca 2h --copia
-./cli/target/release/fux --encurta https://example.com --segredo
-./cli/target/release/fux --ajuda
+| Arquitetura | Binário Standalone | Hardware / SBCs Suportados |
+| :--- | :--- | :--- |
+| **Linux x86_64** (Static musl) | `fux-linux-x86_64` | PCs Intel/AMD 64-bit, Servidores, VPS, containers Docker |
+| **Linux ARM64** (Static musl) | `fux-linux-aarch64` | Raspberry Pi 3/4/5 (SO 64-bit), Orange Pi 5 / 3B / Zero 3, Banana Pi BPI-M5 / M4 Zero, Rock Pi 4, Pine64, Odroid C4/N2 |
+| **Linux ARMv7** (32-bit Hard Float) | `fux-linux-armv7` | Orange Pi Zero / One / Lite / PC, Banana Pi M2 / M2 Berry, Raspberry Pi 2 / 3 / 4 (SO 32-bit), NanoPi NEO / Air, BeagleBone Black, Cubieboard |
+| **Linux ARMv6** (32-bit Legacy) | `fux-linux-armv6` | Raspberry Pi 1, Raspberry Pi Zero / Zero W (v1.x), Pogoplug clássico |
+| **Windows x86_64** | `fux-windows-x86_64.exe` | Windows 10, 11 e Windows Server 64-bit |
+
+Compilação local:
+```bash
+# Compilar binário nativo da máquina host:
+composer build:clients
+
+# Compilar todas as plataformas suportadas:
+composer build:clients:all
+```
+
+Uso idêntico ao script bash:
+```bash
+# Executar binário standalone direto:
+./dist/fux-linux-x86_64 foto.png --caduca 2h --copia
+./dist/fux-linux-x86_64 --encurta https://example.com --segredo
+./dist/fux-linux-x86_64 --ajuda
 ```
 
 ---
