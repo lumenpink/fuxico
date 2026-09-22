@@ -88,7 +88,7 @@ class I18n
             'brand_sub' => 'Ephemeral send & short links',
             'brand_sub_line1' => 'Ephemeral send',
             'brand_sub_line2' => '& short links',
-            'cultural_badge' => '🏳️‍⚧️ Fervo & tecnologia travesti latina',
+            'cultural_badge' => '🏳️‍⚧️ Travesti latina technology & riot',
             'drop_idle' => 'Spill the beans here.',
             'drop_sub' => 'or click to browse your scoops',
             'drop_drag' => "Let it go — we'll spread the word!",
