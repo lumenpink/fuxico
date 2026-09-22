@@ -258,15 +258,16 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     expect($html)->toContain('box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);');
     expect($html)->toContain('overflow: visible;');
     expect($html)->toContain('class="brand-row"');
+    expect($html)->toContain('class="brand-desc-line"');
     expect($html)->toContain('class="badges-row"');
     expect($html)->toContain('https://en.wikipedia.org/wiki/Travesti_(gender_identity)');
-    expect($html)->toContain('>travesti</a> :)');
+    expect($html)->toContain('>Latin travesti</a> :)');
 
     $i18nPt = new I18n('pt');
     $htmlPt = Views::renderWebUI($testEnv->config, $i18nPt);
     expect($htmlPt)->toContain('Orgulhosamente produzido por uma');
     expect($htmlPt)->toContain('https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)');
-    expect($htmlPt)->toContain('>travesti</a> :)');
+    expect($htmlPt)->toContain('>travesti latina</a> :)');
 
     // 2. Private mode API /api/stats without token returns 401
     $_SERVER['REQUEST_METHOD'] = 'GET';
