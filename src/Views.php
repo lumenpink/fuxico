@@ -77,13 +77,13 @@ class Views
             position: absolute;
             top: 0;
             left: 50%;
-            transform: translateX(-50%) rotate(-1deg);
-            background: rgba(226, 248, 53, 0.9);
+            transform: translateX(-50%) rotate(-3.5deg);
+            background: rgba(226, 248, 53, 0.95);
             color: #000;
             font-family: var(--font-display);
             font-size: 0.75rem;
             letter-spacing: 2px;
-            padding: 2px 28px;
+            padding: 3px 32px;
             box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
             z-index: 10;
             user-select: none;
@@ -108,9 +108,9 @@ class Views
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 10px;
+            height: 25px;
             flex-shrink: 0;
-            border-bottom: 1px solid #000;
+            border-bottom: 2px solid #000;
         }
 
         .trans-stripe-line {
@@ -157,11 +157,28 @@ class Views
             text-transform: uppercase;
         }
 
-        .brand-sub {
+        .header-right-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .header-center-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            margin: 4px 0 2px 0;
+        }
+
+        .brand-desc {
             font-family: var(--font-heading);
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--acid-yellow);
+            text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -705,16 +722,18 @@ class Views
             <div class="brand-row">
                 <div class="brand-box">
                     <h1 class="brand">{$t('app_name')}</h1>
-                    <span class="brand-sub">{$t('brand_sub')}</span>
                 </div>
-                <div class="lang-switch">
-                    <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
-                    <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
+                <div class="header-right-box">
+                    <span class="cultural-badge">{$t('cultural_badge')}</span>
+                    <div class="lang-switch">
+                        <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
+                        <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
+                    </div>
                 </div>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div class="header-center-row">
+                <p class="brand-desc">{$t('brand_sub')}</p>
                 <span class="tagline-badge">⚡ {$t('tagline')}</span>
-                <span class="cultural-badge">{$t('cultural_badge')}</span>
             </div>
 
             <!-- Token Section -->
@@ -879,7 +898,7 @@ class Views
         </div>
     </div>
 
-    <div class="trans-stripe" style="max-width:840px; margin-top:24px; border:1px solid #000; box-shadow:2px 2px 0px #000;" role="img" aria-label="Faixa do Orgulho Trans">
+    <div class="trans-stripe" style="max-width:840px; margin-top:24px; border:2px solid #000; box-shadow:3px 3px 0px #000;" role="img" aria-label="Faixa do Orgulho Trans">
         <div class="trans-stripe-line blue"></div>
         <div class="trans-stripe-line pink"></div>
         <div class="trans-stripe-line white"></div>
@@ -1275,9 +1294,9 @@ HTML;
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 8px;
+            height: 18px;
             margin-bottom: 24px;
-            border-bottom: 1px solid #000;
+            border-bottom: 2px solid #000;
         }
         .trans-stripe-line {
             flex: 1;
