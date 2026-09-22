@@ -49,3 +49,14 @@ test('provides authentic pajubá and travesti cultural lexicon', function () {
     expect($en->t('cultural_badge'))->toContain('Travesti & Latin tech');
     expect($en->t('opt_secret'))->toContain('Aquendar');
 });
+
+test('provides descriptive pajubá and technical tooltips in pt and en', function () {
+    $pt = new I18n('pt');
+    expect($pt->t('tip_secret'))->toContain('Aquendar é guardar');
+    expect($pt->t('tip_burn'))->toContain('Desaquenda é soltar');
+    expect($pt->t('tip_expires'))->toContain('retenção');
+
+    $en = new I18n('en');
+    expect($en->t('tip_secret'))->toContain('Aquendar means to hide');
+    expect($en->t('tip_burn'))->toContain('Desaquenda means to release');
+});

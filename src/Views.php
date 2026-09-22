@@ -21,6 +21,7 @@ class Views
         $publicNotice = $config->publicMode ? $t('token_public') : '';
         $dashTabStyle = $config->publicMode ? '' : 'style="display:none;"';
         $footerTravestiLink = htmlspecialchars($i18n->t('footer_travesti_link'), ENT_QUOTES, 'UTF-8');
+        $tip = fn (string $key): string => '<span class="tip-trigger" tabindex="0" role="tooltip" aria-label="'.$t($key).'">?<span class="tip-bubble">'.$t($key).'</span></span>';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -417,6 +418,81 @@ class Views
             font-size: 0.85rem;
             font-weight: 700;
             color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* Zine Tooltips */
+        .tip-trigger {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: #272033;
+            border: 1px solid var(--acid-yellow);
+            color: var(--acid-yellow);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            cursor: help;
+            margin-left: 8px;
+            vertical-align: middle;
+            user-select: none;
+            line-height: 1;
+            box-shadow: 1px 1px 0px #000;
+        }
+
+        .tip-trigger:hover, .tip-trigger:focus {
+            background: var(--electric-pink);
+            border-color: #fff;
+            color: #fff;
+            outline: none;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .tip-bubble {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a080d;
+            border: 1px solid var(--electric-pink);
+            box-shadow: 4px 4px 0px #000, 4px 4px 0px 1px var(--acid-yellow);
+            color: #f5f4ef;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 400;
+            padding: 10px 14px;
+            width: 270px;
+            max-width: 82vw;
+            line-height: 1.45;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .tip-bubble::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: var(--electric-pink) transparent transparent transparent;
+        }
+
+        .tip-trigger:hover .tip-bubble,
+        .tip-trigger:focus .tip-bubble {
+            visibility: visible;
+            opacity: 1;
         }
 
         .form-row {
@@ -739,7 +815,7 @@ class Views
             <!-- Token Section -->
             <div class="token-group">
                 <label class="token-label" for="authToken">
-                    <span>{$t('token_label')}</span>
+                    <span style="display:inline-flex; align-items:center;">{$t('token_label')}{$tip('tip_token')}</span>
                     <span style="color:var(--acid-yellow);">{$publicNotice}</span>
                 </label>
                 <input type="password" id="authToken" class="token-input" placeholder="{$t('token_placeholder')}" spellcheck="false">
@@ -768,16 +844,16 @@ class Views
                 <div class="options-grid">
                     <label class="option-item">
                         <input type="checkbox" id="optOneshot">
-                        <span class="option-label">🔥 {$t('opt_burn')}</span>
+                        <span class="option-label">🔥 {$t('opt_burn')}{$tip('tip_burn')}</span>
                     </label>
                     <label class="option-item">
                         <input type="checkbox" id="optSecret">
-                        <span class="option-label">🕵️ {$t('opt_secret')}</span>
+                        <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
                     </label>
                 </div>
 
                 <div class="form-row">
-                    <label class="form-label" for="optExpires">⌛ {$t('opt_expires')}</label>
+                    <label class="form-label" for="optExpires" style="display:inline-flex; align-items:center;">⌛ {$t('opt_expires')}{$tip('tip_expires')}</label>
                     <select id="optExpires" class="form-control">
                         <option value="">{$t('exp_none')}</option>
                         <option value="1h">{$t('exp_1h')}</option>
@@ -788,7 +864,7 @@ class Views
                 </div>
 
                 <div class="form-row">
-                    <label class="form-label" for="optCustomName">🏷️ {$t('custom_name_placeholder')}</label>
+                    <label class="form-label" for="optCustomName" style="display:inline-flex; align-items:center;">🏷️ {$t('custom_name_placeholder')}{$tip('tip_custom_name')}</label>
                     <input type="text" id="optCustomName" class="form-control" placeholder="fofoca-exclusiva">
                 </div>
 
@@ -806,23 +882,23 @@ class Views
             <!-- 2. URL Shortener Tab -->
             <section id="urlTab" class="tab-pane">
                 <div class="form-row">
-                    <label class="form-label" for="shortenUrl">🌐 {$t('url_placeholder')}</label>
+                    <label class="form-label" for="shortenUrl" style="display:inline-flex; align-items:center;">🌐 {$t('url_placeholder')}{$tip('tip_shorten_url')}</label>
                     <input type="url" id="shortenUrl" class="form-control" placeholder="https://...">
                 </div>
 
                 <div class="form-row">
-                    <label class="form-label" for="urlCustomName">🏷️ {$t('custom_name_placeholder')}</label>
+                    <label class="form-label" for="urlCustomName" style="display:inline-flex; align-items:center;">🏷️ {$t('custom_name_placeholder')}{$tip('tip_custom_name')}</label>
                     <input type="text" id="urlCustomName" class="form-control" placeholder="link-quente">
                 </div>
 
                 <div class="options-grid">
                     <label class="option-item">
                         <input type="checkbox" id="urlOneshot">
-                        <span class="option-label">🔥 {$t('opt_burn')}</span>
+                        <span class="option-label">🔥 {$t('opt_burn')}{$tip('tip_burn')}</span>
                     </label>
                     <label class="option-item">
                         <input type="checkbox" id="urlSecret">
-                        <span class="option-label">🕵️ {$t('opt_secret')}</span>
+                        <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
                     </label>
                 </div>
 

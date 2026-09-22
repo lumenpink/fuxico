@@ -72,6 +72,12 @@ class I18n
             'delete_confirm' => 'Tem certeza que quer desaquendar e queimar esse babado pra sempre?',
             'footer_credit_prefix' => 'Orgulhosamente produzido por uma',
             'footer_travesti_link' => 'https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)',
+            'tip_burn' => '🏳️‍⚧️ No Pajubá: Desaquenda é soltar, revelar. ⚡ Técnico: O arquivo evapora permanentemente do disco imediatamente após o primeiro download.',
+            'tip_secret' => '🏳️‍⚧️ No Pajubá: Aquendar é guardar, esconder e proteger a sete chaves. ⚡ Técnico: Gera uma URL com slug cifrado de 16 caracteres de alta entropia para impedir que curiosos adivinhem ou escaneiem o link.',
+            'tip_expires' => 'Tempo de retenção do babado antes de prescrever e ser purgado automaticamente do cofre.',
+            'tip_custom_name' => 'Defina um apelido personalizado para a URL (ex: fuxico.cc/meu-babado) em vez de um código gerado aleatoriamente.',
+            'tip_token' => 'Chave de autorização para fiscalizar o cofre no painel e subir arquivos em instâncias privadas.',
+            'tip_shorten_url' => 'Cole qualquer link longo da web para encurtar e espalhar.',
         ],
         'en' => [
             'app_name' => 'FUXICO',
@@ -133,6 +139,12 @@ class I18n
             'delete_confirm' => 'Are you sure you want to burn this scoop forever?',
             'footer_credit_prefix' => 'Proudly produced by a',
             'footer_travesti_link' => 'https://en.wikipedia.org/wiki/Travesti_(gender_identity)',
+            'tip_burn' => '🏳️‍⚧️ In Pajubá: Desaquenda means to release or reveal. ⚡ Technical: The file evaporates permanently from the disk immediately after the first download.',
+            'tip_secret' => '🏳️‍⚧️ In Pajubá: Aquendar means to hide, conceal, or closely guard. ⚡ Technical: Generates a 16-character high-entropy secret URL slug, preventing brute-force enumeration attacks.',
+            'tip_expires' => 'Retention lifespan before the scoop expires and is automatically purged from the vault.',
+            'tip_custom_name' => 'Set a custom URL alias (e.g. fuxico.cc/my-scoop) instead of an auto-generated random slug.',
+            'tip_token' => 'Authorization token required to inspect the vault and upload items on private instances.',
+            'tip_shorten_url' => 'Paste any long web address to shorten and spread.',
         ],
     ];
 
