@@ -18,4 +18,5 @@ site/fux-rs
 site/fuxico.php
 site/checksums.sha256
 site/fux
-
+site/version
+.wrangler/

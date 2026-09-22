@@ -36,7 +36,6 @@ done
 
 # 2. Critical Configuration & Installer Files
 CRITICAL_FILES=(
-    "CNAME"
     "_headers"
     "fux-installer"
     "install.sh"
@@ -53,13 +52,20 @@ for file in "${CRITICAL_FILES[@]}"; do
     echo "   ✅ Arquivo crítico encontrado: ${file}"
 done
 
-# 3. CNAME Domain Verification
-CNAME_CONTENT="$(tr -d ' \r\n' < "${SITE_DIR}/CNAME")"
-if [[ "${CNAME_CONTENT}" != "fuxico.2lp.in" ]]; then
-    echo "❌ [verify-site] Conteúdo inválido no CNAME: esperado 'fuxico.2lp.in', obtido '${CNAME_CONTENT}'" >&2
+# 3. Cloudflare Deployment Configuration (wrangler.jsonc)
+if [[ ! -f "${ROOT_DIR}/wrangler.jsonc" ]]; then
+    echo "❌ [verify-site] Configuração do Cloudflare ausente: ${ROOT_DIR}/wrangler.jsonc" >&2
     exit 1
 fi
-echo "   ✅ CNAME verificado: ${CNAME_CONTENT}"
+if ! grep -q '"pattern": "fuxico.2lp.in"' "${ROOT_DIR}/wrangler.jsonc"; then
+    echo "❌ [verify-site] wrangler.jsonc não contém a rota 'fuxico.2lp.in'" >&2
+    exit 1
+fi
+if ! grep -q '"directory": "./site"' "${ROOT_DIR}/wrangler.jsonc"; then
+    echo "❌ [verify-site] wrangler.jsonc não aponta para o diretório de ativos estáticos './site'" >&2
+    exit 1
+fi
+echo "   ✅ Cloudflare wrangler.jsonc verificado: fuxico.2lp.in -> ./site"
 
 # 4. Installer Syntax Check
 bash -n "${SITE_DIR}/fux-installer"

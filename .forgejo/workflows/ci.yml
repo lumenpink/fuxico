@@ -232,3 +232,95 @@ jobs:
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'lumenpink_fuxico' }}
             -Dsonar.organization=${{ vars.SONAR_ORG || 'lumenpink' }}
             -Dsonar.php.coverage.reportPaths=coverage/clover.xml
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 5 — Deploy Static Documentation Site (Cloudflare + Codeberg Fallback)
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-site:
+    name: "Deploy Documentation Site"
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_PROJECT_NAME: ${{ vars.CLOUDFLARE_PROJECT_NAME || 'fuxico' }}
+    steps:
+      - name: "Checkout repository"
+        uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Verify Site Integrity & Links"
+        run: |
+          chmod +x bin/verify-site.sh
+          ./bin/verify-site.sh
+
+      - name: "Prepare Release Artifacts for Distribution"
+        run: |
+          # Copy standalone bash client to site root
+          cp bin/fux site/fux
+          chmod +x site/fux
+
+          # Setup version endpoint
+          head -n 1 VERSION 2>/dev/null | tr -d ' \r\n' > site/version || echo "0.1.0" > site/version
+
+          # Compile portable server bundle if PHP is available
+          if which php >/dev/null 2>&1; then
+            php compile.php --check || true
+            if [ -f dist/fuxico.php ]; then
+              cp dist/fuxico.php site/fuxico.php
+            fi
+          fi
+
+      - name: "Deploy to Cloudflare Workers (fuxico.2lp.in)"
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Cloudflare credentials (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID) not configured in repository secrets. Skipping Cloudflare deployment."
+          else
+            echo "Publishing static documentation site via Cloudflare Workers..."
+            npx wrangler deploy || echo "::warning::Cloudflare deployment exited with status $?. Continuing with redundancy deployment."
+          fi
+
+      - name: "Deploy to Codeberg Pages (Fallback Redundancy)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "actions-user"
+          git config user.email "actions@codeberg.org"
+
+          WORKTREE_DIR=$(mktemp -d)
+          if git ls-remote --exit-code --heads origin pages >/dev/null 2>&1; then
+            git fetch origin pages:pages
+            git worktree add "$WORKTREE_DIR" pages
+          else
+            git worktree add --orphan -b pages "$WORKTREE_DIR"
+          fi
+
+          # Preserve coverage directory if it exists on pages
+          if [ -d "$WORKTREE_DIR/coverage" ]; then
+            cp -r "$WORKTREE_DIR/coverage" /tmp/coverage-backup
+          fi
+
+          rm -rf "${WORKTREE_DIR:?}"/*
+          cp -r site/* "$WORKTREE_DIR/"
+
+          # Restore coverage directory
+          if [ -d /tmp/coverage-backup ]; then
+            mkdir -p "$WORKTREE_DIR/coverage"
+            cp -r /tmp/coverage-backup/* "$WORKTREE_DIR/coverage/"
+          fi
+
+          cd "$WORKTREE_DIR"
+          # Ensure no CNAME in Codeberg Pages branch to avoid hijacking custom domain
+          rm -f CNAME
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No documentation changes to deploy to Codeberg Pages."
+          else
+            git commit -m "docs(site): deploy documentation to Codeberg Pages [skip ci]"
+            git push origin pages
+            echo "Successfully deployed documentation to Codeberg Pages."
+          fi
+          cd - >/dev/null
+          git worktree remove "$WORKTREE_DIR" --force || true

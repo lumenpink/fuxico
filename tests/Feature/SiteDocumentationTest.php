@@ -17,12 +17,15 @@ test('bin/verify-site.sh executes successfully and validates site integrity', fu
     expect(implode("\n", $output))->toContain('Todas as páginas, assets e instaladores foram verificados com sucesso!');
 });
 
-test('site/CNAME is configured for fuxico.2lp.in', function () {
+test('wrangler.jsonc is configured for Cloudflare deployment to fuxico.2lp.in', function () {
     $rootDir = dirname(__DIR__, 2);
-    $cname = $rootDir.'/site/CNAME';
+    $wrangler = $rootDir.'/wrangler.jsonc';
 
-    expect(file_exists($cname))->toBeTrue();
-    expect(trim((string) file_get_contents($cname)))->toBe('fuxico.2lp.in');
+    expect(file_exists($wrangler))->toBeTrue();
+    $content = (string) file_get_contents($wrangler);
+    expect($content)->toContain('"pattern": "fuxico.2lp.in"');
+    expect($content)->toContain('"directory": "./site"');
+    expect($content)->toContain('"name": "fuxico"');
 });
 
 test('site/fux-installer and site/install.sh are valid bash scripts and executable', function () {
