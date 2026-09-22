@@ -254,6 +254,7 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     $html = Views::renderWebUI($testEnv->config);
     expect($html)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" style="display:none;"');
     expect($html)->toContain('class="trans-stripe"');
+    expect($html)->toContain('class="trans-stripe bottom"');
     expect($html)->toContain('https://en.wikipedia.org/wiki/Travesti_(gender_identity)');
     expect($html)->toContain('>travesti</a> :)');
 
