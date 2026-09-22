@@ -114,6 +114,11 @@ class Views
             border-bottom: 2px solid #000;
         }
 
+        .trans-stripe.bottom {
+            border-top: 2px solid #000;
+            border-bottom: none;
+        }
+
         .trans-stripe-line {
             flex: 1;
             width: 100%;
@@ -964,6 +969,13 @@ class Views
                 </div>
             </section>
         </main>
+        <div class="trans-stripe bottom" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
     </div>
 
     <!-- Preview Modal -->
@@ -972,14 +984,6 @@ class Views
             <button class="modal-close" onclick="closeModal()">×</button>
             <div id="modalBody"></div>
         </div>
-    </div>
-
-    <div class="trans-stripe" style="max-width:840px; margin-top:24px; border:2px solid #000; box-shadow:3px 3px 0px #000;" role="img" aria-label="Faixa do Orgulho Trans">
-        <div class="trans-stripe-line blue"></div>
-        <div class="trans-stripe-line pink"></div>
-        <div class="trans-stripe-line white"></div>
-        <div class="trans-stripe-line pink"></div>
-        <div class="trans-stripe-line blue"></div>
     </div>
 
     <footer class="footer">
