@@ -25,6 +25,7 @@
         "lint": "./vendor/bin/pint --test",
         "format": "./vendor/bin/pint",
         "psalm": "./vendor/bin/psalm --config=psalm.xml",
+        "dev": "./scripts/dev.sh",
         "compile": "php compile.php",
         "bundle": "./scripts/build_bundles.sh",
         "ci": [

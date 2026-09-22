@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (dev) add live file watcher and embedded server script (closes #17)
   - (ui) implement accessible zine tooltips with pajuba and technical hints closes #16
   - (ui) expand trans pride stripe and rebalance zine header layout closes #15
   - (i18n) incorporate pajuba, latina, and travesti cultural lexicon across UI closes #14
