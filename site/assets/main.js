@@ -60,12 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Attach click to all art wrappers and print images
-  document.querySelectorAll('.art-img-wrapper img, .lightbox-trigger').forEach(img => {
-    img.style.cursor = 'zoom-in';
-    img.addEventListener('click', (e) => {
+  document.querySelectorAll('.art-img-wrapper img, .lightbox-trigger, .lightbox-trigger img').forEach(el => {
+    el.style.cursor = 'zoom-in';
+    el.addEventListener('click', (e) => {
       e.stopPropagation();
-      lightboxImg.src = img.src;
-      lightbox.classList.add('active');
+      const targetSrc = el.tagName === 'IMG' 
+        ? el.src 
+        : (el.getAttribute('data-full') || el.querySelector('img')?.src);
+      if (targetSrc) {
+        lightboxImg.src = targetSrc;
+        lightbox.classList.add('active');
+      }
     });
   });
 
