@@ -53,7 +53,7 @@ test('provides authentic pajubá and travesti cultural lexicon', function () {
     expect($en->t('brand_sub'))->toBe('Ephemeral send & short links');
     expect($en->t('brand_sub_line1'))->toBe('Ephemeral send');
     expect($en->t('brand_sub_line2'))->toBe('& short links');
-    expect($en->t('cultural_badge'))->toContain('tecnologia travesti latina');
+    expect($en->t('cultural_badge'))->toContain('Travesti latina technology & riot');
     expect($en->t('footer_travesti_text'))->toBe('travesti latina');
     expect($en->t('opt_secret'))->toContain('Aquendar');
 });
