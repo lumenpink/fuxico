@@ -97,7 +97,7 @@ class Views
             max-width: 840px;
             background: var(--card-bg);
             border: var(--border-width) solid var(--acid-yellow);
-            box-shadow: 8px 8px 0px #0a080d, 8px 8px 0px 2px var(--electric-pink);
+            box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);
             overflow: hidden;
             display: flex;
             flex-direction: column;
