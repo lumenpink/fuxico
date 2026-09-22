@@ -76,19 +76,25 @@ class Views
         /* Tape effect decor */
         .duct-tape {
             position: absolute;
-            top: 0;
+            top: -2px;
             left: 50%;
-            transform: translateX(-50%) rotate(-3.5deg);
-            background: rgba(226, 248, 53, 0.95);
+            transform: translateX(-50%) rotate(-2.5deg);
+            background: rgba(226, 248, 53, 0.96);
             color: #000;
             font-family: var(--font-display);
             font-size: 0.75rem;
             letter-spacing: 2px;
-            padding: 3px 32px;
-            box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+            padding: 4px 34px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.6);
             z-index: 10;
             user-select: none;
             text-transform: uppercase;
+            clip-path: polygon(
+                0% 4px, 4px 0%, 8px 3px, 12px 0%, 100% 0%, 
+                97% 6px, 100% 12px, 98% 18px, 100% 100%, 
+                96% 96%, 92% 100%, 88% 97%, 0% 100%, 
+                3% 82%, 0% 64%, 2% 48%, 0% 32%, 3% 16%
+            );
         }
 
         .container {
@@ -181,12 +187,103 @@ class Views
             text-align-last: justify;
         }
 
-        .badges-row {
+        /* Zine Collage Centerpiece */
+        .zine-header-collage {
             display: flex;
-            align-items: stretch;
-            justify-content: space-between;
-            gap: 12px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex: 1;
+            margin: 0 10px;
+            padding: 4px 6px;
+            min-width: 250px;
+            max-width: 460px;
+            gap: 6px;
+        }
+
+        .zine-decor-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.85;
+            z-index: 0;
+        }
+
+        .zine-halftone-svg {
+            position: absolute;
             width: 100%;
+            height: 100%;
+            opacity: 0.65;
+        }
+
+        .zine-stamp-watermark {
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: rgba(255, 42, 133, 0.22);
+            transform: rotate(-5deg);
+            white-space: nowrap;
+            user-select: none;
+            border: 1px dashed rgba(255, 42, 133, 0.28);
+            padding: 2px 8px;
+        }
+
+        .zine-scrap {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .zine-scrap:hover {
+            transform: scale(1.03) !important;
+            z-index: 5;
+        }
+
+        .scrap-tagline {
+            transform: rotate(-2.2deg);
+            align-self: flex-start;
+            margin-left: 6px;
+        }
+
+        .scrap-cultural {
+            transform: rotate(1.8deg);
+            align-self: flex-end;
+            margin-top: -3px;
+            margin-right: 6px;
+        }
+
+        /* Tape Strips */
+        .tape-strip {
+            position: absolute;
+            width: 26px;
+            height: 10px;
+            background: rgba(226, 248, 53, 0.45);
+            backdrop-filter: blur(1px);
+            border-left: 1px dashed rgba(0,0,0,0.3);
+            border-right: 1px dashed rgba(0,0,0,0.3);
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .tape-left {
+            top: -5px;
+            left: -8px;
+            transform: rotate(-16deg);
+            background: rgba(255, 42, 133, 0.55);
+        }
+
+        .tape-right {
+            bottom: -5px;
+            right: -8px;
+            transform: rotate(14deg);
+            background: rgba(226, 248, 53, 0.5);
         }
 
         .badge-box {
@@ -194,27 +291,30 @@ class Views
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 7px 14px;
+            padding: 5px 12px;
             font-family: var(--font-mono);
-            font-size: 0.75rem;
+            font-size: 0.73rem;
             font-weight: 700;
             text-align: center;
-            box-shadow: 2px 2px 0px #000;
-            flex: 1;
-            min-height: 32px;
             box-sizing: border-box;
+            user-select: none;
+            white-space: nowrap;
         }
 
         .tagline-badge {
-            background: var(--electric-pink);
-            color: #fff;
-            border: 1px solid #000;
+            background: var(--tape-black);
+            color: var(--acid-yellow);
+            border: 1.5px solid var(--border-color);
+            box-shadow: 3px 3px 0px #000, 3px 3px 0px 1px var(--acid-yellow);
+            clip-path: polygon(1% 0%, 100% 2%, 99% 100%, 0% 98%);
         }
 
         .cultural-badge {
-            background: var(--tape-black);
+            background: #140d1a;
             color: #5BCEFA;
-            border: 1px solid #F5A9B8;
+            border: 1.5px solid #F5A9B8;
+            box-shadow: 3px 3px 0px #000, 3px 3px 0px 1px var(--electric-pink);
+            clip-path: polygon(0% 2%, 99% 0%, 100% 98%, 1% 100%);
         }
 
         .lang-switch {
@@ -249,13 +349,24 @@ class Views
             box-shadow: 2px 2px 0px #000;
         }
 
-        @media (max-width: 640px) {
-            .badges-row {
+        @media (max-width: 680px) {
+            .brand-row {
                 flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+            .zine-header-collage {
+                margin: 8px 0;
+                width: 100%;
+                max-width: 100%;
+            }
+            .scrap-tagline, .scrap-cultural {
+                align-self: center;
+                margin-left: 0;
+                margin-right: 0;
             }
             .badge-box {
-                width: 100%;
-                flex: none;
+                white-space: normal;
             }
         }
 
@@ -347,12 +458,27 @@ class Views
         .dropzone {
             border: 2px dashed var(--acid-yellow);
             background: #15111c;
-            padding: 48px 20px;
+            padding: 44px 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+        .dropzone-stamp {
+            position: absolute;
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            letter-spacing: 4px;
+            color: rgba(255, 42, 133, 0.05);
+            transform: translate(-50%, -50%) rotate(-10deg);
+            top: 50%;
+            left: 50%;
+            pointer-events: none;
+            white-space: nowrap;
+            user-select: none;
         }
 
         .dropzone:hover, .dropzone.dragover {
@@ -380,6 +506,21 @@ class Views
         .drop-sub {
             font-size: 0.85rem;
             color: var(--text-muted);
+        }
+
+        .dymo-tape {
+            display: inline-block;
+            background: #0a080d;
+            color: #fff;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            padding: 2px 8px;
+            border: 1px solid #383047;
+            box-shadow: 2px 2px 0px #000;
+            transform: rotate(-1deg);
+            margin-left: 6px;
         }
 
         /* Options */
@@ -821,15 +962,45 @@ class Views
                         <span class="brand-desc-line">{$t('brand_sub_line2')}</span>
                     </p>
                 </div>
+
+                <!-- Zine Style Collage Centerpiece -->
+                <div class="zine-header-collage">
+                    <!-- Halftone & Trash Polka SVG Accent Backdrop -->
+                    <div class="zine-decor-layer" aria-hidden="true">
+                        <svg class="zine-halftone-svg" viewBox="0 0 280 60" preserveAspectRatio="none">
+                            <defs>
+                                <pattern id="halftone-dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+                                    <circle cx="2" cy="2" r="1.5" fill="rgba(255, 42, 133, 0.25)" />
+                                    <circle cx="6" cy="6" r="1.2" fill="rgba(226, 248, 53, 0.2)" />
+                                </pattern>
+                            </defs>
+                            <rect x="10" y="5" width="260" height="50" fill="url(#halftone-dots)" />
+                            <!-- Trash Polka Slash Marks & Crosshair -->
+                            <line x1="18" y1="8" x2="262" y2="52" stroke="rgba(255, 42, 133, 0.35)" stroke-width="1.5" stroke-dasharray="6,4" />
+                            <circle cx="35" cy="22" r="8" stroke="rgba(226, 248, 53, 0.3)" stroke-width="1" fill="none" />
+                            <line x1="35" y1="10" x2="35" y2="34" stroke="rgba(226, 248, 53, 0.3)" stroke-width="1" />
+                            <line x1="23" y1="22" x2="47" y2="22" stroke="rgba(226, 248, 53, 0.3)" stroke-width="1" />
+                        </svg>
+                        <span class="zine-stamp-watermark">CONFIDENCIAL // BAFÃO // 100% EFÊMERO</span>
+                    </div>
+
+                    <!-- Cutout Scrap 1: Tagline / Malícia Popular -->
+                    <div class="zine-scrap scrap-tagline">
+                        <span class="tape-strip tape-left"></span>
+                        <span class="badge-box tagline-badge">⚡ {$t('tagline')}</span>
+                    </div>
+
+                    <!-- Cutout Scrap 2: Cultural Manifesto / Tecnologia Travesti Latina -->
+                    <div class="zine-scrap scrap-cultural">
+                        <span class="tape-strip tape-right"></span>
+                        <span class="badge-box cultural-badge">{$t('cultural_badge')}</span>
+                    </div>
+                </div>
+
                 <div class="lang-switch">
                     <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT</button>
                     <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
                 </div>
-            </div>
-
-            <div class="badges-row">
-                <span class="badge-box tagline-badge">⚡ {$t('tagline')}</span>
-                <span class="badge-box cultural-badge">{$t('cultural_badge')}</span>
             </div>
 
             <!-- Token Section -->
@@ -854,10 +1025,11 @@ class Views
             <!-- 1. File Upload Tab -->
             <section id="uploadTab" class="tab-pane active">
                 <div id="dropzone" class="dropzone">
+                    <span class="dropzone-stamp" aria-hidden="true">CONFIDENCIAL // 100% EFÊMERO</span>
                     <input type="file" id="fileInput" style="display:none;">
                     <span class="drop-icon">📦</span>
                     <p class="drop-text" id="dropTitle">{$t('drop_idle')}</p>
-                    <p class="drop-sub">{$t('drop_sub')} (max: {$maxSizeMb} MB)</p>
+                    <p class="drop-sub">{$t('drop_sub')} <span class="dymo-tape">MAX: {$maxSizeMb} MB</span></p>
                     <p id="selectedFileName" style="margin-top:14px; font-weight:700; color:var(--acid-yellow);"></p>
                 </div>
 
