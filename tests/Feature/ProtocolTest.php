@@ -257,6 +257,8 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     expect($html)->toContain('class="trans-stripe bottom"');
     expect($html)->toContain('box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);');
     expect($html)->toContain('overflow: visible;');
+    expect($html)->toContain('class="brand-title-row"');
+    expect($html)->toContain('class="badges-row"');
     expect($html)->toContain('https://en.wikipedia.org/wiki/Travesti_(gender_identity)');
     expect($html)->toContain('>travesti</a> :)');
 
