@@ -17,7 +17,7 @@
   - **`rustypaste`**: `curl -F "file=@..."`, `url` shortening, `expire: 10m` headers, `oneshot: true`, `GET /list` JSON endpoint, and `DELETE /<slug>` method.
 - **🎨 Estética Zine & Risografia Independente:**
   - Visual ácido e marcante: amarelo-marca-texto (`#e2f835`), roxo-berinjela (`#121016`), magenta elétrico (`#ff2a85`) e texturas de meio-tom (*halftone*).
-  - **Faixa do Orgulho Trans:** Faixa de 5 listras em azul bebê (`#5bcefa`), rosa (`#f5a9b8`) e branco (`#ffffff`) coroando o card principal e telas de erro.
+  - **Faixa do Orgulho Trans & Fita Zine:** Faixa destacada de 5 listras em azul bebê (`#5bcefa`), rosa (`#f5a9b8`) e branco (`#ffffff`) coroando o card principal, rodapé e telas de erro, com fita adesiva amarela inclinada em rotação assimétrica e cabeçalho rebalanceado com o badge cultural à direita.
   - Tipografia de alto contraste (`Anton` + `Space Mono`).
   - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica, acolhedora e identificação explícita de compartilhamento efêmero de arquivos e encurtador de links (*"Larga a pedrada aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
   - **Identidade Cultural Travesti & Pajubá:** Microcopy enriquecida com termos autênticos do Pajubá (*"aquendar"*, *"desaquendar"*, *"babado"*, *"bafão"*) e badge celebrando tecnologia travesti latina de resistência.
