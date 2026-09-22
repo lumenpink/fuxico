@@ -27,6 +27,12 @@
   padding: 0;
 }
 
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 body {
   background-color: var(--bg-dark);
   background-image: radial-gradient(#251f33 1px, transparent 1px);

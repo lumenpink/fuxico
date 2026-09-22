@@ -84,7 +84,9 @@ while IFS= read -r html_file; do
             continue
         fi
 
-        target_asset="${html_dir}/${src}"
+        # Strip query strings (?v=...)
+        clean_src="${src%%\?*}"
+        target_asset="${html_dir}/${clean_src}"
         if [[ ! -f "$target_asset" ]]; then
             echo "   ❌ [verify-site] Asset quebrado em ${html_file#$SITE_DIR/}: ${src} (esperado em ${target_asset})" >&2
             exit 1
