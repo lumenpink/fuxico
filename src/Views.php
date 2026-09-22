@@ -129,45 +129,22 @@ class Views
         .trans-stripe-line.white { background-color: #FFFFFF; }
 
         /* Top Header */
+        /* Top Header */
         .top-bar {
             background: var(--tape-black);
-            padding: 20px 24px;
+            padding: 14px 24px 18px 24px;
             border-bottom: var(--border-width) solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 16px;
-        }
-
-        .brand-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
             gap: 12px;
+            position: relative;
         }
 
-        .brand-box {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .brand {
-            font-family: var(--font-display);
-            font-size: 2.8rem;
-            line-height: 1;
-            letter-spacing: 1px;
-            color: var(--acid-yellow);
-            text-shadow: 3px 3px 0px var(--electric-pink);
-            text-transform: uppercase;
-        }
-
-        .header-right-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+        .lang-switch-wrap {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            z-index: 5;
         }
 
         .header-center-row {
@@ -175,8 +152,26 @@ class Views
             flex-direction: column;
             align-items: center;
             text-align: center;
-            gap: 8px;
-            margin: 4px 0 2px 0;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .brand-title-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            font-family: var(--font-display);
+            font-size: 2.6rem;
+            line-height: 1;
+            letter-spacing: 1px;
+            color: var(--acid-yellow);
+            text-shadow: 3px 3px 0px var(--electric-pink);
+            text-transform: uppercase;
         }
 
         .brand-desc {
@@ -187,6 +182,44 @@ class Views
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        .badges-row {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .badge-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 2px 2px 0px #000;
+            flex: 1 1 260px;
+            max-width: 360px;
+            min-height: 32px;
+            box-sizing: border-box;
+        }
+
+        .tagline-badge {
+            background: var(--electric-pink);
+            color: #fff;
+            border: 1px solid #000;
+        }
+
+        .cultural-badge {
+            background: var(--tape-black);
+            color: #5BCEFA;
+            border: 1px solid #F5A9B8;
         }
 
         .lang-switch {
@@ -219,32 +252,20 @@ class Views
             box-shadow: 2px 2px 0px #000;
         }
 
-        .tagline-badge {
-            display: inline-block;
-            background: var(--electric-pink);
-            color: #fff;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border: 1px solid #000;
-            box-shadow: 2px 2px 0px #000;
-            margin-top: -6px;
-        }
-
-        .cultural-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--tape-black);
-            color: #5BCEFA;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border: 1px solid #F5A9B8;
-            box-shadow: 2px 2px 0px #000;
-            margin-top: -6px;
+        @media (max-width: 640px) {
+            .brand-title-row {
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+            .lang-switch-wrap {
+                position: static;
+                align-self: flex-end;
+            }
+            .badge-box {
+                max-width: 100%;
+                flex: 1 1 100%;
+            }
         }
 
         /* Token Section */
@@ -800,21 +821,21 @@ class Views
 
         <!-- Header -->
         <header class="top-bar">
-            <div class="brand-row">
-                <div class="brand-box">
-                    <h1 class="brand">{$t('app_name')}</h1>
-                </div>
-                <div class="header-right-box">
-                    <span class="cultural-badge">{$t('cultural_badge')}</span>
-                    <div class="lang-switch">
-                        <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
-                        <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
-                    </div>
+            <div class="lang-switch-wrap">
+                <div class="lang-switch">
+                    <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
+                    <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
                 </div>
             </div>
             <div class="header-center-row">
-                <p class="brand-desc">{$t('brand_sub')}</p>
-                <span class="tagline-badge">⚡ {$t('tagline')}</span>
+                <div class="brand-title-row">
+                    <h1 class="brand">{$t('app_name')}</h1>
+                    <p class="brand-desc">{$t('brand_sub')}</p>
+                </div>
+                <div class="badges-row">
+                    <span class="badge-box tagline-badge">⚡ {$t('tagline')}</span>
+                    <span class="badge-box cultural-badge">{$t('cultural_badge')}</span>
+                </div>
             </div>
 
             <!-- Token Section -->
