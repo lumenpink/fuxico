@@ -206,18 +206,26 @@ class App
         $isSecret = isset($_POST['secret']) || isset($_GET['secret']);
         $oneshot = isset($_POST['oneshot']) ||
                    isset($_POST['oneshot_url']) ||
+                   (isset($_FILES['oneshot']) && is_array($_FILES['oneshot']) && ! empty($_FILES['oneshot']['tmp_name'])) ||
                    (isset($_SERVER['HTTP_ONESHOT']) && filter_var($_SERVER['HTTP_ONESHOT'], FILTER_VALIDATE_BOOLEAN));
 
         $expireParam = $_POST['expires'] ?? $_POST['expire'] ?? $_SERVER['HTTP_EXPIRE'] ?? null;
         $expiresAt = $this->parseExpiration($expireParam ? (string) $expireParam : null);
 
-        $customName = trim((string) ($_POST['customName'] ?? $_POST['custom_name'] ?? $_POST['name'] ?? ''));
+        $customName = trim((string) ($_POST['customName'] ?? $_POST['custom_name'] ?? $_POST['name'] ?? $_SERVER['HTTP_FILENAME'] ?? ''));
 
-        // Determine slug
+        // Determine slug & optional custom extension
+        $customExt = '';
         if ($customName !== '') {
-            $slug = preg_replace('/[^a-zA-Z0-9_\-]+/', '-', strtolower($customName));
-            $slug = trim($slug, '-');
-            if ($slug === '' || $this->db->isSlugTaken($slug)) {
+            $nameExt = pathinfo($customName, PATHINFO_EXTENSION);
+            $baseName = pathinfo($customName, PATHINFO_FILENAME);
+            $cleanBase = preg_replace('/[^a-zA-Z0-9_\-]+/', '-', strtolower($baseName));
+            $cleanBase = trim((string) $cleanBase, '-');
+            $slug = $cleanBase !== '' ? $cleanBase : $this->generateSlug($isSecret);
+            if ($nameExt !== '') {
+                $customExt = strtolower($nameExt);
+            }
+            if ($this->db->isSlugTaken($slug)) {
                 http_response_code(409);
                 header('Content-Type: text/plain');
                 echo "Error: Name '{$customName}' is already taken or invalid.\n";
@@ -230,9 +238,16 @@ class App
 
         $xToken = bin2hex(random_bytes(16));
 
-        // 1. File Upload
+        // 1. File Upload (supports 'file' and rustypaste 'oneshot' multipart field)
+        $uploadFile = null;
         if (isset($_FILES['file']) && is_array($_FILES['file']) && ! empty($_FILES['file']['tmp_name'])) {
-            $file = $_FILES['file'];
+            $uploadFile = $_FILES['file'];
+        } elseif (isset($_FILES['oneshot']) && is_array($_FILES['oneshot']) && ! empty($_FILES['oneshot']['tmp_name'])) {
+            $uploadFile = $_FILES['oneshot'];
+        }
+
+        if ($uploadFile !== null) {
+            $file = $uploadFile;
             if ($file['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
                 header('Content-Type: text/plain');
@@ -241,7 +256,8 @@ class App
                 return;
             }
 
-            $validation = MimeValidator::validate($file['tmp_name'], $file['name'], $this->config->maxUploadSize);
+            $effectiveName = $customExt !== '' ? "{$slug}.{$customExt}" : $file['name'];
+            $validation = MimeValidator::validate($file['tmp_name'], $effectiveName, $this->config->maxUploadSize);
             if (! $validation['valid']) {
                 http_response_code(400);
                 header('Content-Type: text/plain');
@@ -250,7 +266,7 @@ class App
                 return;
             }
 
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $ext = $customExt !== '' ? $customExt : strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $targetFilename = $slug.($ext !== '' ? ".{$ext}" : '');
 
             if (! $this->storage->storeUploadedFile($file['tmp_name'], $targetFilename)) {
@@ -276,7 +292,7 @@ class App
                 'views' => 0,
             ]);
 
-            header("X-Token: {$xToken}");
+            header("x-token: {$xToken}");
             header('Content-Type: text/plain');
             $urlExt = $ext !== '' ? ".{$ext}" : '';
             echo "{$this->getBaseUrl()}/{$slug}{$urlExt}\n";
@@ -320,7 +336,7 @@ class App
                 'views' => 0,
             ]);
 
-            header("X-Token: {$xToken}");
+            header("x-token: {$xToken}");
             header('Content-Type: text/plain');
             echo "{$this->getBaseUrl()}/{$slug}\n";
 
@@ -408,7 +424,7 @@ class App
             'views' => 0,
         ]);
 
-        header("X-Token: {$xToken}");
+        header("x-token: {$xToken}");
         header('Content-Type: text/plain');
         $urlExt = $ext !== '' ? ".{$ext}" : '';
         echo "{$this->getBaseUrl()}/{$slug}{$urlExt}\n";

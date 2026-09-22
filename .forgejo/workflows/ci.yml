@@ -53,6 +53,10 @@ jobs:
       - name: "Laravel Pint — Code Style"
         run: ./vendor/bin/pint --test
 
+      # ── Fetch External Clients ──────────────────────────────────────────────
+      - name: "Fetch Latest External Clients (rustypaste & 0x0.st)"
+        run: ./scripts/fetch_external_clients.sh bin/.clients
+
       # ── PEST Tests + Coverage ───────────────────────────────────────────────
       - name: "PEST — Test Suite + Clover coverage"
         env:

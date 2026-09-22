@@ -67,3 +67,8 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
   - [x] 9.4 SHA-256 cryptographic verification manifest (`dist/checksums.sha256`) and release archive (`dist/fuxico-*.tar.gz`).
   - [x] 9.5 Automated Forgejo release packaging workflow (`.forgejo/workflows/release-bundles.yml`).
 
+- [x] **Phase 10: Upstream Clients & Ecosystem Interoperability (closes #27)**
+  - [x] 10.1 Automated dynamic fetcher for upstream `rustypaste-cli` (`rpaste`), `AndyRusso/0x0` (Bash), and `olavfosse/0x0` (POSIX sh) (`scripts/fetch_external_clients.sh`).
+  - [x] 10.2 Continuous integration of external clients in Forgejo Actions workflow (`.forgejo/workflows/ci.yml`).
+  - [x] 10.3 End-to-end integration test suite (`tests/Feature/ThirdPartyClientsTest.php`) validating uploads, streams, URL shortening, deletion tokens, and case-insensitive header interop.
+

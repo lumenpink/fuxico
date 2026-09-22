@@ -9,3 +9,4 @@ public_reports/
 # Build and release artifacts
 dist/
 fuxico.php
+bin/.clients/

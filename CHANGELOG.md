@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (protocol) support rpaste oneshot field and filename header with case-insensitive token (closes #27)
   - (ui) add zine collage typography element in header and dropzone accents (closes #25)
   - (ui) stack language buttons vertically and shorten PT-BR to PT (closes #24)
   - (i18n) translate fervo and tecnologia to technology & riot in EN cultural badge
