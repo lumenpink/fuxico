@@ -129,22 +129,38 @@ class Views
         .trans-stripe-line.white { background-color: #FFFFFF; }
 
         /* Top Header */
-        /* Top Header */
         .top-bar {
             background: var(--tape-black);
-            padding: 14px 24px 18px 24px;
+            padding: 16px 24px 18px 24px;
             border-bottom: var(--border-width) solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            position: relative;
+            gap: 6px;
         }
 
-        .lang-switch-wrap {
-            position: absolute;
-            top: 14px;
-            right: 18px;
-            z-index: 5;
+        .brand-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            font-family: var(--font-display);
+            font-size: 2.8rem;
+            line-height: 0.95;
+            letter-spacing: 1px;
+            color: var(--acid-yellow);
+            text-shadow: 3px 3px 0px var(--electric-pink);
+            text-transform: uppercase;
         }
 
         .header-center-row {
@@ -152,44 +168,27 @@ class Views
             flex-direction: column;
             align-items: center;
             text-align: center;
-            gap: 10px;
-            margin-top: 4px;
-        }
-
-        .brand-title-row {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .brand {
-            font-family: var(--font-display);
-            font-size: 2.6rem;
-            line-height: 1;
-            letter-spacing: 1px;
-            color: var(--acid-yellow);
-            text-shadow: 3px 3px 0px var(--electric-pink);
-            text-transform: uppercase;
+            gap: 6px;
+            margin-top: -6px;
         }
 
         .brand-desc {
             font-family: var(--font-heading);
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-weight: 700;
             color: var(--acid-yellow);
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
+            line-height: 1.1;
+            margin: 0;
         }
 
         .badges-row {
             display: flex;
             align-items: stretch;
-            justify-content: center;
+            justify-content: space-between;
             gap: 12px;
-            flex-wrap: wrap;
             width: 100%;
         }
 
@@ -198,14 +197,13 @@ class Views
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 6px 14px;
+            padding: 7px 14px;
             font-family: var(--font-mono);
             font-size: 0.75rem;
             font-weight: 700;
             text-align: center;
             box-shadow: 2px 2px 0px #000;
-            flex: 1 1 260px;
-            max-width: 360px;
+            flex: 1;
             min-height: 32px;
             box-sizing: border-box;
         }
@@ -253,18 +251,12 @@ class Views
         }
 
         @media (max-width: 640px) {
-            .brand-title-row {
+            .badges-row {
                 flex-direction: column;
-                align-items: center;
-                gap: 4px;
-            }
-            .lang-switch-wrap {
-                position: static;
-                align-self: flex-end;
             }
             .badge-box {
-                max-width: 100%;
-                flex: 1 1 100%;
+                width: 100%;
+                flex: none;
             }
         }
 
@@ -273,6 +265,7 @@ class Views
             display: flex;
             flex-direction: column;
             gap: 6px;
+            margin-top: 14px;
         }
 
         .token-label {
@@ -821,17 +814,18 @@ class Views
 
         <!-- Header -->
         <header class="top-bar">
-            <div class="lang-switch-wrap">
+            <div class="brand-row">
+                <div class="brand-box">
+                    <h1 class="brand">{$t('app_name')}</h1>
+                </div>
                 <div class="lang-switch">
                     <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
                     <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
                 </div>
             </div>
+
             <div class="header-center-row">
-                <div class="brand-title-row">
-                    <h1 class="brand">{$t('app_name')}</h1>
-                    <p class="brand-desc">{$t('brand_sub')}</p>
-                </div>
+                <p class="brand-desc">{$t('brand_sub')}</p>
                 <div class="badges-row">
                     <span class="badge-box tagline-badge">⚡ {$t('tagline')}</span>
                     <span class="badge-box cultural-badge">{$t('cultural_badge')}</span>
