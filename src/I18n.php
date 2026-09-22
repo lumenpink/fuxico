@@ -15,7 +15,7 @@ class I18n
         'pt' => [
             'app_name' => 'FUXICO',
             'tagline' => 'A malícia popular do boca a boca',
-            'brand_sub' => 'Compartilhamento efêmero de arquivos & encurtador de links',
+            'brand_sub' => 'Envios efêmeros e links curtos',
             'cultural_badge' => '🏳️‍⚧️ Fervo & tecnologia travesti latina',
             'drop_idle' => 'Larga a pedrada aqui.',
             'drop_sub' => 'ou clique para catar o babado nos arquivos',
@@ -82,7 +82,7 @@ class I18n
         'en' => [
             'app_name' => 'FUXICO',
             'tagline' => 'Word-of-mouth street mischief',
-            'brand_sub' => 'Ephemeral file sharing & URL shortener',
+            'brand_sub' => 'Ephemeral sharing & short links',
             'cultural_badge' => '🏳️‍⚧️ Travesti & Latin tech mischief',
             'drop_idle' => 'Spill the beans here.',
             'drop_sub' => 'or click to browse your scoops',
