@@ -21,6 +21,7 @@
   - Tipografia de alto contraste (`Anton` + `Space Mono`).
   - **Dual Language (PT-BR / EN):** Detecção automática via `Accept-Language` com microcopy sarcástica, acolhedora e identificação explícita de compartilhamento efêmero de arquivos e encurtador de links (*"Larga a pedrada aqui"*, *"Solta o verbo"*, *"Essa fofoca já prescreveu"*).
   - **Identidade Cultural Travesti & Pajubá:** Microcopy enriquecida com termos autênticos do Pajubá (*"aquendar"*, *"desaquendar"*, *"babado"*, *"bafão"*) e badge celebrando tecnologia travesti latina de resistência.
+  - **Tooltips Acessíveis com Glossário:** Balões explicativos estilizados em risografia detalhando o significado cultural no Pajubá (*aquendar*, *desaquendar*) e as garantias técnicas de segurança e expiração em cada campo.
   - **Crédito Travesti no Rodapé:** Inscrição multilíngue (*"Orgulhosamente produzido por uma travesti :)"* / *"Proudly produced by a travesti :)"*) com links contextuais para os verbetes de identidade de gênero na Wikipédia.
 - **💻 CLI `fux` (Ergonomia Máxima):**
   - **Regra de ouro:** deboche no `stderr` (`[fux] espalhando o bafão...`), URL pura no `stdout` para nunca quebrar pipes (`xclip`, `wl-copy`, scripts).
