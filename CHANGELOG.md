@@ -12,6 +12,9 @@
   - (ui) add trans pride ribbon stripe to container and error views closes #12
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
+### Bug Fixes
+  - (i18n) preserve authentic travesti latina phrase untranslated in EN
+
 ## Previous Releases
 
 ### [v0.2.0] - Lexicon and Vault Access Update
