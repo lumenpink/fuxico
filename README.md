@@ -55,8 +55,16 @@ curl -O https://codeberg.org/lumenpink/fuxico/raw/branch/main/fuxico.php
 FUXICO_PUBLIC_MODE=true php -S 127.0.0.1:8080 fuxico.php
 ```
 
-### 3. Run Locally with Built-in PHP Server (Modular Mode)
-- Requires PHP 8.2+ (`pdo_sqlite`, `fileinfo`).
+### 3. Run Development Server (Live Watcher & Modular Mode)
+- **Live Watcher (Auto-Recompile & Serve):** Automatically watches `src/`, recompiles `fuxico.php` on file changes with `inotifywait`, and serves via embedded server:
+```bash
+composer dev
+# or with custom port / host:
+PORT=9000 composer dev
+# or run the script directly:
+./scripts/dev.sh
+```
+- **Modular Mode (direct index.php):**
 ```bash
 php -S 127.0.0.1:8080 index.php
 ```
