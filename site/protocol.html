@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUXICO — Dual Protocol Specification (0x0.st & Rustypaste)</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <!-- Trans Pride Ribbon -->
+  <div class="trans-ribbon">
+    <span class="tb"></span><span class="tp"></span><span class="tw"></span><span class="tp"></span><span class="tb"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/favicon.svg" alt="Fuxico Logo">
+        <span>FUXICO</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="installation.html">Installation</a></li>
+        <li><a href="downloads.html">Downloads</a></li>
+        <li><a href="commands.html">CLI Manual</a></li>
+        <li><a href="protocol.html" class="active">Protocols</a></li>
+        <li><a href="pajuba.html">Pajubá</a></li>
+      </ul>
+      <div class="lang-switch">
+        <a href="protocol.html" class="lang-btn active">EN</a>
+        <a href="pt/protocol.html" class="lang-btn">PT</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header class="hero-header">
+      <div class="duct-tape">SPECIFICATION // DUAL PROTOCOL ENGINE</div>
+      <h1 class="page-title">PROTOCOL SPECIFICATIONS</h1>
+      <p class="subtitle">
+        Fuxico is 100% drop-in compatible with the two most popular self-hosted file vault specifications in the Unix world: <strong>The Null Pointer (0x0.st)</strong> and <strong>rustypaste</strong>.
+      </p>
+      <div class="badge-row">
+        <span class="badge">🌐 cURL Native Compatibility</span>
+        <span class="badge neon">🔑 X-Token Management Header</span>
+        <span class="badge">🛡️ Strict MIME & Subpath Aliasing</span>
+      </div>
+    </header>
+
+    <!-- 0x0.st Protocol -->
+    <section class="doc-section">
+      <h2 class="section-heading">0️⃣ 1. The Null Pointer Protocol (0x0.st)</h2>
+      <p class="lead">
+        Send standard multipart forms via <code>POST /</code>:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Field / Parameter</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>file</code></td>
+              <td>File Multipart</td>
+              <td>File content payload to upload.</td>
+            </tr>
+            <tr>
+              <td><code>url</code></td>
+              <td>String URL</td>
+              <td>Instructs the server to download and store content from a remote URL.</td>
+            </tr>
+            <tr>
+              <td><code>shorten</code></td>
+              <td>String URL</td>
+              <td>Shortens the provided target URL and generates a redirect link.</td>
+            </tr>
+            <tr>
+              <td><code>secret</code></td>
+              <td>Flag / Empty</td>
+              <td>Generates an unguessable 16-character high-entropy secret slug.</td>
+            </tr>
+            <tr>
+              <td><code>expires</code></td>
+              <td>Integer / String</td>
+              <td>Retention duration in hours (e.g. <code>24</code>) or ms epoch timestamp.</td>
+            </tr>
+            <tr>
+              <td><code>oneshot</code></td>
+              <td>Flag / Boolean</td>
+              <td>If set, file evaporates immediately after its first download.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading">cURL Examples</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">curl — 0x0.st examples</span>
+          <button class="copy-btn" data-target="cmd-0x0">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-0x0"># Upload with 24 hours expiration:
+curl -F 'file=@photo.png' -F 'expires=24' https://fuxico.2lp.in/
+
+# Shorten a URL:
+curl -F 'shorten=https://codeberg.org/lumenpink/fuxico' https://fuxico.2lp.in/
+
+# Manage / Delete using X-Token:
+curl -F 'token=&lt;X-Token&gt;' -F 'delete=' https://fuxico.2lp.in/abcde.png</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rustypaste Protocol -->
+    <section class="doc-section">
+      <h2 class="section-heading">🦀 2. Rustypaste Protocol</h2>
+      <p class="lead">
+        Send files using HTTP headers for configuration:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Header / Endpoint</th>
+              <th>Format</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>expire: &lt;duration&gt;</code></td>
+              <td>Header</td>
+              <td>Duration string: <code>10m</code>, <code>2h</code>, <code>7d</code>, etc.</td>
+            </tr>
+            <tr>
+              <td><code>oneshot: true</code></td>
+              <td>Header</td>
+              <td>Enables single-download self-destruction.</td>
+            </tr>
+            <tr>
+              <td><code>filename: &lt;name&gt;</code></td>
+              <td>Header</td>
+              <td>Custom filename alias override.</td>
+            </tr>
+            <tr>
+              <td><code>DELETE /&lt;slug&gt;</code></td>
+              <td>HTTP Method</td>
+              <td>Deletes an upload using <code>Authorization: Bearer &lt;token&gt;</code>.</td>
+            </tr>
+            <tr>
+              <td><code>GET /list</code></td>
+              <td>JSON Endpoint</td>
+              <td>Returns active uploads list in structured JSON format.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading">cURL Examples</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">curl — rustypaste examples</span>
+          <button class="copy-btn" data-target="cmd-rpaste">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-rpaste"># Upload with 10 minutes lifetime header:
+curl -F 'file=@secret.txt' -H 'expire: 10m' https://fuxico.2lp.in/
+
+# Delete via DELETE method:
+curl -X DELETE -H 'Authorization: Bearer &lt;token&gt;' https://fuxico.2lp.in/abcde.png
+
+# List active uploads:
+curl -H 'Authorization: Bearer &lt;token&gt;' https://fuxico.2lp.in/list</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Friendly Subpath Aliases -->
+    <section class="doc-section">
+      <h2 class="section-heading">📎 3. Friendly Subpath Aliasing</h2>
+      <p class="lead">
+        Need to share a file so it saves with a recognizable human name rather than a random slug? Fuxico natively supports subpath aliasing:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">Subpath URL Structure</span>
+        </div>
+        <div class="terminal-body">
+          <pre>https://fuxico.2lp.in/&lt;slug&gt;.&lt;ext&gt;/&lt;friendly_filename&gt;</pre>
+        </div>
+      </div>
+      <p>
+        Example: <code>https://fuxico.2lp.in/8x9yt.png/avatar-lumen-2026.png</code> streams the exact same payload while setting <code>Content-Disposition: inline; filename="avatar-lumen-2026.png"</code>.
+      </p>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <p>Proudly crafted by a <a href="https://en.wikipedia.org/wiki/Travesti_(gender_identity)" target="_blank">Latin American travesti</a> :)</p>
+    <p style="margin-top: 6px; font-size: 0.8rem;">
+      FUXICO // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Codeberg Repository</a> // GPL-3.0-or-later Universal Public Domain Dedication
+    </p>
+  </footer>
+
+  <script src="assets/main.js"></script>
+</body>
+</html>

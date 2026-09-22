@@ -79,4 +79,13 @@ This roadmap breaks down the evolution and modernization of **Fuxico** into disc
   - [x] 11.4 Automated multi-platform matrix release workflow in Forgejo CI (`.forgejo/workflows/release-bundles.yml`).
   - [x] 11.5 Automated test suite integration in `tests/Feature/CompiledArtifactTest.php` and composer scripts (`composer build:clients`).
 
+- [x] **Phase 12: Static Documentation & Distribution Site at fuxico.2lp.in (closes #28)**
+  - [x] 12.1 100% static documentation site in `site/` with custom domain `CNAME` for `fuxico.2lp.in` and `_headers` security rules.
+  - [x] 12.2 Full bilingual page structure in English and Portuguese (`index.html`, `installation.html`, `downloads.html`, `commands.html`, `protocol.html`, `pajuba.html`).
+  - [x] 12.3 Rich visual zine collages, prints, real interface/terminal screenshots, and interactive image lightbox.
+  - [x] 12.4 Direct standalone downloads and detailed single-board computer hardware guide table (Orange Pi, Banana Pi, Raspberry Pi, NanoPi, BeagleBone).
+  - [x] 12.5 Universal 1-line smart installer script `site/fux-installer` (`site/install.sh`) supporting auto-architecture detection and SHA-256 verification.
+  - [x] 12.6 Static site integrity verification script `bin/verify-site.sh`, Pest integration test `tests/Feature/SiteDocumentationTest.php`, and automated Codeberg Pages deployment workflow.
+
+
 

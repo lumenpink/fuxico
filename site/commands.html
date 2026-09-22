@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUXICO — Command-Line Interface (CLI) Manual & Tooling</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <!-- Trans Pride Ribbon -->
+  <div class="trans-ribbon">
+    <span class="tb"></span><span class="tp"></span><span class="tw"></span><span class="tp"></span><span class="tb"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/favicon.svg" alt="Fuxico Logo">
+        <span>FUXICO</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="installation.html">Installation</a></li>
+        <li><a href="downloads.html">Downloads</a></li>
+        <li><a href="commands.html" class="active">CLI Manual</a></li>
+        <li><a href="protocol.html">Protocols</a></li>
+        <li><a href="pajuba.html">Pajubá</a></li>
+      </ul>
+      <div class="lang-switch">
+        <a href="commands.html" class="lang-btn active">EN</a>
+        <a href="pt/commands.html" class="lang-btn">PT</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header class="hero-header">
+      <div class="duct-tape">CLI REFERENCE // TERMINAL ERGONOMICS</div>
+      <h1 class="page-title">CLI COMMAND MANUAL (`fux`)</h1>
+      <p class="subtitle">
+        Both the native Rust client and the universal Bash script share the exact same short command name (<code>fux</code>), identical bilingual options (EN & PT-BR), and unified configuration.
+      </p>
+      <div class="badge-row">
+        <span class="badge">💻 Deboche on stderr, pure URL on stdout</span>
+        <span class="badge neon">📋 Direct Clipboard Pipes</span>
+        <span class="badge">🔥 Oneshot Queima-de-arquivo</span>
+      </div>
+    </header>
+
+    <!-- Terminal Screenshot Banner -->
+    <section class="doc-section">
+      <div style="margin-bottom: 25px; text-align: center;">
+        <img src="assets/prints/ui-terminal.png" alt="Terminal CLI Output in Action" style="max-width: 900px; width: 100%; border: 2px solid var(--border-color); border-radius: 4px;" class="lightbox-trigger">
+      </div>
+
+      <h2 class="section-heading">⚡ The Golden Rule of Ergonomics</h2>
+      <p class="lead">
+        <strong>Deboche and status telemetry go to <code>stderr</code>. The clean URL goes to <code>stdout</code>.</strong>
+      </p>
+      <p>
+        This design guarantee ensures <code>fux</code> will never break your shell pipelines, clipboard commands, or automated cron scripts:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">bash — clipboard & pipe examples</span>
+          <button class="copy-btn" data-target="cmd-pipes">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-pipes"># Upload and copy directly to clipboard (xclip / wl-copy / pbcopy):
+fux photo.png --copia
+
+# Assign clean URL straight into a shell variable:
+url=$(fux report.pdf --caladinho)
+
+# Pipe command output directly into an ephemeral oneshot link:
+dmesg | fux -q | xclip -selection clipboard</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bilingual Flags Table -->
+    <section class="doc-section">
+      <h2 class="section-heading">🎛️ Command-Line Flags Reference</h2>
+      <p class="lead">
+        Fuxico provides full bilingual flag parity. You can freely mix English and Portuguese options:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Flag (Short)</th>
+              <th>English Long Flag</th>
+              <th>Portuguese Long Flag</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>-e &lt;DUR&gt;</code></td>
+              <td><code>--expire &lt;DUR&gt;</code></td>
+              <td><code>--caduca &lt;DUR&gt;</code></td>
+              <td>Retention duration (e.g. <code>10m</code>, <code>2h</code>, <code>7d</code>, or hours integer).</td>
+            </tr>
+            <tr>
+              <td><code>-q</code> / <code>-o</code></td>
+              <td><code>--oneshot</code></td>
+              <td><code>--queima</code></td>
+              <td>Queima-de-arquivo: file self-destructs immediately after first download.</td>
+            </tr>
+            <tr>
+              <td><code>-s</code></td>
+              <td><code>--secret</code></td>
+              <td><code>--segredo</code></td>
+              <td>Generates an unguessable 16-character high-entropy secret slug.</td>
+            </tr>
+            <tr>
+              <td><code>-n &lt;NAME&gt;</code></td>
+              <td><code>--name &lt;NAME&gt;</code></td>
+              <td><code>--nome &lt;NAME&gt;</code></td>
+              <td>Custom friendly filename subpath alias (e.g. <code>/<slug>.<ext>/<name></code>) or custom slug.</td>
+            </tr>
+            <tr>
+              <td><code>-u &lt;URL&gt;</code></td>
+              <td><code>--url &lt;URL&gt;</code></td>
+              <td><code>--encurta &lt;URL&gt;</code></td>
+              <td>Shorten a target web URL and emit a redirect link.</td>
+            </tr>
+            <tr>
+              <td><code>-c</code></td>
+              <td><code>--clipboard</code></td>
+              <td><code>--copia</code></td>
+              <td>Automatically copy resulting link to system clipboard.</td>
+            </tr>
+            <tr>
+              <td><code>-Q</code></td>
+              <td><code>--quiet</code></td>
+              <td><code>--caladinho</code></td>
+              <td>Suppress stderr deboche completely; output pure URL only.</td>
+            </tr>
+            <tr>
+              <td><code>-l</code></td>
+              <td><code>--list</code></td>
+              <td><code>--lista</code></td>
+              <td>List active uploads (requires management or master auth token).</td>
+            </tr>
+            <tr>
+              <td><code>-d &lt;SLUG&gt;</code></td>
+              <td><code>--delete &lt;SLUG&gt;</code></td>
+              <td><code>--apaga &lt;SLUG&gt;</code></td>
+              <td>Delete a file or URL redirect using its slug and management token.</td>
+            </tr>
+            <tr>
+              <td><code>-t &lt;TOK&gt;</code></td>
+              <td><code>--token &lt;TOK&gt;</code></td>
+              <td><code>--ficha &lt;TOK&gt;</code></td>
+              <td>Management deletion token (X-Token) or instance master auth token.</td>
+            </tr>
+            <tr>
+              <td><code>-S &lt;URL&gt;</code></td>
+              <td><code>--server &lt;URL&gt;</code></td>
+              <td><code>--servidor &lt;URL&gt;</code></td>
+              <td>Target Fuxico server instance (default: <code>https://fuxico.2lp.in</code>).</td>
+            </tr>
+            <tr>
+              <td><code>-D &lt;DIAL&gt;</code></td>
+              <td><code>--dialect &lt;DIAL&gt;</code></td>
+              <td><code>--dialeto &lt;DIAL&gt;</code></td>
+              <td>Communication protocol: <code>nullpointer</code> (0x0.st) or <code>rustypaste</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Shared TOML Config -->
+    <section class="doc-section">
+      <h2 class="section-heading">⚙️ Unified Configuration File</h2>
+      <p class="lead">
+        Configure defaults for both Rust and Bash clients in <code>~/.config/fux/config.toml</code>:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">~/.config/fux/config.toml</span>
+          <button class="copy-btn" data-target="cfg-toml">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cfg-toml"># Server URL
+server = "https://fuxico.2lp.in"
+
+# Master auth token (for private instances) or default deletion token
+token = "tatanka"
+
+# Default communication dialect (nullpointer or rustypaste)
+dialect = "nullpointer"
+
+# Default expiration duration
+expires = "24h"
+
+# Default oneshot burn mode
+oneshot = false
+
+# Automatically copy generated link to clipboard
+clipboard = true</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upstream Tools Compatibility -->
+    <section class="doc-section">
+      <h2 class="section-heading">🔄 Upstream Clients Compatibility</h2>
+      <p class="lead">
+        Already have <code>rpaste</code> (rustypaste-cli) or <code>0x0</code> installed on your machine? They work out of the box with zero modifications:
+      </p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>rustypaste-cli (rpaste)</h4>
+          <p>Set the environment variable or <code>~/.config/rustypaste/config.toml</code>:</p>
+          <code>export RPASTE_SERVER="https://fuxico.2lp.in"</code>
+          <p style="margin-top: 10px;">Then use standard rpaste commands:</p>
+          <code>rpaste photo.png -o -e 2h</code>
+        </div>
+
+        <div class="card">
+          <h4>0x0.st Client (AndyRusso / olavfosse)</h4>
+          <p>Pass the Fuxico server URL as argument or export default:</p>
+          <code>export NULLPOINTER_URL="https://fuxico.2lp.in"</code>
+          <p style="margin-top: 10px;">Full compatibility with token headers and deletion:</p>
+          <code>0x0 -s -e 48 document.pdf</code>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <p>Proudly crafted by a <a href="https://en.wikipedia.org/wiki/Travesti_(gender_identity)" target="_blank">Latin American travesti</a> :)</p>
+    <p style="margin-top: 6px; font-size: 0.8rem;">
+      FUXICO // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Codeberg Repository</a> // GPL-3.0-or-later Universal Public Domain Dedication
+    </p>
+  </footer>
+
+  <script src="assets/main.js"></script>
+</body>
+</html>

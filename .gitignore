@@ -10,3 +10,12 @@ public_reports/
 dist/
 fuxico.php
 bin/.clients/
+# Site compiled binaries (populated by CI during pages deployment)
+site/fux-linux-*
+site/fux-windows-*
+site/fux-darwin-*
+site/fux-rs
+site/fuxico.php
+site/checksums.sha256
+site/fux
+

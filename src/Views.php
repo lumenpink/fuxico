@@ -1251,6 +1251,16 @@ class Views
             }
         }
 
+        // Deep linking to tabs via query param or hash
+        const urlTabParam = (new URLSearchParams(window.location.search)).get('tab') || window.location.hash.replace('#', '');
+        if (urlTabParam === 'url' || urlTabParam === 'urlTab') {
+            const urlBtn = document.querySelectorAll('.tab-btn')[1];
+            if (urlBtn) switchTab('urlTab', urlBtn);
+        } else if (urlTabParam === 'dash' || urlTabParam === 'dashTab') {
+            const dashBtn = document.getElementById('dashTabBtn');
+            if (dashBtn) switchTab('dashTab', dashBtn);
+        }
+
         // File Drag & Drop
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');

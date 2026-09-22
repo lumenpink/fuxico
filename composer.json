@@ -30,6 +30,7 @@
         "fetch-clients": "./scripts/fetch_external_clients.sh",
         "build:clients": "./scripts/build_clients.sh",
         "build:clients:all": "./scripts/build_clients.sh --all",
+        "verify:site": "./bin/verify-site.sh",
         "bundle": "./scripts/build_bundles.sh",
         "ci": [
             "@lint",

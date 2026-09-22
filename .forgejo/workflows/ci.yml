@@ -73,14 +73,20 @@ jobs:
         if: always()
         run: php scripts/generate_ci_summary.php --step-summary
 
-      # ── Deploy Coverage Dashboard to Pages ─────────────────────────────────
-      - name: "Deploy Coverage Dashboard to Pages"
+      # ── Verify & Deploy Documentation Site + Reports to Pages ───────────────
+      - name: "Verify Site Integrity"
+        run: ./bin/verify-site.sh
+
+      - name: "Deploy Documentation Site & Reports to Pages"
         if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          php scripts/generate_ci_summary.php --build-pages
+          php scripts/generate_ci_summary.php --build-pages || true
+          ./scripts/build_bundles.sh || true
+          cp -r dist/* site/ 2>/dev/null || true
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin pages:pages 2>/dev/null || true
@@ -91,10 +97,19 @@ jobs:
           fi
           git worktree add /tmp/pages pages
           rm -rf /tmp/pages/*
-          cp -r public_reports/* /tmp/pages/
+          
+          # Deploy full documentation site to root
+          cp -r site/* /tmp/pages/
+
+          # Keep CI reports available under /reports/
+          if [ -d "public_reports" ]; then
+            mkdir -p /tmp/pages/reports
+            cp -r public_reports/* /tmp/pages/reports/
+          fi
+
           cd /tmp/pages
           git add -A
-          git commit -m "Deploy CI reports dashboard - $(date -u '+%Y-%m-%dT%H:%M:%SZ')" || echo "No changes to commit"
+          git commit -m "docs(site): deploy documentation to Codeberg Pages - $(date -u '+%Y-%m-%dT%H:%M:%SZ') [skip ci]" || echo "No changes to commit"
           git push origin pages || git push -f origin pages
 
   # ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUXICO — Guia de Instalação & Configuração do Servidor</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+  <!-- Faixa do Orgulho Trans -->
+  <div class="trans-ribbon">
+    <span class="tb"></span><span class="tp"></span><span class="tw"></span><span class="tp"></span><span class="tb"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="../assets/favicon.svg" alt="Logo Fuxico">
+        <span>FUXICO</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Visão Geral</a></li>
+        <li><a href="installation.html" class="active">Instalação</a></li>
+        <li><a href="downloads.html">Downloads</a></li>
+        <li><a href="commands.html">Manual CLI</a></li>
+        <li><a href="protocol.html">Protocolos</a></li>
+        <li><a href="pajuba.html">Pajubá</a></li>
+      </ul>
+      <div class="lang-switch">
+        <a href="../installation.html" class="lang-btn">EN</a>
+        <a href="installation.html" class="lang-btn active">PT</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header class="hero-header">
+      <div class="duct-tape">IMPLANTAÇÃO DO SERVIDOR // ZERO DEPENDÊNCIAS</div>
+      <h1 class="page-title">INSTALAÇÃO & SETUP</h1>
+      <p class="subtitle">
+        Coloque o Fuxico no ar em segundos. Escolha entre Docker Compose (FrankenPHP com atualizações automáticas via Watchtower) ou o servidor portátil em arquivo único <code>fuxico.php</code>.
+      </p>
+      <div class="badge-row">
+        <span class="badge">🐳 FrankenPHP + Watchtower</span>
+        <span class="badge neon">🐘 PHP 8.2+ Portátil em Arquivo Único</span>
+        <span class="badge">🔒 SQLite com Blindagem Automática</span>
+      </div>
+    </header>
+
+    <!-- 1. Método Docker Compose -->
+    <section class="doc-section">
+      <h2 class="section-heading">🐳 1. Implantação com Docker Compose (Recomendado)</h2>
+      <p class="lead">
+        A imagem de produção oficial é baseada em FrankenPHP Alpine, roda com usuário não-root e já vem pré-configurada para persistência de dados e atualizações automáticas via Watchtower:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">docker-compose.yml</span>
+          <button class="copy-btn" data-target="cfg-docker-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cfg-docker-pt">services:
+  fuxico:
+    image: lumenpink/fuxico:latest
+    container_name: fuxico
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - FUXICO_PUBLIC_MODE=true
+      - FUXICO_DATA_DIR=/workspace/data
+      - FUXICO_AUTH_TOKENS=tatanka
+    volumes:
+      - ./data:/workspace/data
+    labels:
+      - "com.centurylinklabs.watchtower.scope=fuxico"
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: fuxico_watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_SCOPE=fuxico
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_CLEANUP=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock</pre>
+        </div>
+      </div>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">bash — subir contêiner</span>
+          <button class="copy-btn" data-target="cmd-compose-up-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-compose-up-pt">docker compose up -d</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Modo Portátil em Arquivo Único -->
+    <section class="doc-section">
+      <h2 class="section-heading">🐘 2. Servidor Portátil em Arquivo Único (Sem Composer)</h2>
+      <p class="lead">
+        Baixe o arquivo <code>fuxico.php</code> diretamente e execute em qualquer servidor ou VPS com PHP 8.2+. Sem pasta vendor, sem instalar banco de dados, sem compilação:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">bash — execução standalone</span>
+          <button class="copy-btn" data-target="cmd-standalone-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-standalone-pt"># 1. Baixar o servidor completo em arquivo único:
+curl -O https://fuxico.2lp.in/fuxico.php
+
+# 2. Iniciar servidor embutido instantâneo:
+FUXICO_PUBLIC_MODE=true php -S 0.0.0.0:8080 fuxico.php</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Proxy Reverso e Servidores Web -->
+    <section class="doc-section">
+      <h2 class="section-heading">🌐 3. Configuração de Servidores Web (Proxy Reverso)</h2>
+
+      <h3 class="sub-heading">Caddy (Recomendado)</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">Caddyfile</span>
+          <button class="copy-btn" data-target="cfg-caddy-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cfg-caddy-pt">fux.exemplo.com {
+    encode zstd gzip
+
+    request_body {
+        max_size 512MB
+    }
+
+    reverse_proxy 127.0.0.1:8080
+}</pre>
+        </div>
+      </div>
+
+      <h3 class="sub-heading">Nginx</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">nginx.conf</span>
+          <button class="copy-btn" data-target="cfg-nginx-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cfg-nginx-pt">server {
+    listen 80;
+    server_name fux.exemplo.com;
+    client_max_body_size 500M;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Variáveis de Ambiente -->
+    <section class="doc-section">
+      <h2 class="section-heading">⚙️ 4. Variáveis de Ambiente</h2>
+      <p class="lead">
+        Personalize o comportamento do Fuxico exportando qualquer uma das variáveis abaixo:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Variável</th>
+              <th>Padrão</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>FUXICO_PUBLIC_MODE</code></td>
+              <td><code>false</code></td>
+              <td>Quando <code>true</code>, qualquer pessoa pode enviar arquivos sem token (modo 0x0.st público). Quando <code>false</code>, exige um token mestre.</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_AUTH_TOKENS</code></td>
+              <td><code>tatanka</code></td>
+              <td>Lista de tokens mestres autorizados separados por vírgula (para instâncias privadas).</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_DATA_DIR</code></td>
+              <td><code>./data</code></td>
+              <td>Diretório raiz onde o banco SQLite e os arquivos enviados são armazenados.</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_MAX_UPLOAD_SIZE</code></td>
+              <td><code>524288000</code></td>
+              <td>Tamanho máximo aceito por upload em bytes (padrão: 500 MB).</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_SLUG_LENGTH</code></td>
+              <td><code>5</code></td>
+              <td>Número de caracteres de slugs normais (ex: <code>/abcde.png</code>).</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_SECRET_SLUG_LENGTH</code></td>
+              <td><code>16</code></td>
+              <td>Número de caracteres de slugs secretos de alta entropia (ex: <code>/8x9yt4m2k9p1q7z0.png</code>).</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_BASE_URL</code></td>
+              <td><em>(automático)</em></td>
+              <td>Sobrescreve a URL base da aplicação (ex: <code>https://fux.exemplo.com</code>).</td>
+            </tr>
+            <tr>
+              <td><code>FUXICO_LANG</code></td>
+              <td><code>pt</code></td>
+              <td>Idioma padrão da interface (<code>pt</code> ou <code>en</code>). Detecta o cabeçalho <code>Accept-Language</code> se omitido.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <p>Orgulhosamente produzido por uma <a href="https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)" target="_blank">travesti latina</a> :)</p>
+    <p style="margin-top: 6px; font-size: 0.8rem;">
+      FUXICO // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Repositório no Codeberg</a> // Dedicado ao Domínio Público via GPL-3.0-or-later
+    </p>
+  </footer>
+
+  <script src="../assets/main.js"></script>
+</body>
+</html>
