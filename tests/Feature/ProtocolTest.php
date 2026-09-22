@@ -261,7 +261,7 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     expect($html)->toContain('class="brand-desc-line"');
     expect($html)->toContain('class="badges-row"');
     expect($html)->toContain('https://en.wikipedia.org/wiki/Travesti_(gender_identity)');
-    expect($html)->toContain('>Latin travesti</a> :)');
+    expect($html)->toContain('>travesti latina</a> :)');
 
     $i18nPt = new I18n('pt');
     $htmlPt = Views::renderWebUI($testEnv->config, $i18nPt);
