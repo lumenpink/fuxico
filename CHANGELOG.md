@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (ui) align 2-line subtitle with brand and credit travesti latina in footer (closes #23)
   - (dev) add live file watcher and embedded server script (closes #17)
   - (ui) implement accessible zine tooltips with pajuba and technical hints closes #16
   - (ui) expand trans pride stripe and rebalance zine header layout closes #15

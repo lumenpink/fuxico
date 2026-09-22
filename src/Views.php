@@ -140,17 +140,16 @@ class Views
 
         .brand-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 12px;
         }
 
         .brand-box {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-            flex-wrap: wrap;
+            display: inline-flex;
+            flex-direction: column;
+            width: fit-content;
         }
 
         .brand {
@@ -163,25 +162,23 @@ class Views
             text-transform: uppercase;
         }
 
-        .header-center-row {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 6px;
-            margin-top: -6px;
-        }
-
         .brand-desc {
             font-family: var(--font-heading);
-            font-size: 0.88rem;
+            font-size: 0.81rem;
             font-weight: 700;
             color: var(--acid-yellow);
-            text-align: center;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            line-height: 1.1;
-            margin: 0;
+            letter-spacing: 0.5px;
+            line-height: 1.15;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .brand-desc-line {
+            display: block;
+            width: 100%;
+            text-align: justify;
+            text-align-last: justify;
         }
 
         .badges-row {
@@ -817,6 +814,10 @@ class Views
             <div class="brand-row">
                 <div class="brand-box">
                     <h1 class="brand">{$t('app_name')}</h1>
+                    <p class="brand-desc">
+                        <span class="brand-desc-line">{$t('brand_sub_line1')}</span>
+                        <span class="brand-desc-line">{$t('brand_sub_line2')}</span>
+                    </p>
                 </div>
                 <div class="lang-switch">
                     <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT-BR</button>
@@ -824,12 +825,9 @@ class Views
                 </div>
             </div>
 
-            <div class="header-center-row">
-                <p class="brand-desc">{$t('brand_sub')}</p>
-                <div class="badges-row">
-                    <span class="badge-box tagline-badge">⚡ {$t('tagline')}</span>
-                    <span class="badge-box cultural-badge">{$t('cultural_badge')}</span>
-                </div>
+            <div class="badges-row">
+                <span class="badge-box tagline-badge">⚡ {$t('tagline')}</span>
+                <span class="badge-box cultural-badge">{$t('cultural_badge')}</span>
             </div>
 
             <!-- Token Section -->
@@ -1002,7 +1000,7 @@ class Views
     </div>
 
     <footer class="footer">
-        <p style="margin-bottom: 8px;">{$t('footer_credit_prefix')} <a href="{$footerTravestiLink}" target="_blank" rel="noopener noreferrer" style="color:var(--electric-pink); font-weight:700;">travesti</a> :)</p>
+        <p style="margin-bottom: 8px;">{$t('footer_credit_prefix')} <a href="{$footerTravestiLink}" target="_blank" rel="noopener noreferrer" style="color:var(--electric-pink); font-weight:700;">{$t('footer_travesti_text')}</a> :)</p>
         <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank" rel="noopener noreferrer">Codeberg</a> // 100% 0x0.st &amp; rustypaste drop-in protocol</p>
     </footer>
 
