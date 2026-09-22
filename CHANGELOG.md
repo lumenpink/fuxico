@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (ui) add zine collage typography element in header and dropzone accents (closes #25)
   - (ui) stack language buttons vertically and shorten PT-BR to PT (closes #24)
   - (i18n) translate fervo and tecnologia to technology & riot in EN cultural badge
   - (ui) align 2-line subtitle with brand and credit travesti latina in footer (closes #23)
