@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   lightbox.innerHTML = `
     <div class="lightbox-content">
       <button class="lightbox-close" aria-label="Fechar">&times;</button>
-      <img src="" alt="Imagem Ampliada">
+      <img alt="Imagem Ampliada">
     </div>
   `;
   document.body.appendChild(lightbox);
@@ -45,10 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const closeLightbox = () => {
     lightbox.classList.remove('active');
-    lightboxImg.src = '';
+    lightboxImg.removeAttribute('src');
   };
 
-  closeBtn.addEventListener('click', closeLightbox);
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeLightbox();
+  });
+
   lightbox.addEventListener('click', (e) => {
     if (e.target === lightbox) closeLightbox();
   });
@@ -59,20 +63,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Attach click to all art wrappers and print images
-  document.querySelectorAll('.art-img-wrapper img, .lightbox-trigger, .lightbox-trigger img').forEach(el => {
-    el.style.cursor = 'zoom-in';
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const targetSrc = el.tagName === 'IMG' 
-        ? el.src 
-        : (el.getAttribute('data-full') || el.querySelector('img')?.src);
-      if (targetSrc) {
-        lightboxImg.src = targetSrc;
-        lightbox.classList.add('active');
-      }
-    });
+  // Global delegation for all art, prints, and lightbox triggers
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('.lightbox-trigger, .art-img-wrapper, .hero-brand-banner');
+    if (!trigger) return;
+
+    const img = trigger.tagName === 'IMG' ? trigger : trigger.querySelector('img');
+    if (!img) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Browser-resolved absolute URL from live rendered img
+    const resolvedUrl = img.currentSrc || img.src;
+    if (resolvedUrl) {
+      lightboxImg.src = resolvedUrl;
+      lightboxImg.alt = img.alt || 'Imagem Ampliada';
+      lightbox.classList.add('active');
+    }
   });
+
 
   // 3. Language preference persistence
   document.querySelectorAll('.lang-btn').forEach(btn => {

@@ -18,6 +18,7 @@
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
 ### Bug Fixes
+  - (site) integrate zine hero banner into header frame and fix lightbox zoom
   - (i18n) preserve authentic travesti latina phrase untranslated in EN
 
 ## Previous Releases
