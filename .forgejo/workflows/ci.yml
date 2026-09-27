@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
-  CI_IMAGE: lumenpink/fuxico-ci:latest
+  CI_IMAGE: codeberg.org/lumenpink/gost-ci-php:latest
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -159,10 +159,10 @@ jobs:
         run: php scripts/generate_ci_summary.php --step-summary
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 3 — Security Auditing (Composer + Cargo)
+  # JOB 3 — Security Auditing (Composer)
   # ─────────────────────────────────────────────────────────────────────────────
   security-audit:
-    name: "Security Auditing (PHP & Rust)"
+    name: "Security Auditing (PHP)"
     runs-on: ubuntu-latest
     container:
       image: ${{ env.CI_IMAGE }}
@@ -184,12 +184,24 @@ jobs:
       - name: "composer audit — Known vulnerabilities (PHP)"
         run: composer audit --format=plain
 
-      - name: "cargo audit — Known vulnerabilities (Rust)"
-        continue-on-error: true
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 3b — CLI Check (Rust)
+  # ─────────────────────────────────────────────────────────────────────────────
+  rust-cli-check:
+    name: "Rust CLI — Check"
+    runs-on: ubuntu-latest
+    container:
+      image: codeberg.org/lumenpink/gost-ci-rust:latest
+    needs: test
+
+    steps:
+      - name: "Checkout"
+        uses: https://github.com/actions/checkout@v4
+
+      - name: "Cargo Check CLI"
         run: |
           cd cli
-          which cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked || true
-          cargo audit || true
+          cargo check
 
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 4 — SonarQube / SonarCloud Analysis
