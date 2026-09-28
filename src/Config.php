@@ -51,7 +51,7 @@ class Config
         if ($envTokens !== false && trim((string) $envTokens) !== '') {
             $this->authTokens = array_map('trim', explode(',', (string) $envTokens));
         } else {
-            $this->authTokens = ['tatanka'];
+            $this->authTokens = [];
         }
 
         // Upload Limits & Slugs

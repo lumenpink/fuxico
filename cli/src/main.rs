@@ -244,7 +244,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .token
         .or(file_cfg.token)
         .or(file_cfg.ficha)
-        .unwrap_or_else(|| "tatanka".to_string());
+        .unwrap_or_default();
 
     let dialect_raw = cli
         .dialect
@@ -313,8 +313,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             Err(e) => {
-                eprintln!("Error deleting {}: {}", slug, e);
-                std::process::exit(1);
+                handle_req_error(e);
             }
         }
     }
@@ -324,7 +323,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let url = format!("{}/list", server);
         let mut resp = ureq::get(&url)
             .header("Authorization", format!("Bearer {}", token))
-            .call()?;
+            .call()
+            .unwrap_or_else(|e| handle_req_error(e));
         let body: String = resp.body_mut().read_to_string()?;
         print!("{}", body);
         return Ok(());
@@ -351,10 +351,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut resp = req
             .send_json(serde_json::Value::Object(payload))
-            .map_err(|e| {
-                eprintln!("falha ao criar repositório git: {}", e);
-                std::process::exit(1);
-            })?;
+            .unwrap_or_else(|e| handle_req_error(e));
 
         let resp_json: serde_json::Value = resp.body_mut().read_json()?;
         let clone_url = resp_json
@@ -426,7 +423,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             req = req.header("Authorization", format!("Bearer {}", token));
         }
 
-        let mut resp = req.send_json(serde_json::Value::Object(payload))?;
+        let mut resp = req
+            .send_json(serde_json::Value::Object(payload))
+            .unwrap_or_else(|e| handle_req_error(e));
 
         if !quiet {
             if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
@@ -490,7 +489,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
-        let mut resp = req.send(body.as_slice())?;
+        let mut resp = req
+            .send(body.as_slice())
+            .unwrap_or_else(|e| handle_req_error(e));
 
         if !quiet {
             if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
@@ -575,7 +576,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     body.extend_from_slice(b"\r\n");
     body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
-    let mut resp = req.send(body.as_slice())?;
+    let mut resp = req
+        .send(body.as_slice())
+        .unwrap_or_else(|e| handle_req_error(e));
 
     if !quiet {
         if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
@@ -602,6 +605,28 @@ fn append_field(body: &mut Vec<u8>, boundary: &str, name: &str, value: &str) {
         )
         .as_bytes(),
     );
+}
+
+fn handle_req_error(err: ureq::Error) -> ! {
+    match err {
+        ureq::Error::StatusCode(401) => {
+            eprintln!("[fux] acesso negado (HTTP 401): ficha/token de autenticação incorreto ou ausente.");
+            eprintln!("[fux] dica: use 'fux -t <sua-ficha>' ou configure 'token = \"...\"' em ~/.config/fux/config.toml");
+        }
+        ureq::Error::StatusCode(400) => {
+            eprintln!("[fux] requisição rejeitada (HTTP 400): verifique os parâmetros ou a extensão do arquivo.");
+        }
+        ureq::Error::StatusCode(413) => {
+            eprintln!("[fux] arquivo grande demais (HTTP 413): o tamanho ultrapassa o limite máximo do servidor.");
+        }
+        ureq::Error::StatusCode(code) => {
+            eprintln!("[fux] erro do servidor (HTTP {}).", code);
+        }
+        other => {
+            eprintln!("[fux] erro de comunicação/rede: {}", other);
+        }
+    }
+    std::process::exit(1);
 }
 
 #[cfg(test)]

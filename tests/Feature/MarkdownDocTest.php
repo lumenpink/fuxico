@@ -56,7 +56,7 @@ beforeEach(function () use ($testEnv) {
     $testEnv->config = new Config;
     $testEnv->config->publicMode = true;
     $testEnv->config->baseUrl = 'https://fuxico.test';
-    $testEnv->config->authTokens = ['tatanka'];
+    $testEnv->config->authTokens = ['test-token'];
 
     $testEnv->db = new Database($testEnv->dbPath);
     $testEnv->storage = new Storage($testEnv->tempDir, $testEnv->filesDir);
@@ -236,7 +236,7 @@ test('api can toggle item type between file and doc, and edit content', function
     // 1. Change type to doc via PATCH /api/items/editavel
     $_SERVER['REQUEST_METHOD'] = 'PATCH';
     $_SERVER['REQUEST_URI'] = '/api/items/'.$slug;
-    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer tatanka';
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer test-token';
 
     $payload = json_encode(['type' => 'doc']);
     // Mock php://input via custom stream wrapper or temp stream

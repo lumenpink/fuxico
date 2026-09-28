@@ -80,7 +80,7 @@
     environment:
       - FUXICO_PUBLIC_MODE=true
       - FUXICO_DATA_DIR=/workspace/data
-      - FUXICO_AUTH_TOKENS=tatanka
+      - FUXICO_AUTH_TOKENS=seu-token-secreto-aqui
     volumes:
       - ./data:/workspace/data
     labels:
@@ -223,7 +223,7 @@ FUXICO_PUBLIC_MODE=true php -S 0.0.0.0:8080 fuxico.php</pre>
             </tr>
             <tr>
               <td><code>FUXICO_AUTH_TOKENS</code></td>
-              <td><code>tatanka</code></td>
+              <td><code>(vazio)</code></td>
               <td>Lista de tokens mestres autorizados separados por vírgula (para instâncias privadas).</td>
             </tr>
             <tr>

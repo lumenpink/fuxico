@@ -103,7 +103,7 @@ beforeAll(function () use ($testEnv) {
     $testEnv->host = "http://127.0.0.1:{$testEnv->port}";
 
     $cmd = sprintf(
-        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=tatanka FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
+        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=test-token FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
         escapeshellarg($testEnv->tempDir.'/data'),
         $testEnv->port,
         escapeshellarg($distFile)
@@ -291,7 +291,7 @@ test('bash cli supports defined lifetime via -e flag', function () use ($testEnv
 });
 
 test('bash cli lists active files via -l flag', function () use ($testEnv) {
-    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t tatanka -l");
+    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t test-token -l");
 
     expect($res['code'])->toBe(0);
     expect($res['stdout'])->toContain('[');
@@ -311,7 +311,7 @@ test('bash cli deletes fofoca via -d flag', function () use ($testEnv) {
     expect($testEnv->fetch($url)['status'])->toBe(200);
 
     // Delete with bash CLI
-    $resDel = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t tatanka -d {$slug}");
+    $resDel = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t test-token -d {$slug}");
     expect($resDel['code'])->toBe(0);
 
     // Confirm file is gone
@@ -443,7 +443,7 @@ test('rust cli supports defined lifetime via -e flag', function () use ($testEnv
 })->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
 
 test('rust cli lists active items as structured JSON via -l flag', function () use ($testEnv) {
-    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} -t tatanka -l");
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} -t test-token -l");
 
     expect($res['code'])->toBe(0);
     $data = json_decode($res['stdout'], true);
@@ -485,7 +485,7 @@ test('bash cli supports PT-BR flags (--ficha, --caduca, --queima, --caladinho)',
     $sample = $testEnv->tempDir.'/ptbr_bash.txt';
     file_put_contents($sample, 'conteudo fuxico ptbr');
 
-    $res = $testEnv->runCmd("{$testEnv->bashBin} --servidor {$testEnv->host} --ficha tatanka --caduca 2h --queima --caladinho ".escapeshellarg($sample));
+    $res = $testEnv->runCmd("{$testEnv->bashBin} --servidor {$testEnv->host} --ficha test-token --caduca 2h --queima --caladinho ".escapeshellarg($sample));
     expect($res['code'])->toBe(0);
     expect($res['stderr'])->toBe(''); // 100% silent with --caladinho
 
@@ -505,7 +505,7 @@ test('bash cli supports dialects and custom TOML config via -C', function () use
     $configFile = $testEnv->tempDir.'/fux_test_config.toml';
     file_put_contents($configFile, <<<TOML
 server = "{$testEnv->host}"
-token = "tatanka"
+token = "test-token"
 dialect = "rustypaste"
 expires = "30m"
 TOML);
@@ -527,7 +527,7 @@ test('rust cli supports PT-BR flags (--servidor, --ficha, --caduca, --calado)', 
     $sample = $testEnv->tempDir.'/ptbr_rust.txt';
     file_put_contents($sample, 'conteudo rust ptbr');
 
-    $res = $testEnv->runCmd("{$testEnv->rustBin} --servidor {$testEnv->host} --ficha tatanka --caduca 2h --calado ".escapeshellarg($sample));
+    $res = $testEnv->runCmd("{$testEnv->rustBin} --servidor {$testEnv->host} --ficha test-token --caduca 2h --calado ".escapeshellarg($sample));
     expect($res['code'])->toBe(0);
     expect($res['stderr'])->toBe(''); // silent stderr
 
@@ -543,7 +543,7 @@ test('rust cli supports dialects and custom TOML config via -C', function () use
     $configFile = $testEnv->tempDir.'/fux_rust_config.toml';
     file_put_contents($configFile, <<<TOML
 server = "{$testEnv->host}"
-token = "tatanka"
+token = "test-token"
 dialect = "rustypaste"
 expires = "45m"
 TOML);
@@ -567,7 +567,7 @@ test('bash cli uploads multi-file gist via fux gist and serves raw and zip', fun
     file_put_contents($file1, "print('hello from gist')\n");
     file_put_contents($file2, "# Gist Readme\nTest\n");
 
-    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t tatanka gist ".escapeshellarg($file1).' '.escapeshellarg($file2));
+    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t test-token gist ".escapeshellarg($file1).' '.escapeshellarg($file2));
     expect($res['code'])->toBe(0);
     $url = trim($res['stdout']);
     expect($url)->toStartWith($testEnv->host);
@@ -589,7 +589,7 @@ test('rust cli uploads multi-file gist via fux -g', function () use ($testEnv) {
     file_put_contents($file1, "fn main() {}\n");
     file_put_contents($file2, "Important notes\n");
 
-    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} -t tatanka -g ".escapeshellarg($file1).' '.escapeshellarg($file2));
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} -t test-token -g ".escapeshellarg($file1).' '.escapeshellarg($file2));
     expect($res['code'])->toBe(0);
     $url = trim($res['stdout']);
     expect($url)->toStartWith($testEnv->host);

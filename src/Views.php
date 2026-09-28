@@ -1994,6 +1994,11 @@ HTML;
                     if (res.ok) {
                         showDashboard();
                         return;
+                    } else {
+                        showLogin();
+                        loginError.innerHTML = 'A ficha salva anteriormente foi rejeitada pelo servidor. <br><a href="#" onclick="logoutVault(); return false;" style="color:var(--accent-yellow); text-decoration:underline; font-size:0.85rem; margin-top:4px; display:inline-block;">Limpar ficha salva e digitar nova</a>';
+                        loginError.style.display = 'block';
+                        return;
                     }
                 } catch (e) {}
             }
@@ -2030,7 +2035,12 @@ HTML;
                     if (token) localStorage.setItem('fuxico_token', token);
                     showDashboard();
                 } else {
-                    loginError.innerText = 'Acesso negado: token incorreto ou cofre trancado.';
+                    let errMsg = 'Acesso negado: token incorreto ou cofre trancado.';
+                    try {
+                        const errJson = await res.json();
+                        if (errJson.message) errMsg = 'Acesso negado: ' + errJson.message;
+                    } catch(e) {}
+                    loginError.innerHTML = errMsg + ' <br><a href="#" onclick="logoutVault(); return false;" style="color:var(--accent-yellow); text-decoration:underline; font-size:0.85rem; margin-top:4px; display:inline-block;">Limpar ficha salva e tentar novamente</a>';
                     loginError.style.display = 'block';
                 }
             } catch (err) {

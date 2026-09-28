@@ -206,11 +206,10 @@ class App
 
     private function handleUpload(?string $authHeader): void
     {
-        // Public vs Private authentication
         if (! $this->config->publicMode && ! $this->config->isAuthorized($authHeader)) {
             http_response_code(401);
-            header('Content-Type: text/plain');
-            echo "401 Unauthorized: Valid Authorization header required.\n";
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo "401 Unauthorized: Ficha ou token de acesso inválido ou ausente. Esta instância é privada. Envie o token via 'Authorization: Bearer <token>' ou use 'fux -t <ficha>'.\n";
 
             return;
         }
@@ -902,8 +901,11 @@ class App
     {
         if (! $this->config->isAuthorized($authHeader)) {
             http_response_code(401);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'error' => 'Unauthorized',
+                'message' => 'Ficha ou token de acesso inválido ou ausente. Forneça o token via Authorization: Bearer <token> ou use a flag -t no fux.',
+            ]);
 
             return;
         }
@@ -934,8 +936,11 @@ class App
         // In public mode, GET stats and items are publicly readable
         if (! $this->config->publicMode && ! $isAuthorized) {
             http_response_code(401);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'error' => 'Unauthorized',
+                'message' => 'Ficha ou token de acesso inválido ou ausente. Esta rota requer autenticação.',
+            ]);
 
             return;
         }
@@ -986,8 +991,11 @@ class App
         if (str_starts_with($endpoint, 'items/') && $method === 'DELETE') {
             if (! $isAuthorized) {
                 http_response_code(401);
-                header('Content-Type: application/json');
-                echo json_encode(['error' => 'Unauthorized']);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Unauthorized',
+                    'message' => 'Ficha ou token de acesso inválido ou ausente para exclusão.',
+                ]);
 
                 return;
             }
@@ -1011,8 +1019,11 @@ class App
         if (str_starts_with($endpoint, 'items/') && ($method === 'PATCH' || $method === 'PUT')) {
             if (! $isAuthorized) {
                 http_response_code(401);
-                header('Content-Type: application/json');
-                echo json_encode(['error' => 'Unauthorized']);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Unauthorized',
+                    'message' => 'Ficha ou token de acesso inválido ou ausente para edição.',
+                ]);
 
                 return;
             }
@@ -1086,8 +1097,11 @@ class App
     {
         if (! $this->config->publicMode && ! $this->config->isAuthorized($authHeader)) {
             http_response_code(401);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'error' => 'Unauthorized',
+                'message' => 'Ficha ou token de acesso inválido ou ausente para publicar gists.',
+            ]);
 
             return;
         }
@@ -1393,8 +1407,11 @@ class App
         $isAuthorized = $this->config->isAuthorized($authHeader);
         if (! $this->config->publicMode && ! $isAuthorized) {
             http_response_code(401);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Unauthorized']);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'error' => 'Unauthorized',
+                'message' => 'Ficha ou token de acesso inválido ou ausente para criar repositórios git.',
+            ]);
 
             return;
         }

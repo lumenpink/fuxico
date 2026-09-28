@@ -128,7 +128,7 @@ beforeAll(function () use ($thirdPartyEnv) {
     $thirdPartyEnv->host = "http://127.0.0.1:{$thirdPartyEnv->port}";
 
     $cmd = sprintf(
-        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=tatanka FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
+        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=test-token FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
         escapeshellarg($thirdPartyEnv->tempDir.'/data'),
         $thirdPartyEnv->port,
         escapeshellarg($distFile)
@@ -279,7 +279,7 @@ describe('rustypaste-cli (rpaste)', function () use ($thirdPartyEnv) {
 
         // Delete with auth token
         $deleteCmd = sprintf(
-            '%s -s %s -a tatanka -d %s',
+            '%s -s %s -a test-token -d %s',
             escapeshellarg($thirdPartyEnv->rpasteBin),
             escapeshellarg($thirdPartyEnv->host),
             escapeshellarg($fileUrl)

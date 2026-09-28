@@ -154,7 +154,7 @@ Ambos os clientes (Bash e Rust) compartilham o mesmo nome curto (`fux`), aceitam
 ### Arquivo de Configuração Compartilhado (`~/.config/fux/config.toml`)
 ```toml
 server = "http://localhost:8080"
-token = "tatanka"
+# token = "seu-token-aqui"
 dialect = "nullpointer" # ou "rustypaste"
 # expires = "24h"
 # oneshot = false
@@ -224,7 +224,7 @@ Set any of the following environment variables (or export them in your web serve
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `FUXICO_PUBLIC_MODE` | `false` | When `true`, uploads are open to everyone (0x0.st public mode). When `false`, uploads require a master token. |
-| `FUXICO_AUTH_TOKENS` | `tatanka` | Comma-separated list of valid master tokens. |
+| `FUXICO_AUTH_TOKENS` | *(empty)* | Comma-separated list of valid master tokens. |
 | `FUXICO_DATA_DIR` | `__DIR__/data` | Root directory for SQLite database and uploaded files. |
 | `FUXICO_MAX_UPLOAD_SIZE`| `524288000` | Max file size in bytes (default: 500 MB). |
 | `FUXICO_SLUG_LENGTH` | `5` | Length of standard random slugs. |

@@ -113,7 +113,7 @@ fi
 
 # Fallback to Environment Variables or Defaults
 SERVER_URL="${SERVER_URL:-${FUXICO_URL:-http://localhost:8080}}"
-AUTH_TOKEN="${AUTH_TOKEN:-${FUXICO_TOKEN:-tatanka}}"
+AUTH_TOKEN="${AUTH_TOKEN:-${FUXICO_TOKEN:-}}"
 
 log() {
     if [[ "${SILENT}" == false ]]; then
@@ -291,10 +291,44 @@ copy_to_clipboard() {
     fi
 }
 
+handle_curl_error() {
+    local http_code="$1"
+    local body="$2"
+    local operation="${3:-operação}"
+
+    if [[ "$http_code" -eq 401 ]]; then
+        echo -e "${PINK}[fux]${RESET} acesso negado (HTTP 401): ficha/token de autenticação incorreto ou ausente." >&2
+        echo -e "${PINK}[fux]${RESET} dica: use 'fux -t <sua-ficha>' ou configure 'token = \"...\"' em ~/.config/fux/config.toml" >&2
+    elif [[ "$http_code" -eq 400 ]]; then
+        echo -e "${PINK}[fux]${RESET} requisição rejeitada (HTTP 400): ${body:-verifique os parâmetros ou a extensão do arquivo.}" >&2
+    elif [[ "$http_code" -eq 403 ]]; then
+        echo -e "${PINK}[fux]${RESET} ação proibida (HTTP 403): ${body:-permissão insuficiente para esta operação.}" >&2
+    elif [[ "$http_code" -eq 404 ]]; then
+        echo -e "${PINK}[fux]${RESET} não encontrado (HTTP 404): o arquivo ou rota solicitada não existe." >&2
+    elif [[ "$http_code" -eq 409 ]]; then
+        echo -e "${PINK}[fux]${RESET} conflito de nome (HTTP 409): ${body:-apelido ou slug já está em uso.}" >&2
+    elif [[ "$http_code" -eq 413 ]]; then
+        echo -e "${PINK}[fux]${RESET} arquivo grande demais (HTTP 413): o tamanho ultrapassa o limite máximo do servidor." >&2
+    else
+        echo -e "${PINK}[fux]${RESET} erro na ${operation} (HTTP ${http_code}): ${body}" >&2
+    fi
+    exit 1
+}
+
 # 1. Listar fofocas
 if [[ "${LIST_FILES}" == true ]]; then
     log "consultando o cofre de fofocas..."
-    curl -s -f -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/list"
+    CURL_ARGS=("-s" "-i")
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/list" || true)
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+    BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$BODY" "listagem de fofocas"
+    fi
+
+    echo "${BODY}"
     exit 0
 fi
 
@@ -306,7 +340,7 @@ if [[ -n "${DELETE_TARGET}" ]]; then
         RES=$(curl -s -w "\n%{http_code}" -X POST \
             -F "token=${AUTH_TOKEN}" \
             -F "delete=" \
-            "${SERVER_URL%/}/${DELETE_TARGET}")
+            "${SERVER_URL%/}/${DELETE_TARGET}" || true)
         HTTP_CODE=$(echo "$RES" | tail -n 1)
         BODY=$(echo "$RES" | sed '$d')
         if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
@@ -316,14 +350,13 @@ if [[ -n "${DELETE_TARGET}" ]]; then
     fi
 
     # Rustypaste style or fallback: DELETE /<slug>
-    RES=$(curl -s -w "\n%{http_code}" -X DELETE -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/${DELETE_TARGET}")
+    RES=$(curl -s -w "\n%{http_code}" -X DELETE -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/${DELETE_TARGET}" || true)
     HTTP_CODE=$(echo "$RES" | tail -n 1)
     BODY=$(echo "$RES" | sed '$d')
     if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
         log "segredo incinerado com sucesso."
     else
-        echo -e "${PINK}[fux]${RESET} falha ao queimar: ${BODY} (HTTP ${HTTP_CODE})" >&2
-        exit 1
+        handle_curl_error "$HTTP_CODE" "$BODY" "remoção da fofoca"
     fi
     exit 0
 fi
@@ -331,7 +364,7 @@ fi
 # 3. Encurtar URL
 if [[ -n "${TARGET_URL}" ]]; then
     log "espalhando o link quente..."
-    CURL_ARGS=("-s" "-f" "-D" "-")
+    CURL_ARGS=("-s" "-i")
 
     if [[ "${DIALECT}" == "rustypaste" ]]; then
         CURL_ARGS+=("-F" "url=${TARGET_URL}")
@@ -348,11 +381,15 @@ if [[ -n "${TARGET_URL}" ]]; then
     if [[ -n "${CUSTOM_NAME}" ]]; then CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}"); fi
     if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
 
-    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/" || true)
 
-    # Extract headers and body
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
     BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
     X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$BODY" "encurtamento de link"
+    fi
 
     if [[ -n "$X_TOKEN" ]]; then
         log "ficha de gerência (X-Token): ${X_TOKEN}"
@@ -373,12 +410,19 @@ if [[ ${#POSITIONAL_ARGS[@]} -gt 0 && "${POSITIONAL_ARGS[0]}" == "git" ]]; then
     fi
 
     log "inicializando repositório git efêmero no fuxico..."
-    CURL_ARGS=("-s" "-f" "-X" "POST" "${SERVER_URL%/}/api/git")
+    CURL_ARGS=("-s" "-i" "-X" "POST" "${SERVER_URL%/}/api/git")
     if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
     CURL_ARGS+=("-F" "name=${REPO_NAME}")
     if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
 
-    JSON_RESP=$(curl "${CURL_ARGS[@]}")
+    RESPONSE=$(curl "${CURL_ARGS[@]}" || true)
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+    JSON_RESP=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$JSON_RESP" "criação de repositório git"
+    fi
+
     CLONE_URL=$(echo "$JSON_RESP" | grep -o '"clone_url": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
     GIT_TOKEN=$(echo "$JSON_RESP" | grep -o '"x_token": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
 
@@ -419,7 +463,7 @@ if [[ "${IS_GIST}" == true ]]; then
         exit 1
     fi
     log "empacotando o gist com ${#POSITIONAL_ARGS[@]} arquivos..."
-    CURL_ARGS=("-s" "-f" "-D" "-")
+    CURL_ARGS=("-s" "-i")
     for f in "${POSITIONAL_ARGS[@]}"; do
         if [[ ! -f "$f" ]]; then
             echo -e "${PINK}[fux]${RESET} arquivo não encontrado: $f" >&2
@@ -434,9 +478,14 @@ if [[ "${IS_GIST}" == true ]]; then
     if [[ "${SECRET}" == true ]]; then CURL_ARGS+=("-F" "secret="); fi
     if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
 
-    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/" || true)
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
     BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
     X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$BODY" "publicação do gist"
+    fi
 
     if [[ -n "$X_TOKEN" ]]; then
         log "ficha de gerência (X-Token): ${X_TOKEN}"
@@ -489,7 +538,7 @@ fi
 
 log "espalhando o bafão..."
 
-CURL_ARGS=("-s" "-f" "-D" "-")
+CURL_ARGS=("-s" "-i")
 
 if [[ -n "${CUSTOM_NAME}" ]]; then
     CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD};filename=${CUSTOM_NAME}")
@@ -515,11 +564,16 @@ if [[ -n "${AUTH_TOKEN}" ]]; then
     CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}")
 fi
 
-RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/" || true)
 
 # Split headers and body
+HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
 BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
 X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+    handle_curl_error "$HTTP_CODE" "$BODY" "publicação da fofoca"
+fi
 
 if [[ -n "$X_TOKEN" ]]; then
     log "ficha de gerência (X-Token): ${X_TOKEN}"

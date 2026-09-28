@@ -57,7 +57,7 @@ beforeEach(function () use ($testEnv) {
     $testEnv->config = new Config;
     $testEnv->config->publicMode = true;
     $testEnv->config->baseUrl = 'https://fuxico.test';
-    $testEnv->config->authTokens = ['tatanka'];
+    $testEnv->config->authTokens = ['test-token'];
 
     $testEnv->db = new Database($testEnv->dbPath);
     $testEnv->storage = new Storage($testEnv->tempDir, $testEnv->filesDir);
@@ -108,7 +108,7 @@ test('uploads multi-file gist via JSON API /api/gist and bakes static html', fun
         'json' => $payload,
     ];
 
-    $method->invoke($testEnv->app(), 'Bearer tatanka');
+    $method->invoke($testEnv->app(), 'Bearer test-token');
     $output = ob_get_clean();
 
     $res = json_decode($output, true);

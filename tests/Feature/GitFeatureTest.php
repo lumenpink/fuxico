@@ -91,7 +91,7 @@ beforeAll(function () use ($gitEnv) {
     $gitEnv->host = "http://127.0.0.1:{$gitEnv->port}";
 
     $cmd = sprintf(
-        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=tatanka FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
+        'FUXICO_PUBLIC_MODE=true FUXICO_AUTH_TOKENS=test-token FUXICO_DATA_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!',
         escapeshellarg($gitEnv->tempDir.'/data'),
         $gitEnv->port,
         escapeshellarg($distFile)
