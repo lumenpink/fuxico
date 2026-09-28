@@ -1780,6 +1780,7 @@ HTML;
         .badge-file { background: var(--acid-yellow); color: #000; }
         .badge-doc { background: #c084fc; color: #000; }
         .badge-gist { background: #34d399; color: #000; }
+        .badge-git { background: #f05032; color: #fff; }
         .badge-url { background: #38bdf8; color: #000; }
         .badge-oneshot { background: var(--electric-pink); color: #fff; }
 
@@ -1912,6 +1913,7 @@ HTML;
                     <option value="file">{$t('dash_filter_files')}</option>
                     <option value="doc">{$t('dash_filter_docs')}</option>
                     <option value="gist">{$t('dash_filter_gists')}</option>
+                    <option value="git">{$t('dash_filter_gits')}</option>
                     <option value="url">{$t('dash_filter_urls')}</option>
                 </select>
             </div>
@@ -2096,6 +2098,8 @@ HTML;
                         typeBadge = '<span class="badge badge-doc">📖 ' + escapeHtml(t('tab_doc')) + '</span>';
                     } else if (item.type === 'gist') {
                         typeBadge = '<span class="badge badge-gist">📦 ' + escapeHtml(t('tab_gist')) + '</span>';
+                    } else if (item.type === 'git') {
+                        typeBadge = '<span class="badge badge-git">🌱 ' + escapeHtml(t('tab_git')) + '</span>';
                     } else {
                         typeBadge = '<span class="badge badge-url">URL</span>';
                     }

@@ -173,7 +173,7 @@ class Database
             $params[':search'] = '%'.trim($search).'%';
         }
 
-        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist'], true)) {
+        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist', 'git'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
@@ -202,7 +202,7 @@ class Database
             $params[':search'] = '%'.trim($search).'%';
         }
 
-        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist'], true)) {
+        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist', 'git'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
@@ -239,7 +239,7 @@ class Database
     }
 
     /**
-     * @return array{total_items: int, total_files: int, total_urls: int, total_docs: int, total_gists: int, total_bytes: int, total_views: int}
+     * @return array{total_items: int, total_files: int, total_urls: int, total_docs: int, total_gists: int, total_gits: int, total_bytes: int, total_views: int}
      */
     public function getStats(): array
     {
@@ -250,6 +250,7 @@ class Database
                 SUM(CASE WHEN type = "url" THEN 1 ELSE 0 END) as total_urls,
                 SUM(CASE WHEN type = "doc" THEN 1 ELSE 0 END) as total_docs,
                 SUM(CASE WHEN type = "gist" THEN 1 ELSE 0 END) as total_gists,
+                SUM(CASE WHEN type = "git" THEN 1 ELSE 0 END) as total_gits,
                 SUM(size) as total_bytes,
                 SUM(views) as total_views
             FROM items
@@ -262,6 +263,7 @@ class Database
             'total_urls' => (int) ($res['total_urls'] ?? 0),
             'total_docs' => (int) ($res['total_docs'] ?? 0),
             'total_gists' => (int) ($res['total_gists'] ?? 0),
+            'total_gits' => (int) ($res['total_gits'] ?? 0),
             'total_bytes' => (int) ($res['total_bytes'] ?? 0),
             'total_views' => (int) ($res['total_views'] ?? 0),
         ];

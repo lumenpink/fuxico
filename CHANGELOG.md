@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (git) suporte a repositórios git efêmeros com git http smart protocol e baking estático (closes #38)
   - (gist) suporte a gists multi-arquivo com visualizador tabulado e cli (closes #37)
   - (markdown) suporte a upload e baking estatico com temas zine e academico depressivo (closes #36)
   - (social) cartaz oficial e preview de compartilhamento para o Fuxico (closes #34)

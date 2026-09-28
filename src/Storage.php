@@ -10,10 +10,13 @@ class Storage
 
     private string $filesDir;
 
+    private string $reposDir;
+
     public function __construct(string $dataDir, string $filesDir)
     {
         $this->dataDir = rtrim($dataDir, '/');
         $this->filesDir = rtrim($filesDir, '/');
+        $this->reposDir = $this->dataDir.'/repos';
         $this->ensureDirectories();
     }
 
@@ -25,9 +28,13 @@ class Storage
         if (! is_dir($this->filesDir)) {
             mkdir($this->filesDir, 0755, true);
         }
+        if (! is_dir($this->reposDir)) {
+            mkdir($this->reposDir, 0755, true);
+        }
 
         $this->protectDirectory($this->dataDir);
         $this->protectDirectory($this->filesDir);
+        $this->protectDirectory($this->reposDir);
     }
 
     /**
@@ -57,6 +64,16 @@ class Storage
     public function getFilePath(string $filename): string
     {
         return $this->filesDir.'/'.basename($filename);
+    }
+
+    public function getRepoPath(string $slug): string
+    {
+        $cleanSlug = basename($slug);
+        if (! str_ends_with($cleanSlug, '.git')) {
+            $cleanSlug .= '.git';
+        }
+
+        return $this->reposDir.'/'.$cleanSlug;
     }
 
     public function fileExists(string $filename): bool
@@ -153,6 +170,11 @@ class Storage
         $zipFile = $this->getFilePath("{$slug}.zip");
         if (file_exists($zipFile)) {
             @unlink($zipFile);
+        }
+
+        $repoDir = $this->getRepoPath($slug);
+        if (is_dir($repoDir)) {
+            $this->deleteDirectory($repoDir);
         }
     }
 

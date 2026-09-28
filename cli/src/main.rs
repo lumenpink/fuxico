@@ -24,7 +24,7 @@ struct FileConfig {
 #[derive(Parser, Debug)]
 #[command(
     name = "fux",
-    about = "fux - A malícia popular do boca a boca no terminal",
+    about = "fux - A malícia popular do boca a boca no terminal. fux é um chuchuzim fuxiquento.",
     long_about = None
 )]
 struct Cli {
@@ -128,6 +128,14 @@ struct Cli {
         visible_alias = "copia"
     )]
     copy: bool,
+
+    /// Initialize an ephemeral Git repository
+    #[arg(
+        long = "git-init",
+        visible_alias = "git",
+        value_name = "NAME"
+    )]
+    git_init: Option<String>,
 
     /// Custom path to config TOML file
     #[arg(
@@ -319,6 +327,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .call()?;
         let body: String = resp.body_mut().read_to_string()?;
         print!("{}", body);
+        return Ok(());
+    }
+
+    // 2.3 Git Repository Initialization
+    if let Some(ref repo_name) = cli.git_init {
+        if !quiet {
+            eprintln!("inicializando repositório git efêmero no fuxico...");
+        }
+
+        let mut payload = serde_json::Map::new();
+        payload.insert("name".to_string(), serde_json::Value::String(repo_name.clone()));
+        if let Some(ref exp) = expires {
+            payload.insert("expires".to_string(), serde_json::Value::String(exp.clone()));
+        }
+
+        let mut req = ureq::post(&format!("{}/api/git", server))
+            .header("Content-Type", "application/json");
+
+        if !token.is_empty() {
+            req = req.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let mut resp = req
+            .send_json(serde_json::Value::Object(payload))
+            .map_err(|e| {
+                eprintln!("falha ao criar repositório git: {}", e);
+                std::process::exit(1);
+            })?;
+
+        let resp_json: serde_json::Value = resp.body_mut().read_json()?;
+        let clone_url = resp_json
+            .get("clone_url")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        if let Some(tok) = resp_json.get("x_token").and_then(|v| v.as_str()) {
+            if !quiet {
+                eprintln!("ficha do repositório (X-Token): {}", tok);
+            }
+        }
+
+        if !quiet {
+            eprintln!("remote 'fuxico' disponível para push:");
+            eprintln!("git remote add fuxico {}", clone_url);
+            eprintln!("git push -u fuxico main");
+        }
+
+        println!("{}", clone_url);
+        if cli.copy {
+            copy_to_clipboard(&clone_url);
+        }
         return Ok(());
     }
 

@@ -61,6 +61,8 @@ $compileFiles = [
     'I18n.php',
     'MarkdownRenderer.php',
     'GistRenderer.php',
+    'GitBackend.php',
+    'RepoRenderer.php',
     'Views.php',
     'App.php',
 ];

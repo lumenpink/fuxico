@@ -124,6 +124,7 @@ log() {
 usage() {
     cat <<EOF
 ${BOLD}fux${RESET} - A malícia popular do boca a boca no terminal
+fux é um chuchuzim fuxiquento.
 
 ${BOLD}Uso:${RESET}
     fux [opções] <arquivo>
@@ -131,6 +132,7 @@ ${BOLD}Uso:${RESET}
     fux -q <arquivo>               (queima de arquivo: some no 1º download)
     fux -u <url>                   (encurtar fofoca)
     fux -g <arq1> <arq2>...        (publicar gist multi-arquivo com abas)
+    fux git init [nome]            (inicializar repositório git efêmero)
     fux -d <slug>                  (queimar fofoca com token)
     fux -l                         (listar fofocas ativas)
 
@@ -359,6 +361,45 @@ if [[ -n "${TARGET_URL}" ]]; then
     log "tá na rua! link encurtado:"
     echo "${BODY}"
     if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${BODY}"; fi
+    exit 0
+fi
+
+# 3.5 Inicialização de Repositório Git (fux git init [nome])
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 && "${POSITIONAL_ARGS[0]}" == "git" ]]; then
+    SUB_GIT="${POSITIONAL_ARGS[1]:-init}"
+    REPO_NAME="${POSITIONAL_ARGS[2]:-${CUSTOM_NAME:-}}"
+    if [[ -z "${REPO_NAME}" ]]; then
+        REPO_NAME=$(basename "$PWD")
+    fi
+
+    log "inicializando repositório git efêmero no fuxico..."
+    CURL_ARGS=("-s" "-f" "-X" "POST" "${SERVER_URL%/}/api/git")
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+    CURL_ARGS+=("-F" "name=${REPO_NAME}")
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+
+    JSON_RESP=$(curl "${CURL_ARGS[@]}")
+    CLONE_URL=$(echo "$JSON_RESP" | grep -o '"clone_url": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
+    GIT_TOKEN=$(echo "$JSON_RESP" | grep -o '"x_token": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
+
+    if [[ -z "${CLONE_URL}" ]]; then
+        echo -e "${PINK}[fux]${RESET} falha ao criar repositório git: ${JSON_RESP}" >&2
+        exit 1
+    fi
+
+    if [[ -n "${GIT_TOKEN}" ]]; then
+        log "ficha do repositório (X-Token): ${GIT_TOKEN}"
+    fi
+
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git remote remove fuxico 2>/dev/null || true
+        git remote add fuxico "${CLONE_URL}" 2>/dev/null || true
+        log "remote 'fuxico' configurado no repositório git local."
+        log "para enviar commits: git push -u fuxico main"
+    fi
+
+    echo "${CLONE_URL}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${CLONE_URL}"; fi
     exit 0
 fi
 

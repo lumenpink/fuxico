@@ -193,6 +193,13 @@ class App
             return;
         }
 
+        // 3.5 Git HTTP Smart Protocol endpoints (/<slug>.git/info/refs, /<slug>.git/git-upload-pack, etc.)
+        if (preg_match('#^([a-zA-Z0-9_\-\.]+?)(?:\.git)?/(info/refs|git-upload-pack|git-receive-pack)$#', $path, $m)) {
+            $this->handleGitRoute($m[1], $m[2], $method, $authHeader);
+
+            return;
+        }
+
         // 4. File / URL lookup or 0x0.st Management
         $this->handleItemRoute($path, $method, $authHeader);
     }
@@ -587,15 +594,20 @@ class App
         if (count($parts) > 1) {
             $subAction = $parts[1];
 
-            // 1. Raw file inside Gist: /<slug>/raw or /<slug>/raw/<filename>
+            // 1. Raw file inside Gist or Git Repo: /<slug>/raw or /<slug>/raw/<filename>
             if ($subAction === 'raw') {
                 $requestedFile = implode('/', array_slice($parts, 2));
-                if ($requestedFile === '') {
-                    $files = $this->storage->getGistFiles($slug);
-                    $first = array_key_first($files);
-                    $requestedFile = $first ?: '';
+                if ($item['type'] === 'git') {
+                    $repoPath = $this->storage->getRepoPath($slug);
+                    $content = GitBackend::getFileContent($repoPath, $requestedFile !== '' ? $requestedFile : 'README.md');
+                } else {
+                    if ($requestedFile === '') {
+                        $files = $this->storage->getGistFiles($slug);
+                        $first = array_key_first($files);
+                        $requestedFile = $first ?: '';
+                    }
+                    $content = $this->storage->getGistFile($slug, $requestedFile);
                 }
-                $content = $this->storage->getGistFile($slug, $requestedFile);
                 if ($content !== null) {
                     $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
                     $mime = match ($ext) {
@@ -614,7 +626,9 @@ class App
 
             // 2. Download ZIP: /<slug>/zip
             if ($subAction === 'zip') {
-                $zipData = $this->storage->getGistZip($slug);
+                $zipData = $item['type'] === 'git'
+                    ? GitBackend::getArchiveZip($this->storage->getRepoPath($slug))
+                    : $this->storage->getGistZip($slug);
                 if ($zipData !== null) {
                     $safeZipName = ($item['original_name'] ? preg_replace('/[^\w\-]/', '_', $item['original_name']) : $slug).'.zip';
                     header('Content-Type: application/zip');
@@ -814,6 +828,50 @@ class App
                 return;
             }
 
+            // Rendered Git Repository
+            if ($item['type'] === 'git') {
+                $this->db->incrementViews($slug);
+                $isOneshot = (bool) $item['is_oneshot'];
+                if ($isOneshot) {
+                    $this->db->deleteBySlug($slug);
+                }
+
+                $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+                $isRaw = isset($_GET['raw']) || ! str_contains($accept, 'text/html');
+
+                if ($isRaw) {
+                    $meta = GitBackend::getRepoMetadata($this->storage->getRepoPath($slug));
+                    header('Content-Type: text/plain; charset=UTF-8');
+                    echo "Fuxico Git Repository: {$slug}\n";
+                    echo "Clone URL: {$this->getBaseUrl()}/{$slug}.git\n";
+                    echo "Branch: {$meta['default_branch']} ({$meta['commit_count']} commits)\n";
+                    if (! empty($meta['files'])) {
+                        echo 'Files ('.count($meta['files'])."):\n";
+                        foreach ($meta['files'] as $f) {
+                            echo "  - {$f['name']} ({$f['size']} bytes)\n";
+                        }
+                    }
+
+                    return;
+                }
+
+                $htmlFilename = "{$slug}.html";
+                if (! $this->storage->fileExists($htmlFilename)) {
+                    $metadata = GitBackend::getRepoMetadata($this->storage->getRepoPath($slug));
+                    $baked = RepoRenderer::render($metadata, [
+                        'title' => $item['original_name'] ?: "{$slug}.git",
+                        'slug' => $slug,
+                        'created_at' => (int) $item['created_at'],
+                        'base_url' => $this->getBaseUrl(),
+                    ]);
+                    file_put_contents($this->storage->getFilePath($htmlFilename), $baked);
+                }
+
+                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', "{$slug}.html", true, $isOneshot);
+
+                return;
+            }
+
             // Stream File
             $this->db->incrementViews($slug);
             $mime = $item['mime_type'] ?: 'application/octet-stream';
@@ -884,6 +942,12 @@ class App
 
         if ($endpoint === 'gist' && $method === 'POST') {
             $this->handleGistApi($authHeader);
+
+            return;
+        }
+
+        if ($endpoint === 'git' && $method === 'POST') {
+            $this->handleGitApi($authHeader);
 
             return;
         }
@@ -1165,6 +1229,243 @@ class App
             header('Content-Type: text/plain');
             echo "{$url}\n";
         }
+    }
+
+    private function handleGitRoute(string $slug, string $gitAction, string $method, ?string $authHeader): void
+    {
+        $repoPath = $this->storage->getRepoPath($slug);
+        [$user, $pass] = $this->getGitAuthCredentials($authHeader);
+        $token = ($pass !== null && $pass !== '') ? $pass : ($user ?? '');
+
+        if ($gitAction === 'info/refs') {
+            $service = $_GET['service'] ?? '';
+            if ($service === 'git-upload-pack') {
+                if (! is_dir($repoPath)) {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    echo "Repository not found\n";
+
+                    return;
+                }
+                GitBackend::handleInfoRefs($repoPath, $service);
+
+                return;
+            }
+
+            if ($service === 'git-receive-pack') {
+                $item = $this->db->findBySlug($slug);
+
+                if ($item) {
+                    $isMaster = $this->config->isAuthorized($authHeader) || in_array($token, $this->config->authTokens, true);
+                    $isOwner = $token !== '' && $token === $item['x_token'];
+                    if (! $isMaster && ! $isOwner) {
+                        header('WWW-Authenticate: Basic realm="Fuxico Git"');
+                        http_response_code(401);
+                        echo "Authentication required\n";
+
+                        return;
+                    }
+                } else {
+                    // Push-to-create: repository doesn't exist yet
+                    if ($token === '') {
+                        header('WWW-Authenticate: Basic realm="Fuxico Git"');
+                        http_response_code(401);
+                        echo "Authentication required to create repository\n";
+
+                        return;
+                    }
+
+                    $isMaster = $this->config->isAuthorized($authHeader) || in_array($token, $this->config->authTokens, true);
+                    if (! $this->config->publicMode && ! $isMaster) {
+                        http_response_code(401);
+                        echo "Unauthorized\n";
+
+                        return;
+                    }
+
+                    GitBackend::initBareRepo($repoPath);
+                    $this->db->createItem([
+                        'id' => bin2hex(random_bytes(8)),
+                        'slug' => $slug,
+                        'original_name' => "{$slug}.git",
+                        'type' => 'git',
+                        'file_path' => "{$slug}.git",
+                        'mime_type' => 'application/x-git',
+                        'size' => 0,
+                        'x_token' => $token,
+                        'is_oneshot' => 0,
+                        'expires_at' => null,
+                        'created_at' => time(),
+                        'views' => 0,
+                    ]);
+
+                    $html = RepoRenderer::render(['has_commits' => false], [
+                        'slug' => $slug,
+                        'base_url' => $this->getBaseUrl(),
+                        'title' => "{$slug}.git",
+                    ]);
+                    file_put_contents($this->storage->getFilePath("{$slug}.html"), $html);
+                }
+
+                GitBackend::handleInfoRefs($repoPath, $service);
+
+                return;
+            }
+
+            http_response_code(400);
+            header('Content-Type: text/plain');
+            echo "Invalid git service\n";
+
+            return;
+        }
+
+        if ($gitAction === 'git-upload-pack' && $method === 'POST') {
+            if (! is_dir($repoPath)) {
+                http_response_code(404);
+                header('Content-Type: text/plain');
+                echo "Repository not found\n";
+
+                return;
+            }
+            GitBackend::handleRpc($repoPath, 'git-upload-pack');
+
+            return;
+        }
+
+        if ($gitAction === 'git-receive-pack' && $method === 'POST') {
+            $item = $this->db->findBySlug($slug);
+            $isMaster = $this->config->isAuthorized($authHeader) || in_array($token, $this->config->authTokens, true);
+            $isOwner = $item && $token !== '' && $token === $item['x_token'];
+
+            if (! $isMaster && ! $isOwner) {
+                http_response_code(401);
+                header('Content-Type: text/plain');
+                echo "Unauthorized\n";
+
+                return;
+            }
+
+            $exitCode = GitBackend::handleRpc($repoPath, 'git-receive-pack');
+            if ($exitCode === 0 && is_dir($repoPath)) {
+                $metadata = GitBackend::getRepoMetadata($repoPath);
+                $html = RepoRenderer::render($metadata, [
+                    'slug' => $slug,
+                    'base_url' => $this->getBaseUrl(),
+                    'title' => $item['original_name'] ?? "{$slug}.git",
+                    'created_at' => (int) ($item['created_at'] ?? time()),
+                ]);
+                file_put_contents($this->storage->getFilePath("{$slug}.html"), $html);
+                $this->db->updateContent($slug, $metadata['size'] ?? 0);
+            }
+
+            return;
+        }
+
+        http_response_code(405);
+        header('Content-Type: text/plain');
+        echo "Method Not Allowed\n";
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function getGitAuthCredentials(?string $authHeader): array
+    {
+        $user = $_SERVER['PHP_AUTH_USER'] ?? null;
+        $pass = $_SERVER['PHP_AUTH_PW'] ?? null;
+
+        if ($user === null && $pass === null && $authHeader !== null) {
+            if (str_starts_with($authHeader, 'Basic ')) {
+                $decoded = base64_decode(substr($authHeader, 6), true);
+                if ($decoded !== false && str_contains($decoded, ':')) {
+                    [$user, $pass] = explode(':', $decoded, 2);
+                }
+            } elseif (str_starts_with($authHeader, 'Bearer ')) {
+                $pass = substr($authHeader, 7);
+            }
+        }
+
+        return [$user, $pass];
+    }
+
+    private function handleGitApi(?string $authHeader): void
+    {
+        $isAuthorized = $this->config->isAuthorized($authHeader);
+        if (! $this->config->publicMode && ! $isAuthorized) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Unauthorized']);
+
+            return;
+        }
+
+        $rawBody = (string) file_get_contents('php://input');
+        $jsonData = json_decode($rawBody, true);
+        $data = is_array($jsonData) ? $jsonData : $_POST;
+
+        $name = trim((string) ($data['name'] ?? $data['slug'] ?? ''));
+        $slug = $name !== '' ? preg_replace('/[^\w\-]/', '-', $name) : $this->generateSlug();
+
+        if ($slug === '' || $this->db->isSlugTaken($slug)) {
+            http_response_code(409);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Slug already exists or is invalid']);
+
+            return;
+        }
+
+        $xToken = trim((string) ($data['token'] ?? ''));
+        if ($xToken === '') {
+            $xToken = bin2hex(random_bytes(16));
+        }
+
+        $expireParam = $data['expires'] ?? $data['expire'] ?? null;
+        $expiresAt = $this->parseExpiration($expireParam ? (string) $expireParam : null);
+
+        $repoPath = $this->storage->getRepoPath($slug);
+        if (! GitBackend::initBareRepo($repoPath)) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Failed to initialize git repository']);
+
+            return;
+        }
+
+        $this->db->createItem([
+            'id' => bin2hex(random_bytes(8)),
+            'slug' => $slug,
+            'original_name' => "{$slug}.git",
+            'type' => 'git',
+            'file_path' => "{$slug}.git",
+            'mime_type' => 'application/x-git',
+            'size' => 0,
+            'x_token' => $xToken,
+            'is_oneshot' => 0,
+            'expires_at' => $expiresAt,
+            'created_at' => time(),
+            'views' => 0,
+        ]);
+
+        $html = RepoRenderer::render(['has_commits' => false], [
+            'slug' => $slug,
+            'base_url' => $this->getBaseUrl(),
+            'title' => "{$slug}.git",
+        ]);
+        file_put_contents($this->storage->getFilePath("{$slug}.html"), $html);
+
+        $cloneUrl = "{$this->getBaseUrl()}/{$slug}.git";
+        $webUrl = "{$this->getBaseUrl()}/{$slug}";
+
+        header("x-token: {$xToken}");
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'slug' => $slug,
+            'clone_url' => $cloneUrl,
+            'web_url' => $webUrl,
+            'x_token' => $xToken,
+            'expires_at' => $expiresAt,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
     private function handlePainel(string $method): void
