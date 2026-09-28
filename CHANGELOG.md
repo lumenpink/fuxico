@@ -22,6 +22,7 @@
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
 ### Bug Fixes
+  - (ci) corrigir schema de imagem de container no ci.yml
   - (site) enforce inline frame containment, add global image reset, and fix asset caching
   - (site) integrate zine hero banner into header frame and fix lightbox zoom
   - (i18n) preserve authentic travesti latina phrase untranslated in EN
