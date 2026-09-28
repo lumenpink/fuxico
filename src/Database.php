@@ -56,6 +56,11 @@ class Database
 
     public function isSlugTaken(string $slug): bool
     {
+        $reserved = ['api', 'list', 'painel', 'index.php', 'favicon.ico', 'robots.txt'];
+        if (in_array(strtolower($slug), $reserved, true)) {
+            return true;
+        }
+
         $stmt = $this->pdo->prepare('SELECT 1 FROM items WHERE slug = :slug LIMIT 1');
         $stmt->execute([':slug' => $slug]);
 

@@ -19,7 +19,6 @@ class Views
         $activePt = $lang === 'pt' ? 'active' : '';
         $activeEn = $lang === 'en' ? 'active' : '';
         $publicNotice = $config->publicMode ? $t('token_public') : '';
-        $dashTabStyle = $config->publicMode ? '' : 'style="display:none;"';
         $footerTravestiLink = htmlspecialchars($i18n->t('footer_travesti_link'), ENT_QUOTES, 'UTF-8');
         $tip = fn (string $key): string => '<span class="tip-trigger" tabindex="0" role="tooltip" aria-label="'.$t($key).'">?<span class="tip-bubble">'.$t($key).'</span></span>';
 
@@ -1017,7 +1016,6 @@ class Views
         <nav class="tabs">
             <button class="tab-btn active" onclick="switchTab('uploadTab', this)">📁 {$t('tab_file')}</button>
             <button class="tab-btn" onclick="switchTab('urlTab', this)">🔗 {$t('tab_url')}</button>
-            <button class="tab-btn" id="dashTabBtn" onclick="switchTab('dashTab', this)" {$dashTabStyle}>👁️ {$t('tab_dash')}</button>
         </nav>
 
         <!-- Content Area -->
@@ -1105,56 +1103,6 @@ class Views
                 </div>
             </section>
 
-            <!-- 3. Dashboard Tab -->
-            <section id="dashTab" class="tab-pane">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div id="statFiles" class="stat-val">0</div>
-                        <div class="stat-label">{$t('stat_files')}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div id="statUrls" class="stat-val">0</div>
-                        <div class="stat-label">{$t('stat_urls')}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div id="statBytes" class="stat-val">0 MB</div>
-                        <div class="stat-label">{$t('stat_bytes')}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div id="statViews" class="stat-val">0</div>
-                        <div class="stat-label">{$t('stat_views')}</div>
-                    </div>
-                </div>
-
-                <div class="filter-row">
-                    <input type="text" id="dashSearch" class="form-control" style="flex:2;" placeholder="{$t('dash_search')}" oninput="debounce(loadDashboard, 300)()">
-                    <select id="dashType" class="form-control" style="flex:1;" onchange="loadDashboard()">
-                        <option value="">{$t('dash_filter_all')}</option>
-                        <option value="file">{$t('dash_filter_files')}</option>
-                        <option value="url">{$t('dash_filter_urls')}</option>
-                    </select>
-                </div>
-
-                <div style="overflow-x:auto;">
-                    <table class="dash-table">
-                        <thead>
-                            <tr>
-                                <th>{$t('col_slug')}</th>
-                                <th>{$t('col_type')}</th>
-                                <th>{$t('col_size')}</th>
-                                <th>{$t('col_exp')}</th>
-                                <th>{$t('col_views')}</th>
-                                <th>{$t('col_actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dashTableBody">
-                            <tr>
-                                <td colspan="6" style="text-align:center; color:var(--text-muted);">{$t('dash_auth_required')}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
         </main>
         <div class="trans-stripe bottom" role="img" aria-label="Faixa do Orgulho Trans">
             <div class="trans-stripe-line blue"></div>
@@ -1162,14 +1110,6 @@ class Views
             <div class="trans-stripe-line white"></div>
             <div class="trans-stripe-line pink"></div>
             <div class="trans-stripe-line blue"></div>
-        </div>
-    </div>
-
-    <!-- Preview Modal -->
-    <div id="previewModal" class="modal" onclick="closeModal()">
-        <div class="modal-card" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal()">×</button>
-            <div id="modalBody"></div>
         </div>
     </div>
 
@@ -1181,7 +1121,6 @@ class Views
     <script>
         const I18N = {$strings};
         const IS_PUBLIC_MODE = {$publicMode};
-        const dashTabBtn = document.getElementById('dashTabBtn');
 
         function t(k) { return I18N[k] || k; }
 
@@ -1198,45 +1137,9 @@ class Views
             tokenInput.value = savedToken;
         }
 
-        async function updateAuthVisibility() {
-            if (IS_PUBLIC_MODE) {
-                if (dashTabBtn) dashTabBtn.style.display = '';
-                return;
-            }
-
-            const token = tokenInput.value.trim();
-            if (!token) {
-                if (dashTabBtn) dashTabBtn.style.display = 'none';
-                if (document.getElementById('dashTab').classList.contains('active')) {
-                    switchTab('uploadTab', document.querySelector('.tab-btn'));
-                }
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
-                if (res.ok) {
-                    if (dashTabBtn) dashTabBtn.style.display = '';
-                } else {
-                    if (dashTabBtn) dashTabBtn.style.display = 'none';
-                    if (document.getElementById('dashTab').classList.contains('active')) {
-                        switchTab('uploadTab', document.querySelector('.tab-btn'));
-                    }
-                }
-            } catch (e) {
-                if (dashTabBtn) dashTabBtn.style.display = 'none';
-            }
-        }
-
-        updateAuthVisibility();
-
         tokenInput.addEventListener('input', () => {
             const val = tokenInput.value.trim();
             localStorage.setItem('fuxico_token', val);
-            updateAuthVisibility();
-            if (document.getElementById('dashTab').classList.contains('active')) {
-                loadDashboard();
-            }
         });
 
         // Tab Switching
@@ -1244,11 +1147,8 @@ class Views
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-
-            if (tabId === 'dashTab') {
-                loadDashboard();
-            }
+            const target = document.getElementById(tabId);
+            if (target) target.classList.add('active');
         }
 
         // Deep linking to tabs via query param or hash
@@ -1256,9 +1156,6 @@ class Views
         if (urlTabParam === 'url' || urlTabParam === 'urlTab') {
             const urlBtn = document.querySelectorAll('.tab-btn')[1];
             if (urlBtn) switchTab('urlTab', urlBtn);
-        } else if (urlTabParam === 'dash' || urlTabParam === 'dashTab') {
-            const dashBtn = document.getElementById('dashTabBtn');
-            if (dashBtn) switchTab('dashTab', dashBtn);
         }
 
         // File Drag & Drop
@@ -1396,122 +1293,8 @@ class Views
             navigator.clipboard.writeText(val).then(() => alert(t('copy_success')));
         }
 
-        // Dashboard
-        async function loadDashboard() {
-            const tbody = document.getElementById('dashTableBody');
-            const token = tokenInput.value.trim();
-
-            if (!IS_PUBLIC_MODE && !token) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + t('dash_auth_required') + '</td></tr>';
-                return;
-            }
-
-            const search = encodeURIComponent(document.getElementById('dashSearch').value.trim());
-            const type = encodeURIComponent(document.getElementById('dashType').value);
-            const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-
-            try {
-                // Stats
-                const statsRes = await fetch('/api/stats', { headers });
-                if (statsRes.ok) {
-                    const stats = await statsRes.json();
-                    document.getElementById('statFiles').innerText = stats.total_files;
-                    document.getElementById('statUrls').innerText = stats.total_urls;
-                    document.getElementById('statBytes').innerText = (stats.total_bytes / (1024*1024)).toFixed(1) + ' MB';
-                    document.getElementById('statViews').innerText = stats.total_views;
-                }
-
-                // Items
-                const res = await fetch('/api/items?search=' + search + '&type=' + type, { headers });
-
-                if (!res.ok) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';
-                    return;
-                }
-
-                const data = await res.json();
-                if (!data.items || data.items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + t('dash_empty') + '</td></tr>';
-                    return;
-                }
-
-                let html = '';
-                data.items.forEach(item => {
-                    const sizeStr = item.type === 'file' ? (item.size / 1024).toFixed(1) + ' KB' : '-';
-                    const typeBadge = item.type === 'file' ? '<span class="badge badge-file">' + t('tab_file') + '</span>' : '<span class="badge badge-url">URL</span>';
-                    const oneshotBadge = item.is_oneshot ? '<span class="badge badge-oneshot">🔥 Oneshot</span>' : '';
-                    const expStr = item.expires_at ? new Date(item.expires_at * 1000).toLocaleString() : t('exp_none');
-
-                    html += '<tr>' +
-                        '<td><strong style="color:var(--acid-yellow); font-family:var(--font-mono);">' + escapeHtml(item.slug) + '</strong><br><small style="color:var(--text-muted);">' + escapeHtml(item.original_name || '') + '</small></td>' +
-                        '<td>' + typeBadge + '</td>' +
-                        '<td>' + sizeStr + '</td>' +
-                        '<td>' + oneshotBadge + ' <small style="color:var(--text-muted);">' + expStr + '</small></td>' +
-                        '<td>' + item.views + '</td>' +
-                        '<td>' +
-                            '<button class="btn-action-icon" onclick="copyText(\'' + escapeHtml(item.url) + '\')">' + t('act_copy') + '</button> ' +
-                            (item.type === 'file' ? '<button class="btn-action-icon" onclick="previewItem(\'' + escapeHtml(item.url) + '\', \'' + escapeHtml(item.mime_type) + '\')">' + t('act_view') + '</button> ' : '<a class="btn-action-icon" href="' + escapeHtml(item.url) + '" target="_blank">' + t('act_open') + '</a> ') +
-                            '<button class="btn-action-icon btn-delete" onclick="deleteItem(\'' + escapeHtml(item.slug) + '\')">' + t('act_delete') + '</button>' +
-                        '</td>' +
-                    '</tr>';
-                });
-                tbody.innerHTML = html;
-            } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Erro ao carregar dados: ' + escapeHtml(err.message) + '</td></tr>';
-            }
-        }
-
-        async function deleteItem(slug) {
-            if (!confirm(t('delete_confirm'))) return;
-            const token = tokenInput.value.trim();
-            try {
-                const res = await fetch('/api/items/' + slug, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (res.ok) {
-                    loadDashboard();
-                } else {
-                    alert('Falha ao apagar item.');
-                }
-            } catch (err) {
-                alert('Erro: ' + err.message);
-            }
-        }
-
-        function previewItem(url, mime) {
-            const modal = document.getElementById('previewModal');
-            const body = document.getElementById('modalBody');
-            body.innerHTML = '';
-
-            if (mime.startsWith('image/')) {
-                body.innerHTML = '<img src="' + url + '" style="max-width:100%; max-height:75vh; border:2px solid var(--acid-yellow);">';
-            } else if (mime.startsWith('video/')) {
-                body.innerHTML = '<video src="' + url + '" controls autoplay style="max-width:100%; max-height:75vh; border:2px solid var(--acid-yellow);"></video>';
-            } else if (mime.startsWith('audio/')) {
-                body.innerHTML = '<audio src="' + url + '" controls autoplay style="width:100%; margin-top:20px;"></audio>';
-            } else {
-                window.open(url, '_blank');
-                return;
-            }
-            modal.classList.add('open');
-        }
-
-        function closeModal() {
-            document.getElementById('previewModal').classList.remove('open');
-            document.getElementById('modalBody').innerHTML = '';
-        }
-
         function copyText(str) {
             navigator.clipboard.writeText(str).then(() => alert(t('copy_success')));
-        }
-
-        function debounce(func, wait) {
-            let timeout;
-            return function(...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
         }
 
         function escapeHtml(str) {
@@ -1638,4 +1421,731 @@ HTML;
 </html>
 HTML;
     }
+
+    public static function renderDashboardUI(Config $config, ?I18n $i18n = null): string
+    {
+        $i18n ??= new I18n;
+        $publicMode = $config->publicMode ? 'true' : 'false';
+        $lang = $i18n->getLang();
+        $strings = json_encode($i18n->getAll(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+
+        $t = fn (string $key): string => htmlspecialchars($i18n->t($key), ENT_QUOTES, 'UTF-8');
+
+        $activePt = $lang === 'pt' ? 'active' : '';
+        $activeEn = $lang === 'en' ? 'active' : '';
+        $footerTravestiLink = htmlspecialchars($i18n->t('footer_travesti_link'), ENT_QUOTES, 'UTF-8');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="{$lang}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$t('app_name')} - {$t('painel_title')}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121016;
+            --card-bg: #1a1622;
+            --card-surface: #221c2e;
+            --text-main: #f5f4ef;
+            --text-muted: #9f97ad;
+            --acid-yellow: #e2f835;
+            --acid-yellow-hover: #ccee22;
+            --electric-pink: #ff2a85;
+            --tape-black: #0a080d;
+            --border-width: 2px;
+            --border-color: #383047;
+            --border-acid: #e2f835;
+            --font-display: 'Anton', -apple-system, sans-serif;
+            --font-heading: 'Space Grotesk', -apple-system, sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --shadow-hard: 4px 4px 0px #0a080d;
+            --shadow-acid: 4px 4px 0px #e2f835;
+            --shadow-pink: 4px 4px 0px #ff2a85;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-mono);
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle, rgba(226, 248, 53, 0.05) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 10% 20%, rgba(255, 42, 133, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(226, 248, 53, 0.06) 0%, transparent 40%);
+            background-size: 20px 20px, 100% 100%, 100% 100%;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+
+        .duct-tape {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2.5deg);
+            background: rgba(226, 248, 53, 0.96);
+            color: #000;
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            padding: 4px 34px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.6);
+            z-index: 10;
+            user-select: none;
+            text-transform: uppercase;
+            clip-path: polygon(
+                0% 4px, 4px 0%, 8px 3px, 12px 0%, 100% 0%, 
+                97% 6px, 100% 12px, 98% 18px, 100% 100%, 
+                96% 96%, 92% 100%, 88% 97%, 0% 100%, 
+                3% 82%, 0% 64%, 2% 48%, 0% 32%, 3% 16%
+            );
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 960px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);
+            padding: 34px 24px 28px 24px;
+            margin-top: 14px;
+            position: relative;
+        }
+
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 14px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+        }
+
+        .trans-stripe.bottom {
+            margin-top: 24px;
+            margin-bottom: 0;
+            border-top: 2px solid #000;
+            border-bottom: none;
+        }
+
+        .trans-stripe-line { flex: 1; width: 100%; }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 18px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand {
+            font-family: var(--font-display);
+            font-size: 2.8rem;
+            line-height: 0.9;
+            color: var(--acid-yellow);
+            text-shadow: 4px 4px 0px #000, 4px 4px 0px 1px var(--electric-pink);
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            font-size: 0.8rem;
+            color: var(--electric-pink);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .lang-switch {
+            display: flex;
+            gap: 4px;
+            background: #0a080d;
+            padding: 2px;
+            border: 1px solid var(--border-color);
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .lang-btn.active {
+            background: var(--acid-yellow);
+            color: #000;
+            box-shadow: 1px 1px 0px #000;
+        }
+
+        .btn-action-icon {
+            background: var(--card-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .btn-action-icon:hover {
+            border-color: var(--acid-yellow);
+            color: var(--acid-yellow);
+        }
+
+        .btn-delete {
+            border-color: var(--electric-pink);
+            color: var(--electric-pink);
+        }
+
+        .btn-delete:hover {
+            background: var(--electric-pink);
+            color: #fff;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--card-surface);
+            border: 1px solid var(--border-color);
+            padding: 12px 14px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--acid-yellow);
+            box-shadow: 2px 2px 0px var(--acid-yellow);
+        }
+
+        .btn-action {
+            width: 100%;
+            background: var(--acid-yellow);
+            color: #000;
+            border: 2px solid #000;
+            box-shadow: 4px 4px 0px #000, 4px 4px 0px 2px var(--electric-pink);
+            padding: 14px 20px;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            margin-top: 12px;
+        }
+
+        .btn-action:hover {
+            background: var(--acid-yellow-hover);
+            transform: translate(-1px, -1px);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--tape-black);
+            border: 1px solid var(--border-color);
+            padding: 14px;
+            text-align: center;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+        }
+
+        .stat-val {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--acid-yellow);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .dash-table th {
+            background: var(--tape-black);
+            color: var(--acid-yellow);
+            font-family: var(--font-heading);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .dash-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--card-bg);
+        }
+
+        .dash-table tr:hover td {
+            background: var(--card-surface);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid #000;
+            box-shadow: 1px 1px 0px #000;
+        }
+
+        .badge-file { background: var(--acid-yellow); color: #000; }
+        .badge-url { background: #38bdf8; color: #000; }
+        .badge-oneshot { background: var(--electric-pink); color: #fff; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 8, 13, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.open { display: flex; }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 2px solid var(--acid-yellow);
+            box-shadow: 8px 8px 0px var(--electric-pink);
+            max-width: 90vw;
+            max-height: 90vh;
+            padding: 24px;
+            position: relative;
+            overflow: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: var(--electric-pink);
+            color: #fff;
+            border: 1px solid #000;
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            padding: 2px 8px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .footer a {
+            color: var(--acid-yellow);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="trans-stripe" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+        <div class="duct-tape">COFRE // PAINEL RESTRITO</div>
+
+        <header class="top-bar">
+            <div class="brand-box">
+                <h1 class="brand">FUXICO</h1>
+                <div class="tagline">{$t('painel_title')}</div>
+            </div>
+            <div class="lang-switch">
+                <button class="lang-btn {$activePt}" onclick="setLanguage('pt')">PT</button>
+                <button class="lang-btn {$activeEn}" onclick="setLanguage('en')">EN</button>
+            </div>
+        </header>
+
+        <!-- 1. Login View -->
+        <section id="loginView" style="display:none; max-width:480px; margin: 20px auto 40px auto; text-align:center;">
+            <div style="background:var(--tape-black); border:2px solid var(--electric-pink); padding:28px 24px; box-shadow:6px 6px 0px #000;">
+                <h2 style="font-family:var(--font-heading); font-size:1.4rem; color:var(--acid-yellow); margin-bottom:10px;">{$t('painel_login_title')}</h2>
+                <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.5; margin-bottom:20px;">{$t('painel_login_desc')}</p>
+                <div style="margin-bottom:14px;">
+                    <input type="password" id="painelTokenInput" class="form-control" placeholder="{$t('token_placeholder')}" style="text-align:center;">
+                </div>
+                <button type="button" class="btn-action" onclick="unlockVault()">{$t('painel_login_btn')}</button>
+                <div id="loginError" style="display:none; color:var(--electric-pink); margin-top:14px; font-size:0.85rem; font-weight:700;"></div>
+            </div>
+            <div style="margin-top:20px;">
+                <a href="/" class="btn-action-icon">{$t('painel_back_home')}</a>
+            </div>
+        </section>
+
+        <!-- 2. Dashboard View -->
+        <section id="dashView" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <a href="/" class="btn-action-icon">{$t('painel_back_home')}</a>
+                <button type="button" class="btn-action-icon btn-delete" onclick="logoutVault()">{$t('painel_logout_btn')}</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div id="statFiles" class="stat-val">0</div>
+                    <div class="stat-label">{$t('stat_files')}</div>
+                </div>
+                <div class="stat-card">
+                    <div id="statUrls" class="stat-val">0</div>
+                    <div class="stat-label">{$t('stat_urls')}</div>
+                </div>
+                <div class="stat-card">
+                    <div id="statBytes" class="stat-val">0 MB</div>
+                    <div class="stat-label">{$t('stat_bytes')}</div>
+                </div>
+                <div class="stat-card">
+                    <div id="statViews" class="stat-val">0</div>
+                    <div class="stat-label">{$t('stat_views')}</div>
+                </div>
+            </div>
+
+            <div class="filter-row">
+                <input type="text" id="dashSearch" class="form-control" style="flex:2;" placeholder="{$t('dash_search')}" oninput="debounce(loadDashboard, 300)()">
+                <select id="dashType" class="form-control" style="flex:1;" onchange="loadDashboard()">
+                    <option value="">{$t('dash_filter_all')}</option>
+                    <option value="file">{$t('dash_filter_files')}</option>
+                    <option value="url">{$t('dash_filter_urls')}</option>
+                </select>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>{$t('col_slug')}</th>
+                            <th>{$t('col_type')}</th>
+                            <th>{$t('col_size')}</th>
+                            <th>{$t('col_exp')}</th>
+                            <th>{$t('col_views')}</th>
+                            <th>{$t('col_actions')}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:var(--text-muted);">{$t('dash_auth_required')}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <div class="trans-stripe bottom" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal" onclick="closeModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p style="margin-bottom: 8px;">{$t('footer_credit_prefix')} <a href="{$footerTravestiLink}" target="_blank" rel="noopener noreferrer" style="color:var(--electric-pink); font-weight:700;">{$t('footer_travesti_text')}</a> :)</p>
+        <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank" rel="noopener noreferrer">Codeberg</a> // 100% 0x0.st &amp; rustypaste drop-in protocol</p>
+    </footer>
+
+    <script>
+        const I18N = {$strings};
+        const IS_PUBLIC_MODE = {$publicMode};
+        const loginView = document.getElementById('loginView');
+        const dashView = document.getElementById('dashView');
+        const tokenInput = document.getElementById('painelTokenInput');
+        const loginError = document.getElementById('loginError');
+
+        function t(k) { return I18N[k] || k; }
+
+        function setLanguage(lang) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            window.location.href = url.toString();
+        }
+
+        async function init() {
+            const savedToken = localStorage.getItem('fuxico_token') || '';
+            if (savedToken) {
+                tokenInput.value = savedToken;
+            }
+
+            if (IS_PUBLIC_MODE) {
+                showDashboard();
+                return;
+            }
+
+            if (savedToken) {
+                try {
+                    const res = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + savedToken } });
+                    if (res.ok) {
+                        showDashboard();
+                        return;
+                    }
+                } catch (e) {}
+            }
+
+            showLogin();
+        }
+
+        function showLogin() {
+            loginView.style.display = 'block';
+            dashView.style.display = 'none';
+            loginError.style.display = 'none';
+        }
+
+        function showDashboard() {
+            loginView.style.display = 'none';
+            dashView.style.display = 'block';
+            loadDashboard();
+        }
+
+        async function unlockVault() {
+            const token = tokenInput.value.trim();
+            loginError.style.display = 'none';
+
+            if (!IS_PUBLIC_MODE && !token) {
+                loginError.innerText = 'Token mestre obrigatório.';
+                loginError.style.display = 'block';
+                return;
+            }
+
+            try {
+                const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+                const res = await fetch('/api/stats', { headers });
+                if (res.ok) {
+                    if (token) localStorage.setItem('fuxico_token', token);
+                    showDashboard();
+                } else {
+                    loginError.innerText = 'Acesso negado: token incorreto ou cofre trancado.';
+                    loginError.style.display = 'block';
+                }
+            } catch (err) {
+                loginError.innerText = 'Erro ao verificar token: ' + err.message;
+                loginError.style.display = 'block';
+            }
+        }
+
+        function logoutVault() {
+            localStorage.removeItem('fuxico_token');
+            tokenInput.value = '';
+            showLogin();
+        }
+
+        // Enter key in token input
+        tokenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') unlockVault();
+        });
+
+        async function loadDashboard() {
+            const tbody = document.getElementById('dashTableBody');
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+
+            if (!IS_PUBLIC_MODE && !token) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_auth_required')) + '</td></tr>';
+                return;
+            }
+
+            const search = encodeURIComponent(document.getElementById('dashSearch').value.trim());
+            const type = encodeURIComponent(document.getElementById('dashType').value);
+            const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+            try {
+                // Stats
+                const statsRes = await fetch('/api/stats', { headers });
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    document.getElementById('statFiles').innerText = stats.total_files;
+                    document.getElementById('statUrls').innerText = stats.total_urls;
+                    document.getElementById('statBytes').innerText = (stats.total_bytes / (1024*1024)).toFixed(1) + ' MB';
+                    document.getElementById('statViews').innerText = stats.total_views;
+                }
+
+                // Items
+                const res = await fetch('/api/items?search=' + search + '&type=' + type, { headers });
+
+                if (!res.ok) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!data.items || data.items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_empty')) + '</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                data.items.forEach(item => {
+                    const sizeStr = item.type === 'file' ? (item.size / 1024).toFixed(1) + ' KB' : '-';
+                    const typeBadge = item.type === 'file' ? '<span class="badge badge-file">' + escapeHtml(t('tab_file')) + '</span>' : '<span class="badge badge-url">URL</span>';
+                    const oneshotBadge = item.is_oneshot ? '<span class="badge badge-oneshot">🔥 Oneshot</span>' : '';
+                    const expStr = item.expires_at ? new Date(item.expires_at * 1000).toLocaleString() : escapeHtml(t('exp_none'));
+
+                    html += '<tr>' +
+                        '<td><strong style="color:var(--acid-yellow); font-family:var(--font-mono);">' + escapeHtml(item.slug) + '</strong><br><small style="color:var(--text-muted);">' + escapeHtml(item.original_name || '') + '</small></td>' +
+                        '<td>' + typeBadge + '</td>' +
+                        '<td>' + sizeStr + '</td>' +
+                        '<td>' + oneshotBadge + ' <small style="color:var(--text-muted);">' + expStr + '</small></td>' +
+                        '<td>' + item.views + '</td>' +
+                        '<td>' +
+                            '<button class="btn-action-icon" onclick="copyText(\'' + escapeHtml(item.url) + '\')">' + escapeHtml(t('act_copy')) + '</button> ' +
+                            (item.type === 'file' ? '<button class="btn-action-icon" onclick="previewItem(\'' + escapeHtml(item.url) + '\', \'' + escapeHtml(item.mime_type) + '\')">' + escapeHtml(t('act_view')) + '</button> ' : '<a class="btn-action-icon" href="' + escapeHtml(item.url) + '" target="_blank">' + escapeHtml(t('act_open')) + '</a> ') +
+                            '<button class="btn-action-icon btn-delete" onclick="deleteItem(\'' + escapeHtml(item.slug) + '\')">' + escapeHtml(t('act_delete')) + '</button>' +
+                        '</td>' +
+                    '</tr>';
+                });
+                tbody.innerHTML = html;
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Erro ao carregar dados: ' + escapeHtml(err.message) + '</td></tr>';
+            }
+        }
+
+        async function deleteItem(slug) {
+            if (!confirm(t('delete_confirm'))) return;
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            try {
+                const res = await fetch('/api/items/' + slug, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    loadDashboard();
+                } else {
+                    alert('Falha ao apagar item.');
+                }
+            } catch (err) {
+                alert('Erro: ' + err.message);
+            }
+        }
+
+        function previewItem(url, mime) {
+            const modal = document.getElementById('previewModal');
+            const body = document.getElementById('modalBody');
+            body.innerHTML = '';
+
+            if (mime.startsWith('image/')) {
+                body.innerHTML = '<img src="' + url + '" style="max-width:100%; max-height:75vh; border:2px solid var(--acid-yellow);">';
+            } else if (mime.startsWith('video/')) {
+                body.innerHTML = '<video src="' + url + '" controls autoplay style="max-width:100%; max-height:75vh; border:2px solid var(--acid-yellow);"></video>';
+            } else if (mime.startsWith('audio/')) {
+                body.innerHTML = '<audio src="' + url + '" controls autoplay style="width:100%; margin-top:20px;"></audio>';
+            } else {
+                window.open(url, '_blank');
+                return;
+            }
+            modal.classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('previewModal').classList.remove('open');
+            document.getElementById('modalBody').innerHTML = '';
+        }
+
+        function copyText(str) {
+            navigator.clipboard.writeText(str).then(() => alert(t('copy_success')));
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag));
+        }
+
+        init();
+    </script>
+</body>
+</html>
+HTML;
+    }
 }
+

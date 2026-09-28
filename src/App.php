@@ -173,6 +173,13 @@ class App
             return;
         }
 
+        // 2.5 Dedicated Admin Panel endpoint
+        if ($path === 'painel') {
+            $this->handlePainel($method);
+
+            return;
+        }
+
         // 3. Root Endpoint
         if ($path === '') {
             if ($method === 'POST') {
@@ -673,6 +680,20 @@ class App
         http_response_code(404);
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Not found']);
+    }
+
+    private function handlePainel(string $method): void
+    {
+        if ($method !== 'GET') {
+            http_response_code(405);
+            header('Content-Type: text/plain');
+            echo "Method Not Allowed\n";
+
+            return;
+        }
+
+        $i18n = new I18n;
+        echo Views::renderDashboardUI($this->config, $i18n);
     }
 
     private function handleRootGet(): void

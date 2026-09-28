@@ -248,11 +248,12 @@ test('handles rustypaste list and delete endpoints', function () use ($testEnv) 
     expect($testEnv->db()->findBySlug('rpfile'))->toBeNull();
 });
 
-test('dashTab is hidden on private instances and protected by auth', function () use ($testEnv) {
-    // 1. Private mode Web UI rendering
+test('dashboard is segregated to /painel and protected by auth, home UI is clean', function () use ($testEnv) {
+    // 1. Web UI (Home) rendering is clean and 100% hidden from mortals
     $testEnv->config->publicMode = false;
     $html = Views::renderWebUI($testEnv->config);
-    expect($html)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" style="display:none;"');
+    expect($html)->not->toContain('dashTabBtn');
+    expect($html)->not->toContain('id="dashTab"');
     expect($html)->toContain('class="trans-stripe"');
     expect($html)->toContain('class="trans-stripe bottom"');
     expect($html)->toContain('box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);');
@@ -271,7 +272,22 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     expect($htmlPt)->toContain('https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)');
     expect($htmlPt)->toContain('>travesti latina</a> :)');
 
-    // 2. Private mode API /api/stats without token returns 401
+    // 2. Dedicated /painel route renders admin dashboard UI
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = '/painel';
+    unset($_SERVER['HTTP_AUTHORIZATION']);
+    $_POST = [];
+    $_FILES = [];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $painelHtml = ob_get_clean();
+    expect($painelHtml)->toContain('id="loginView"');
+    expect($painelHtml)->toContain('id="dashView"');
+    expect($painelHtml)->toContain('id="dashTableBody"');
+    expect($painelHtml)->toContain('id="painelTokenInput"');
+
+    // 3. Private mode API /api/stats without token returns 401
     $_SERVER['REQUEST_METHOD'] = 'GET';
     $_SERVER['REQUEST_URI'] = '/api/stats';
     unset($_SERVER['HTTP_AUTHORIZATION']);
@@ -285,12 +301,11 @@ test('dashTab is hidden on private instances and protected by auth', function ()
     expect($dataPrivate)->toHaveKey('error');
     expect($dataPrivate['error'])->toBe('Unauthorized');
 
-    // 3. Public mode Web UI rendering reveals tab
+    // 4. Public mode: Home still does not show dashboard, but /api/stats is open
     $testEnv->config->publicMode = true;
     $htmlPublic = Views::renderWebUI($testEnv->config);
-    expect($htmlPublic)->toContain('id="dashTabBtn" onclick="switchTab(\'dashTab\', this)" >');
+    expect($htmlPublic)->not->toContain('dashTabBtn');
 
-    // 4. Public mode API /api/stats is readable without token
     ob_start();
     $testEnv->app()->handleRequest();
     $resPublic = ob_get_clean();
