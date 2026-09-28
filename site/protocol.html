@@ -30,6 +30,7 @@
         <li><a href="commands.html">CLI Manual</a></li>
         <li><a href="protocol.html" class="active">Protocols</a></li>
         <li><a href="pajuba.html">Pajubá</a></li>
+        <li><a href="docs/index.html">Zine Docs</a></li>
       </ul>
       <div class="lang-switch">
         <a href="protocol.html" class="lang-btn active">EN</a>
@@ -40,15 +41,15 @@
 
   <div class="container">
     <header class="hero-header">
-      <div class="duct-tape">SPECIFICATION // DUAL PROTOCOL ENGINE</div>
+      <div class="duct-tape">SPECIFICATION // MULTI-PROTOCOL ENGINE</div>
       <h1 class="page-title">PROTOCOL SPECIFICATIONS</h1>
       <p class="subtitle">
-        Fuxico is 100% drop-in compatible with the two most popular self-hosted file vault specifications in the Unix world: <strong>The Null Pointer (0x0.st)</strong> and <strong>rustypaste</strong>.
+        Fuxico implements 5 core communication protocols: <strong>The Null Pointer (0x0.st)</strong>, <strong>rustypaste</strong>, <strong>Markdown Zine Docs</strong>, <strong>Multi-File Gists</strong>, and <strong>Git HTTP Smart Protocol</strong>.
       </p>
       <div class="badge-row">
-        <span class="badge">🌐 cURL Native Compatibility</span>
+        <span class="badge">🌐 cURL & Git Native Compatibility</span>
         <span class="badge neon">🔑 X-Token Management Header</span>
-        <span class="badge">🛡️ Strict MIME & Subpath Aliasing</span>
+        <span class="badge">📝 Markdown, Gists & Bare Repositories</span>
       </div>
     </header>
 
@@ -220,6 +221,137 @@ curl -H 'Authorization: Bearer &lt;token&gt;' https://fuxico.2lp.in/list</pre>
       <p>
         Example: <code>https://fuxico.2lp.in/8x9yt.png/avatar-lumen-2026.png</code> streams the exact same payload while setting <code>Content-Disposition: inline; filename="avatar-lumen-2026.png"</code>.
       </p>
+    </section>
+
+    <!-- Markdown Zine Publishing Protocol -->
+    <section class="doc-section">
+      <h2 class="section-heading">📝 4. Markdown Zine Publishing Protocol</h2>
+      <p class="lead">
+        Upload standard Markdown documents to publish beautiful standalone web readers with syntax highlighting, Obsidian callouts, and dual-skin toggle:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Field / Query</th>
+              <th>Format</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>POST /api/doc</code> or <code>POST / (doc=true)</code></td>
+              <td>Multipart</td>
+              <td>Uploads Markdown payload and triggers atomic HTML rendering.</td>
+            </tr>
+            <tr>
+              <td><code>GET /&lt;slug&gt;</code></td>
+              <td>Content-Negotiated</td>
+              <td>Web browsers receive rendered standalone HTML reader; curl receives pure raw Markdown.</td>
+            </tr>
+            <tr>
+              <td><code>GET /&lt;slug&gt;?raw=1</code></td>
+              <td>Raw Text</td>
+              <td>Explicitly forces raw untouched Markdown source delivery.</td>
+            </tr>
+            <tr>
+              <td><code>POST /&lt;slug&gt;/assets</code></td>
+              <td>Multipart</td>
+              <td>Uploads static images or attachments scoped to <code>/&lt;slug&gt;/assets/&lt;filename&gt;</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading">cURL Example</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">curl — markdown docs example</span>
+          <button class="copy-btn" data-target="cmd-doc">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-doc"># Publish Markdown document as standalone Zine doc:
+curl -F 'file=@article.md' -F 'doc=true' https://fuxico.2lp.in/</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Multi-File Gist Protocol -->
+    <section class="doc-section">
+      <h2 class="section-heading">📦 5. Multi-File Gist Protocol</h2>
+      <p class="lead">
+        Send multi-file code pastings as JSON payloads via <code>POST /api/gist</code>. Fuxico bakes a tabbed viewer and provides instant raw and zip endpoints:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">cURL — publish multi-file gist</span>
+          <button class="copy-btn" data-target="cmd-gist">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-gist">curl -X POST https://fuxico.2lp.in/api/gist \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      { "name": "main.rs", "content": "fn main() { println!(\"olá!\"); }" },
+      { "name": "Cargo.toml", "content": "[package]\nname = \"demo\"\nversion = \"0.1.0\"" }
+    ],
+    "expires": "7d",
+    "oneshot": false
+  }'</pre>
+        </div>
+      </div>
+
+      <p style="margin-top: 15px;">
+        <strong>Endpoints Available:</strong><br>
+        • Web Viewer: <code>https://fuxico.2lp.in/&lt;slug&gt;</code> (Tabbed interactive code view)<br>
+        • Raw File: <code>https://fuxico.2lp.in/&lt;slug&gt;/raw/&lt;filename&gt;</code> (Single file raw content)<br>
+        • Zip Archive: <code>https://fuxico.2lp.in/&lt;slug&gt;/zip</code> (Bundled ZIP of all files in gist)
+      </p>
+    </section>
+
+    <!-- Git HTTP Smart Protocol -->
+    <section class="doc-section">
+      <h2 class="section-heading">🌱 6. Git HTTP Smart Protocol</h2>
+      <p class="lead">
+        Host ephemeral or long-lived bare Git repositories over standard HTTP smart protocol without SSH daemons:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">bash — Git HTTP lifecycle</span>
+          <button class="copy-btn" data-target="cmd-git-proto">COPY</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-git-proto"># 1. Initialize bare repository via CLI:
+fux git init my-project
+
+# 2. Add remote to existing local git repo:
+git remote add fuxico https://&lt;TOKEN&gt;@fuxico.2lp.in/&lt;slug&gt;.git
+
+# 3. Push commits:
+git push fuxico main
+
+# 4. Clone from any machine:
+git clone https://fuxico.2lp.in/&lt;slug&gt;.git</pre>
+        </div>
+      </div>
     </section>
   </div>
 

@@ -30,6 +30,7 @@
         <li><a href="commands.html" class="active">CLI Manual</a></li>
         <li><a href="protocol.html">Protocols</a></li>
         <li><a href="pajuba.html">Pajubá</a></li>
+        <li><a href="docs/index.html">Zine Docs</a></li>
       </ul>
       <div class="lang-switch">
         <a href="commands.html" class="lang-btn active">EN</a>
@@ -84,7 +85,16 @@ fux photo.png --copia
 url=$(fux report.pdf --caladinho)
 
 # Pipe command output directly into an ephemeral oneshot link:
-dmesg | fux -q | xclip -selection clipboard</pre>
+dmesg | fux -q | xclip -selection clipboard
+
+# Publish Markdown note as standalone Zine doc:
+fux memo.md --doc
+
+# Upload multi-file code Gist (with tabbed viewer and ZIP download):
+fux gist src/main.rs Cargo.toml README.md
+
+# Create instant remote Git bare repo over HTTP smart protocol:
+fux git init my-project</pre>
         </div>
       </div>
     </section>
@@ -178,6 +188,24 @@ dmesg | fux -q | xclip -selection clipboard</pre>
               <td><code>--dialect &lt;DIAL&gt;</code></td>
               <td><code>--dialeto &lt;DIAL&gt;</code></td>
               <td>Communication protocol: <code>nullpointer</code> (0x0.st) or <code>rustypaste</code>.</td>
+            </tr>
+            <tr>
+              <td><code>-M</code></td>
+              <td><code>--doc</code></td>
+              <td><code>--documento</code></td>
+              <td>Publish Markdown note as a styled Zine document with syntax highlighting.</td>
+            </tr>
+            <tr>
+              <td><code>-g</code> / <code>fux gist</code></td>
+              <td><code>--gist</code></td>
+              <td><code>--fuxico-gist</code></td>
+              <td>Upload multi-file code gist with tabbed view and auto-generated ZIP.</td>
+            </tr>
+            <tr>
+              <td><code>-G</code> / <code>fux git init</code></td>
+              <td><code>--git-init</code></td>
+              <td><code>--novo-git</code></td>
+              <td>Initialize remote bare Git repository over HTTP smart protocol.</td>
             </tr>
           </tbody>
         </table>

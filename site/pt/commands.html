@@ -30,6 +30,7 @@
         <li><a href="commands.html" class="active">Manual CLI</a></li>
         <li><a href="protocol.html">Protocolos</a></li>
         <li><a href="pajuba.html">Pajubá</a></li>
+        <li><a href="../docs/index.html">Docs Zine</a></li>
       </ul>
       <div class="lang-switch">
         <a href="../commands.html" class="lang-btn">EN</a>
@@ -84,7 +85,16 @@ fux foto.png --copia
 url=$(fux relatorio.pdf --caladinho)
 
 # Enviar saída de comando direto como link efêmero de queima-de-arquivo:
-dmesg | fux -q | xclip -selection clipboard</pre>
+dmesg | fux -q | xclip -selection clipboard
+
+# Publicar anotação em Markdown como página Zine com realce de sintaxe:
+fux memo.md --doc
+
+# Publicar Gist com múltiplos arquivos de código (com abas e download ZIP):
+fux gist src/main.rs Cargo.toml README.md
+
+# Criar repositório Git bare remoto instantâneo via HTTP smart protocol:
+fux git init meu-projeto</pre>
         </div>
       </div>
     </section>
@@ -178,6 +188,24 @@ dmesg | fux -q | xclip -selection clipboard</pre>
               <td><code>--dialeto &lt;DIAL&gt;</code></td>
               <td><code>--dialect &lt;DIAL&gt;</code></td>
               <td>Protocolo de envio: <code>nullpointer</code> (0x0.st) ou <code>rustypaste</code>.</td>
+            </tr>
+            <tr>
+              <td><code>-M</code></td>
+              <td><code>--documento</code></td>
+              <td><code>--doc</code></td>
+              <td>Publica nota Markdown como documento Zine com realce de sintaxe e sumário.</td>
+            </tr>
+            <tr>
+              <td><code>-g</code> / <code>fux gist</code></td>
+              <td><code>--fuxico-gist</code></td>
+              <td><code>--gist</code></td>
+              <td>Envia gist com múltiplos arquivos, interface de abas e ZIP para download.</td>
+            </tr>
+            <tr>
+              <td><code>-G</code> / <code>fux git init</code></td>
+              <td><code>--novo-git</code></td>
+              <td><code>--git-init</code></td>
+              <td>Inicializa repositório Git bare remoto sobre HTTP smart protocol.</td>
             </tr>
           </tbody>
         </table>
