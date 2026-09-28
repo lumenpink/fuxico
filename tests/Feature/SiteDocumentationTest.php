@@ -92,3 +92,35 @@ test('site/downloads.html contains single-board computer hardware guidance', fun
     expect($downloadsPt)->toContain('Raspberry Pi');
     expect($downloadsPt)->toContain('BeagleBone');
 });
+
+test('scripts/build_docs.php compiles markdown docs into standalone zine pages with dual-skin', function () {
+    $rootDir = dirname(__DIR__, 2);
+    $script = $rootDir.'/scripts/build_docs.php';
+
+    expect(file_exists($script))->toBeTrue();
+
+    $output = [];
+    $code = 0;
+    exec("php {$script} 2>&1", $output, $code);
+
+    expect($code)->toBe(0);
+
+    $expectedDocs = [
+        'index.html',
+        'architecture.html',
+        'protocols.html',
+        'cli.html',
+        'pajuba.html',
+        'api.html',
+        'deployment.html',
+    ];
+
+    foreach ($expectedDocs as $doc) {
+        $path = $rootDir.'/site/docs/'.$doc;
+        expect(file_exists($path))->toBeTrue("Missing compiled doc: {$doc}");
+        $content = (string) file_get_contents($path);
+        expect($content)->toContain('<!DOCTYPE html>');
+        expect($content)->toContain('data-theme=');
+        expect($content)->toContain('btnThemeToggle');
+    }
+});

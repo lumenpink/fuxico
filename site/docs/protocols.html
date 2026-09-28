@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="zine">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuxico — Especificação dos Protocolos do Fuxico</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const saved = localStorage.getItem('fuxico_theme');
+                let theme = 'zine';
+                if (params.get('acad') === 'true' || params.get('theme') === 'acad' || params.has('acad')) {
+                    theme = 'acad';
+                } else if (params.get('theme') === 'zine') {
+                    theme = 'zine';
+                } else if (saved === 'acad' || saved === 'zine') {
+                    theme = saved;
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
+    <style>
+        /* Base Resets & Transitions */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ─── DUAL SKIN: 1. TRAVA ZINE (FUXICO STANDARD) ─── */
+        [data-theme="zine"] {
+            --bg-body: #121016;
+            --bg-card: #1a1622;
+            --bg-surface: #221c2e;
+            --text-main: #f5f4ef;
+            --text-muted: #9f97ad;
+            --text-link: #e2f835;
+            --acid-yellow: #e2f835;
+            --acid-hover: #ccee22;
+            --electric-pink: #ff2a85;
+            --tape-black: #0a080d;
+            --border-color: #383047;
+            --border-hard: 2px solid #000;
+            --shadow-hard: 4px 4px 0px #0a080d;
+            --shadow-accent: 5px 5px 0px var(--electric-pink);
+            --font-heading: 'Anton', -apple-system, sans-serif;
+            --font-sub: 'Space Grotesk', -apple-system, sans-serif;
+            --font-body: 'Space Grotesk', -apple-system, sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --code-bg: #09080d;
+            --callout-bg: #1c1726;
+            --mark-bg: rgba(226, 248, 53, 0.3);
+            --mark-color: #e2f835;
+        }
+
+        /* ─── DUAL SKIN: 2. ACADÊMICO DEPRESSIVO MONOCROMÁTICO (?acad=true) ─── */
+        [data-theme="acad"] {
+            --bg-body: #fcfcfc;
+            --bg-card: #ffffff;
+            --bg-surface: #f4f4f5;
+            --text-main: #18181b;
+            --text-muted: #52525b;
+            --text-link: #09090b;
+            --acid-yellow: #09090b;
+            --acid-hover: #27272a;
+            --electric-pink: #27272a;
+            --tape-black: #e4e4e7;
+            --border-color: #d4d4d8;
+            --border-hard: 1px solid #18181b;
+            --shadow-hard: 2px 2px 0px #d4d4d8;
+            --shadow-accent: none;
+            --font-heading: 'Noto Serif', Georgia, serif;
+            --font-sub: 'Noto Serif', Georgia, serif;
+            --font-body: 'Noto Serif', Georgia, serif;
+            --font-mono: 'Space Mono', Courier, monospace;
+            --code-bg: #f4f4f5;
+            --callout-bg: #fafafa;
+            --mark-bg: #e4e4e7;
+            --mark-color: #09090b;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px 40px 16px;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        /* Zine background pattern */
+        [data-theme="zine"] body {
+            background-image: 
+                radial-gradient(circle, rgba(226, 248, 53, 0.04) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 10% 20%, rgba(255, 42, 133, 0.06) 0%, transparent 40%);
+            background-size: 20px 20px, 100% 100%;
+        }
+
+        /* Academic background pattern */
+        [data-theme="acad"] body {
+            background-image: linear-gradient(to right, #f4f4f5 1px, transparent 1px);
+            background-size: 80px 100%;
+        }
+
+        /* Layout Container */
+        .fuxico-container {
+            width: 100%;
+            max-width: 860px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-hard);
+            padding: 36px 32px;
+            position: relative;
+        }
+
+        [data-theme="zine"] .fuxico-container {
+            box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);
+            border: 2px solid var(--border-color);
+        }
+
+        [data-theme="acad"] .fuxico-container {
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            max-width: 820px;
+            padding: 56px 48px;
+        }
+
+        /* Trans Pride Stripes */
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+        }
+        .trans-stripe.bottom {
+            margin-top: 36px;
+            margin-bottom: 0;
+            border-top: 2px solid #000;
+            border-bottom: none;
+        }
+        .trans-stripe-line { flex: 1; width: 100%; }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+
+        /* In Academic mode, hide decorative stripes and tape */
+        [data-theme="acad"] .trans-stripe,
+        [data-theme="acad"] .duct-tape {
+            display: none !important;
+        }
+
+        /* Duct tape badge */
+        .duct-tape {
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1.5deg);
+            background: rgba(226, 248, 53, 0.96);
+            color: #000;
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            padding: 4px 28px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.6);
+            z-index: 10;
+            user-select: none;
+            text-transform: uppercase;
+        }
+
+        /* Document Top Toolbar */
+        .doc-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        [data-theme="acad"] .doc-toolbar {
+            border-bottom: 1px solid #18181b;
+            font-size: 0.85rem;
+            padding-bottom: 12px;
+            margin-bottom: 36px;
+        }
+
+        .doc-breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doc-breadcrumbs a {
+            color: var(--text-link);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .doc-breadcrumbs a:hover { text-decoration: underline; }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-tool {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.4);
+            user-select: none;
+        }
+
+        [data-theme="acad"] .btn-tool {
+            background: #ffffff;
+            border: 1px solid #71717a;
+            color: #18181b;
+            box-shadow: none;
+            border-radius: 2px;
+        }
+
+        .btn-tool:hover {
+            border-color: var(--acid-yellow);
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .btn-tool:hover {
+            background: #f4f4f5;
+            color: #000;
+            border-color: #000;
+        }
+
+        /* ─── TYPOGRAPHY & ARTICLE CONTENT ─── */
+        .fuxico-article {
+            font-size: 1.05rem;
+        }
+
+        [data-theme="acad"] .fuxico-article {
+            font-size: 1.08rem;
+            text-align: justify;
+        }
+
+        /* Headings */
+        .fuxico-article h1,
+        .fuxico-article h2,
+        .fuxico-article h3,
+        .fuxico-article h4,
+        .fuxico-article h5,
+        .fuxico-article h6 {
+            color: var(--text-main);
+            margin-top: 1.6em;
+            margin-bottom: 0.6em;
+            line-height: 1.25;
+            scroll-margin-top: 20px;
+        }
+
+        [data-theme="zine"] .fuxico-article h1 {
+            font-family: var(--font-heading);
+            font-size: 2.4rem;
+            color: var(--acid-yellow);
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0px #000;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        [data-theme="zine"] .fuxico-article h2 {
+            font-family: var(--font-sub);
+            font-size: 1.6rem;
+            color: var(--electric-pink);
+            letter-spacing: 0.5px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 6px;
+        }
+        [data-theme="zine"] .fuxico-article h3 {
+            font-family: var(--font-sub);
+            font-size: 1.3rem;
+            color: var(--text-main);
+        }
+
+        [data-theme="acad"] .fuxico-article h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 1.2em;
+            border-bottom: 1px solid #18181b;
+            padding-bottom: 12px;
+        }
+        [data-theme="acad"] .fuxico-article h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 1.8em;
+            border-bottom: 1px solid #e4e4e7;
+            padding-bottom: 4px;
+        }
+        [data-theme="acad"] .fuxico-article h3 {
+            font-size: 1.18rem;
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        /* Paragraphs & Text */
+        .fuxico-article p {
+            margin-bottom: 1.2em;
+        }
+
+        .fuxico-article a {
+            color: var(--text-link);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        [data-theme="zine"] .fuxico-article a:hover {
+            background: var(--acid-yellow);
+            color: #000;
+            text-decoration: none;
+        }
+
+        .fuxico-article strong { font-weight: 700; }
+        .fuxico-article em { font-style: italic; }
+        .fuxico-article s, .fuxico-article del { text-decoration: line-through; opacity: 0.75; }
+
+        /* Highlights */
+        .fuxico-article mark {
+            background-color: var(--mark-bg);
+            color: var(--mark-color);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        /* Blockquotes */
+        .fuxico-article blockquote {
+            border-left: 4px solid var(--electric-pink);
+            background: var(--callout-bg);
+            padding: 12px 18px;
+            margin: 1.4em 0;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        [data-theme="acad"] .fuxico-article blockquote {
+            border-left: 3px solid #71717a;
+            background: #fafafa;
+            color: #3f3f46;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* Obsidian Callouts */
+        .callout {
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--callout-color, var(--acid-yellow));
+            background: var(--callout-bg);
+            padding: 14px 18px;
+            margin: 1.5em 0;
+            border-radius: 2px;
+        }
+
+        .callout-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-family: var(--font-sub);
+            color: var(--callout-color, var(--acid-yellow));
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        [data-theme="acad"] .callout {
+            border: 1px solid #d4d4d8;
+            border-left: 4px solid #18181b;
+            background: #fbfbfb;
+            box-shadow: none;
+        }
+        [data-theme="acad"] .callout-title {
+            color: #18181b;
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+        }
+
+        .callout-note { --callout-color: #38bdf8; }
+        .callout-tip { --callout-color: #4ade80; }
+        .callout-warning { --callout-color: #facc15; }
+        .callout-danger { --callout-color: #f87171; }
+        .callout-info { --callout-color: #a78bfa; }
+        .callout-quote { --callout-color: #9f97ad; }
+
+        /* Code Blocks */
+        .code-block-wrapper {
+            margin: 1.5em 0;
+            border: 1px solid var(--border-color);
+            background: var(--code-bg);
+            box-shadow: var(--shadow-hard);
+            overflow: hidden;
+        }
+
+        [data-theme="acad"] .code-block-wrapper {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+        }
+
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--tape-black);
+            padding: 6px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .btn-copy-code {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
+        .btn-copy-code:hover {
+            color: var(--text-main);
+            border-color: var(--acid-yellow);
+        }
+
+        .fuxico-article pre {
+            padding: 14px 16px;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        .fuxico-article code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border: 1px solid var(--border-color);
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .fuxico-article code {
+            color: #18181b;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+        }
+
+        .fuxico-article pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Lists */
+        .fuxico-article ul, .fuxico-article ol {
+            margin: 1.2em 0 1.2em 2em;
+        }
+
+        .fuxico-article li {
+            margin-bottom: 0.4em;
+        }
+
+        .task-list-item {
+            list-style-type: none;
+            margin-left: -1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-list-item input[type="checkbox"] {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            cursor: default;
+            position: relative;
+        }
+
+        .task-list-item input[type="checkbox"]:checked {
+            background: var(--acid-yellow);
+            border-color: var(--acid-yellow);
+        }
+
+        .task-list-item input[type="checkbox"]:checked::after {
+            content: '✔';
+            position: absolute;
+            top: -3px;
+            left: 2px;
+            font-size: 11px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1.6em 0;
+        }
+
+        .fuxico-article table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+            margin: 0 auto;
+        }
+
+        .fuxico-article th {
+            background: var(--tape-black);
+            color: var(--text-main);
+            font-family: var(--font-sub);
+            font-weight: 700;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        [data-theme="zine"] .fuxico-article th {
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .fuxico-article th {
+            background: #f4f4f5;
+            color: #18181b;
+            border: 1px solid #d4d4d8;
+            font-family: var(--font-heading);
+            font-size: 0.88rem;
+        }
+
+        .fuxico-article td {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+        }
+
+        [data-theme="acad"] .fuxico-article td {
+            border: 1px solid #e4e4e7;
+        }
+
+        /* Images & Figures */
+        .fuxico-article img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1.8em auto;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-hard);
+        }
+
+        [data-theme="acad"] .fuxico-article img {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+        }
+
+        /* Horizontal Rule */
+        .fuxico-article hr {
+            border: none;
+            border-top: 2px dashed var(--border-color);
+            margin: 2.2em 0;
+        }
+
+        [data-theme="acad"] .fuxico-article hr {
+            border-top: 1px solid #d4d4d8;
+        }
+
+        /* Footer */
+        .doc-footer {
+            margin-top: 36px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .doc-footer a {
+            color: var(--acid-yellow);
+            text-decoration: none;
+        }
+
+        [data-theme="acad"] .doc-footer a {
+            color: #18181b;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="fuxico-container">
+        <div class="trans-stripe" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+        <div class="duct-tape">FUXICO // DOCUMENTO</div>
+
+        <nav class="doc-toolbar">
+            <div class="doc-breadcrumbs">
+                <a href="/">FUXICO</a>
+                <span>/</span>
+                <span>PROTOCOLS.md</span>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn-tool" id="btnThemeToggle" onclick="toggleTheme()" title="Alternar entre visual Zine e Acadêmico">
+                    <span id="themeLabel">🏛️ Acadêmico</span>
+                </button>
+                <a href="?raw=1" class="btn-tool" title="Ver ou baixar markdown puro">
+                    ⬇ Raw
+                </a>
+                <button type="button" class="btn-tool" onclick="copyDocUrl()" title="Copiar link do documento">
+                    🔗 Copiar
+                </button>
+            </div>
+        </nav>
+
+        <article class="fuxico-article">
+            <h1 id="especificacao-dos-protocolos-do-fuxico">Especificação dos Protocolos do Fuxico</h1>
+<div class="callout callout-tip"><div class="callout-title">Tip</div><div class="callout-content">O Fuxico oferece compatibilidade estrita "drop-in" com as duas ferramentas de linha de comando mais populares do ecossistema de pastebins efêmeros: <strong>0x0.st (The Null Pointer)</strong> e <strong>rustypaste</strong>. Além disso, ele estende o ecossistema com protocolos nativos para <strong>Markdown Docs</strong>, <strong>Gists Multi-Arquivo</strong> e <strong>Repositórios Git Efêmeros via HTTP Smart Protocol</strong>.</div></div>
+<hr>
+<h2 id="1-protocolo-0x0-st-the-null-pointer">1. Protocolo 0x0.st (The Null Pointer)</h2>
+<p>Todas as requisições 0x0.st utilizam codificação <code>multipart/form-data</code> contra a raiz do servidor (<code>/</code>).</p>
+<h3 id="1-1-upload-de-arquivo-padrao">1.1 Upload de Arquivo Padrão</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;file=@relatorio.pdf&#039; https://fuxico.2lp.in/</code></pre></div>
+<p><strong>Resposta do Servidor:</strong></p>
+<ul>
+<li><strong>Status:</strong> <code>HTTP 200 OK</code></li>
+<li><strong>Cabeçalho:</strong> <code>X-Token: 6f9e6c0880d206442a9692482f1c7cc4</code></li>
+<li><strong>Corpo:</strong> <code>https://fuxico.2lp.in/k9xpt.pdf\n</code></li>
+</ul>
+<h3 id="1-2-queima-de-arquivo-oneshot">1.2 Queima-de-Arquivo (Oneshot)</h3>
+<p>O arquivo é incinerado fisicamente imediatamente após o primeiro download:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;file=@segredo.gpg&#039; -F &#039;oneshot=true&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="1-3-slug-secreto-alta-entropia">1.3 Slug Secreto (Alta Entropia)</h3>
+<p>Gera uma chave aleatória de 16 caracteres alfanuméricos criptograficamente seguros em vez do slug curto de 5 caracteres:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;file=@documento.txt&#039; -F &#039;secret=&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="1-4-tempo-de-retencao-definido-expires">1.4 Tempo de Retenção Definido (<code>expires</code>)</h3>
+<p>Aceita durações amigáveis (ex: <code>10m</code>, <code>2h</code>, <code>7d</code>) ou inteiros em horas:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;file=@backup.tar.gz&#039; -F &#039;expires=4h&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="1-5-encurtamento-de-url">1.5 Encurtamento de URL</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;shorten=https://codeberg.org/lumenpink/fuxico&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="1-6-gestao-e-delecao-via-x-token-0x0-st-style">1.6 Gestão e Deleção via X-Token (0x0.st Style)</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash"># Apagar fofoca usando o token retornado no cabeçalho X-Token:
+curl -F &#039;token=6f9e6c0880d206442a9692482f1c7cc4&#039; -F &#039;delete=&#039; https://fuxico.2lp.in/k9xpt.pdf
+
+# Atualizar tempo de expiração:
+curl -F &#039;token=6f9e6c0880d206442a9692482f1c7cc4&#039; -F &#039;expires=48&#039; https://fuxico.2lp.in/k9xpt.pdf</code></pre></div>
+<hr>
+<h2 id="2-protocolo-rustypaste">2. Protocolo rustypaste</h2>
+<p>O dialeto <code>rustypaste</code> utiliza parâmetros passados tanto em campos de formulário quanto em cabeçalhos HTTP dedicados.</p>
+<h3 id="2-1-upload-com-cabecalhos-rustypaste">2.1 Upload com Cabeçalhos rustypaste</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -H &#039;expire: 2h&#039; -H &#039;oneshot: true&#039; -F &#039;file=@dump.sql&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="2-2-listagem-de-arquivos-get-list">2.2 Listagem de Arquivos (<code>GET /list</code>)</h3>
+<p>Retorna um array JSON com todos os arquivos ativos pertencentes à instância:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -H &#039;Authorization: Bearer &lt;master_token&gt;&#039; https://fuxico.2lp.in/list</code></pre></div>
+<p><strong>Exemplo de Resposta:</strong></p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>JSON</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-json">[
+  {
+    &quot;file_name&quot;: &quot;foto.png&quot;,
+    &quot;file_size&quot;: 204850,
+    &quot;expires_at&quot;: 1790620078,
+    &quot;url&quot;: &quot;https://fuxico.2lp.in/foto.png&quot;
+  }
+]</code></pre></div>
+<h3 id="2-3-delecao-direta-delete">2.3 Deleção Direta (<code>DELETE /&lt;slug&gt;</code>)</h3>
+<p>Exclui diretamente pelo método HTTP <code>DELETE</code> informando o <code>X-Token</code> ou o token mestre:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -X DELETE -H &#039;Authorization: Bearer &lt;token&gt;&#039; https://fuxico.2lp.in/foto.png</code></pre></div>
+<hr>
+<h2 id="3-protocolo-de-documentos-markdown-dual-skin-obsidian">3. Protocolo de Documentos Markdown (Dual-Skin & Obsidian)</h2>
+<p>O Fuxico renderiza documentos Markdown transformando-os em páginas web com suporte nativo a temas Zine e Acadêmico.</p>
+<h3 id="3-1-publicacao-de-documento">3.1 Publicação de Documento</h3>
+<p>Para que um arquivo <code>.md</code> seja tratado como página rica de documentação, basta enviar <code>doc=true</code> (ou <code>doc=1</code>):</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;file=@manual.md&#039; -F &#039;doc=true&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="3-2-visualizacao-e-negociacao-de-conteudo">3.2 Visualização e Negociação de Conteúdo</h3>
+<ul>
+<li><strong>Navegador Web:</strong> Recebe o HTML estático pré-assado (dual-skin) completo com menu de alternância, callouts estilizados e syntax highlighting.</li>
+<li><strong>Terminal <code>curl</code>:</strong> Ao detectar <code>curl</code> no <code>User-Agent</code> (ou passando <code>?raw=1</code>), o Fuxico entrega o texto puro original do Markdown.</li>
+</ul>
+<h3 id="3-3-recursos-sintaticos-suportados">3.3 Recursos Sintáticos Suportados</h3>
+<ul>
+<li><strong>Callouts Obsidian:</strong> Blocos <code>&gt; [!NOTE]</code>, <code>&gt; [!TIP]</code>, <code>&gt; [!IMPORTANT]</code>, <code>&gt; [!WARNING]</code> e <code>&gt; [!CAUTION]</code>.</li>
+<li><strong>Wikilinks:</strong> Links no formato <code>&lt;a href=&quot;Outro Documento&quot;&gt;Outro Documento&lt;/a&gt;</code>.</li>
+<li><strong>Destaques:</strong> Texto com marca-texto <code><mark>amarelo neon</mark></code>.</li>
+<li><strong>Tabelas Pipe:</strong> Tabelas no formato Markdown GFM.</li>
+<li><strong>Assets Anexados:</strong> Imagens e anexos referenciados no documento ficam disponíveis sob <code>/&lt;slug&gt;/assets/&lt;arquivo&gt;</code>.</li>
+</ul>
+<hr>
+<h2 id="4-protocolo-de-gists-multi-arquivo-api-gist">4. Protocolo de Gists Multi-Arquivo (<code>/api/gist</code>)</h2>
+<p>Permite empacotar múltiplos arquivos e snippets de código em um único link compartilhado com abas visuais e download em arquivo comprimido.</p>
+<h3 id="4-1-criacao-de-gist-via-json">4.1 Criação de Gist via JSON</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -X POST https://fuxico.2lp.in/api/gist \
+  -H &#039;Content-Type: application/json&#039; \
+  -H &#039;Authorization: Bearer &lt;token&gt;&#039; \
+  -d &#039;{
+    &quot;title&quot;: &quot;Script de Manutenção&quot;,
+    &quot;expires&quot;: &quot;24h&quot;,
+    &quot;files&quot;: {
+      &quot;main.py&quot;: { &quot;content&quot;: &quot;print(\&quot;iniciando backup...\&quot;)&quot; },
+      &quot;README.md&quot;: { &quot;content&quot;: &quot;# Documentação do Script\nExecute com python3.&quot; }
+    }
+  }&#039;</code></pre></div>
+<h3 id="4-2-criacao-de-gist-via-multipart">4.2 Criação de Gist via Multipart</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -F &#039;files[]=@main.py&#039; -F &#039;files[]=@README.md&#039; -F &#039;type=gist&#039; https://fuxico.2lp.in/</code></pre></div>
+<h3 id="4-3-endpoints-de-download-do-gist">4.3 Endpoints de Download do Gist</h3>
+<ul>
+<li><strong>Visualizador Web:</strong> <code>https://fuxico.2lp.in/&lt;slug&gt;</code> (Interface tabulada com temas Zine e Acadêmico).</li>
+<li><strong>Download Zip:</strong> <code>https://fuxico.2lp.in/&lt;slug&gt;/zip</code> (Gera arquivo ZIP on-the-fly contendo todos os arquivos).</li>
+<li><strong>Raw Individual:</strong> <code>https://fuxico.2lp.in/&lt;slug&gt;/raw/&lt;filename&gt;</code> (Ex: <code>https://fuxico.2lp.in/&lt;slug&gt;/raw/main.py</code>).</li>
+</ul>
+<hr>
+<h2 id="5-repositorios-git-efemeros-git-http-smart-protocol">5. Repositórios Git Efêmeros (Git HTTP Smart Protocol)</h2>
+<p>O Fuxico atua como um servidor remoto de Git compatível com a especificação oficial do <code>Git HTTP Smart Protocol</code> (RFC 0001 / Git Transfer Protocol).</p>
+<h3 id="5-1-inicializacao-de-repositorio-post-api-git">5.1 Inicialização de Repositório (<code>POST /api/git</code>)</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash">curl -X POST https://fuxico.2lp.in/api/git \
+  -H &#039;Authorization: Bearer &lt;token&gt;&#039; \
+  -F &#039;name=meu-projeto&#039; \
+  -F &#039;expires=48h&#039;</code></pre></div>
+<p><strong>Resposta:</strong></p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>JSON</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-json">{
+  &quot;slug&quot;: &quot;meu-projeto&quot;,
+  &quot;clone_url&quot;: &quot;https://fuxico.2lp.in/meu-projeto.git&quot;,
+  &quot;x_token&quot;: &quot;9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d&quot;,
+  &quot;expires_at&quot;: 1790800000
+}</code></pre></div>
+<h3 id="5-2-operacoes-nativas-do-git">5.2 Operações Nativas do Git</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash"># Adicionar o Fuxico como remote:
+git remote add fuxico https://fuxico.2lp.in/meu-projeto.git
+
+# Enviar commits:
+git push -u fuxico main
+
+# Clonar em outra máquina:
+git clone https://fuxico.2lp.in/meu-projeto.git</code></pre></div>
+<h3 id="5-3-endpoints-do-smart-protocol-implementados">5.3 Endpoints do Smart Protocol Implementados</h3>
+<ul>
+<li><code>GET /&lt;slug&gt;.git/info/refs?service=git-upload-pack</code> (Descoberta de referências para clone e fetch)</li>
+<li><code>POST /&lt;slug&gt;.git/git-upload-pack</code> (Negociação de packfile para download de commits)</li>
+<li><code>GET /&lt;slug&gt;.git/info/refs?service=git-receive-pack</code> (Descoberta de referências para push)</li>
+<li><code>POST /&lt;slug&gt;.git/git-receive-pack</code> (Envio e validação de packfile de commits)</li>
+<li><code>GET /&lt;slug&gt;.git</code> ou <code>GET /&lt;slug&gt;</code> no navegador (Visualizador web do repositório com visualização de README, histórico de commits, árvore de arquivos e download de tarball).</li>
+</ul>
+        </article>
+
+        <div class="trans-stripe bottom" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+    </div>
+
+    <footer class="doc-footer">
+        <p>Postado em 2026-09-28 20:52:17 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'zine';
+            const next = current === 'zine' ? 'acad' : 'zine';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fuxico_theme', next);
+            updateThemeLabel(next);
+        }
+
+        function updateThemeLabel(theme) {
+            const label = document.getElementById('themeLabel');
+            if (label) {
+                label.innerText = theme === 'zine' ? '🏛️ Acadêmico' : '⚡ Zine';
+            }
+        }
+
+        function copyDocUrl() {
+            navigator.clipboard.writeText(window.location.href.split('?')[0])
+                .then(() => alert('Link copiado para a área de transferência!'));
+        }
+
+        function copyCode(btn) {
+            const pre = btn.closest('.code-block-wrapper').querySelector('pre');
+            if (pre) {
+                navigator.clipboard.writeText(pre.innerText).then(() => {
+                    const original = btn.innerText;
+                    btn.innerText = 'Copiado!';
+                    setTimeout(() => { btn.innerText = original; }, 2000);
+                });
+            }
+        }
+
+        // Initialize button label on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'zine';
+            updateThemeLabel(current);
+        });
+    </script>
+</body>
+</html>

@@ -283,6 +283,7 @@ jobs:
             if [ -f dist/fuxico.php ]; then
               cp dist/fuxico.php site/fuxico.php
             fi
+            php scripts/build_docs.php || true
           fi
 
       - name: "Deploy to Cloudflare Workers (fuxico.2lp.in)"

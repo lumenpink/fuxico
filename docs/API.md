@@ -108,3 +108,34 @@ Both Bash (`bin/fux`) and Native Rust (`cli/target/release/fux`) clients support
 | **Deletion** | `POST /<slug> -F token=... -F delete=` | `DELETE /<slug> -H "Authorization: Bearer ..."` |
 | **Listing** | Via `GET /list` (shared) | `GET /list -H "Authorization: Bearer ..."` |
 
+---
+
+## 5. Markdown Document Baking API
+
+Uploads with `doc=true` or `doc=1` are pre-baked into standalone dual-skin HTML documents.
+
+- **Endpoint:** `POST /` (with multipart `file=@doc.md` and `doc=true`).
+- **Browsing:** Browsers receive static HTML with responsive layout, Obsidian callouts and Zine/Acad switcher.
+- **Raw Access:** `curl https://fuxico.2lp.in/<slug>` or `?raw=1` streams original Markdown text.
+- **Associated Assets:** Assets uploaded under the document's namespace are served at `/<slug>/assets/<filename>`.
+
+---
+
+## 6. Multi-File Gist API
+
+- **Endpoint:** `POST /api/gist` (Accepts JSON or multipart `files[]=@...` with `type=gist`).
+- **Web UI:** `GET /<slug>` renders tabbed file browser with line numbers and dual-skin themes.
+- **Zip Download:** `GET /<slug>/zip` generates dynamic zip archive with all gist files.
+- **Raw File Access:** `GET /<slug>/raw/<filename>` delivers individual raw file content.
+
+---
+
+## 7. Git HTTP Smart Protocol
+
+Fuxico embeds a native bare Git server compatible with the Git HTTP Smart Transfer Protocol:
+
+- **Repository Creation:** `POST /api/git` (fields: `name`, `expires`).
+- **Reference Discovery:** `GET /<slug>.git/info/refs?service=git-upload-pack` or `service=git-receive-pack`.
+- **Packfile Upload / Download:** `POST /<slug>.git/git-upload-pack` and `POST /<slug>.git/git-receive-pack`.
+- **Web Repository Viewer:** `GET /<slug>.git` provides commit history, file tree, syntax view, and archive download.
+

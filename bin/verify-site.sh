@@ -24,6 +24,13 @@ REQUIRED_PAGES=(
     "pt/commands.html"
     "pt/protocol.html"
     "pt/pajuba.html"
+    "docs/index.html"
+    "docs/architecture.html"
+    "docs/protocols.html"
+    "docs/cli.html"
+    "docs/pajuba.html"
+    "docs/api.html"
+    "docs/deployment.html"
 )
 
 for page in "${REQUIRED_PAGES[@]}"; do
@@ -77,8 +84,7 @@ echo "🖼️  [verify-site] Verificando referências de imagens..."
 MISSING_ASSETS=0
 while IFS= read -r html_file; do
     html_dir="$(dirname "$html_file")"
-    # Extract src="..."
-    grep -o -E 'src="[^"]+"' "$html_file" | sed -E 's/src="([^"]+)"/\1/' | while read -r src; do
+    (grep -o -E 'src="[^"]+"' "$html_file" || true) | sed -E 's/src="([^"]+)"/\1/' | while read -r src; do
         # Ignore external URLs
         if [[ "$src" =~ ^https?:// ]] || [[ "$src" == "" ]]; then
             continue

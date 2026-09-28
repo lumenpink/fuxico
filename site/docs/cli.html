@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="zine">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuxico — Manual das Ferramentas de Linha de Comando (`fux`)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const saved = localStorage.getItem('fuxico_theme');
+                let theme = 'zine';
+                if (params.get('acad') === 'true' || params.get('theme') === 'acad' || params.has('acad')) {
+                    theme = 'acad';
+                } else if (params.get('theme') === 'zine') {
+                    theme = 'zine';
+                } else if (saved === 'acad' || saved === 'zine') {
+                    theme = saved;
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
+    <style>
+        /* Base Resets & Transitions */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ─── DUAL SKIN: 1. TRAVA ZINE (FUXICO STANDARD) ─── */
+        [data-theme="zine"] {
+            --bg-body: #121016;
+            --bg-card: #1a1622;
+            --bg-surface: #221c2e;
+            --text-main: #f5f4ef;
+            --text-muted: #9f97ad;
+            --text-link: #e2f835;
+            --acid-yellow: #e2f835;
+            --acid-hover: #ccee22;
+            --electric-pink: #ff2a85;
+            --tape-black: #0a080d;
+            --border-color: #383047;
+            --border-hard: 2px solid #000;
+            --shadow-hard: 4px 4px 0px #0a080d;
+            --shadow-accent: 5px 5px 0px var(--electric-pink);
+            --font-heading: 'Anton', -apple-system, sans-serif;
+            --font-sub: 'Space Grotesk', -apple-system, sans-serif;
+            --font-body: 'Space Grotesk', -apple-system, sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --code-bg: #09080d;
+            --callout-bg: #1c1726;
+            --mark-bg: rgba(226, 248, 53, 0.3);
+            --mark-color: #e2f835;
+        }
+
+        /* ─── DUAL SKIN: 2. ACADÊMICO DEPRESSIVO MONOCROMÁTICO (?acad=true) ─── */
+        [data-theme="acad"] {
+            --bg-body: #fcfcfc;
+            --bg-card: #ffffff;
+            --bg-surface: #f4f4f5;
+            --text-main: #18181b;
+            --text-muted: #52525b;
+            --text-link: #09090b;
+            --acid-yellow: #09090b;
+            --acid-hover: #27272a;
+            --electric-pink: #27272a;
+            --tape-black: #e4e4e7;
+            --border-color: #d4d4d8;
+            --border-hard: 1px solid #18181b;
+            --shadow-hard: 2px 2px 0px #d4d4d8;
+            --shadow-accent: none;
+            --font-heading: 'Noto Serif', Georgia, serif;
+            --font-sub: 'Noto Serif', Georgia, serif;
+            --font-body: 'Noto Serif', Georgia, serif;
+            --font-mono: 'Space Mono', Courier, monospace;
+            --code-bg: #f4f4f5;
+            --callout-bg: #fafafa;
+            --mark-bg: #e4e4e7;
+            --mark-color: #09090b;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px 40px 16px;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        /* Zine background pattern */
+        [data-theme="zine"] body {
+            background-image: 
+                radial-gradient(circle, rgba(226, 248, 53, 0.04) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 10% 20%, rgba(255, 42, 133, 0.06) 0%, transparent 40%);
+            background-size: 20px 20px, 100% 100%;
+        }
+
+        /* Academic background pattern */
+        [data-theme="acad"] body {
+            background-image: linear-gradient(to right, #f4f4f5 1px, transparent 1px);
+            background-size: 80px 100%;
+        }
+
+        /* Layout Container */
+        .fuxico-container {
+            width: 100%;
+            max-width: 860px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-hard);
+            padding: 36px 32px;
+            position: relative;
+        }
+
+        [data-theme="zine"] .fuxico-container {
+            box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);
+            border: 2px solid var(--border-color);
+        }
+
+        [data-theme="acad"] .fuxico-container {
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            max-width: 820px;
+            padding: 56px 48px;
+        }
+
+        /* Trans Pride Stripes */
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+        }
+        .trans-stripe.bottom {
+            margin-top: 36px;
+            margin-bottom: 0;
+            border-top: 2px solid #000;
+            border-bottom: none;
+        }
+        .trans-stripe-line { flex: 1; width: 100%; }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+
+        /* In Academic mode, hide decorative stripes and tape */
+        [data-theme="acad"] .trans-stripe,
+        [data-theme="acad"] .duct-tape {
+            display: none !important;
+        }
+
+        /* Duct tape badge */
+        .duct-tape {
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1.5deg);
+            background: rgba(226, 248, 53, 0.96);
+            color: #000;
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            padding: 4px 28px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.6);
+            z-index: 10;
+            user-select: none;
+            text-transform: uppercase;
+        }
+
+        /* Document Top Toolbar */
+        .doc-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        [data-theme="acad"] .doc-toolbar {
+            border-bottom: 1px solid #18181b;
+            font-size: 0.85rem;
+            padding-bottom: 12px;
+            margin-bottom: 36px;
+        }
+
+        .doc-breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doc-breadcrumbs a {
+            color: var(--text-link);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .doc-breadcrumbs a:hover { text-decoration: underline; }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-tool {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.4);
+            user-select: none;
+        }
+
+        [data-theme="acad"] .btn-tool {
+            background: #ffffff;
+            border: 1px solid #71717a;
+            color: #18181b;
+            box-shadow: none;
+            border-radius: 2px;
+        }
+
+        .btn-tool:hover {
+            border-color: var(--acid-yellow);
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .btn-tool:hover {
+            background: #f4f4f5;
+            color: #000;
+            border-color: #000;
+        }
+
+        /* ─── TYPOGRAPHY & ARTICLE CONTENT ─── */
+        .fuxico-article {
+            font-size: 1.05rem;
+        }
+
+        [data-theme="acad"] .fuxico-article {
+            font-size: 1.08rem;
+            text-align: justify;
+        }
+
+        /* Headings */
+        .fuxico-article h1,
+        .fuxico-article h2,
+        .fuxico-article h3,
+        .fuxico-article h4,
+        .fuxico-article h5,
+        .fuxico-article h6 {
+            color: var(--text-main);
+            margin-top: 1.6em;
+            margin-bottom: 0.6em;
+            line-height: 1.25;
+            scroll-margin-top: 20px;
+        }
+
+        [data-theme="zine"] .fuxico-article h1 {
+            font-family: var(--font-heading);
+            font-size: 2.4rem;
+            color: var(--acid-yellow);
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0px #000;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        [data-theme="zine"] .fuxico-article h2 {
+            font-family: var(--font-sub);
+            font-size: 1.6rem;
+            color: var(--electric-pink);
+            letter-spacing: 0.5px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 6px;
+        }
+        [data-theme="zine"] .fuxico-article h3 {
+            font-family: var(--font-sub);
+            font-size: 1.3rem;
+            color: var(--text-main);
+        }
+
+        [data-theme="acad"] .fuxico-article h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 1.2em;
+            border-bottom: 1px solid #18181b;
+            padding-bottom: 12px;
+        }
+        [data-theme="acad"] .fuxico-article h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 1.8em;
+            border-bottom: 1px solid #e4e4e7;
+            padding-bottom: 4px;
+        }
+        [data-theme="acad"] .fuxico-article h3 {
+            font-size: 1.18rem;
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        /* Paragraphs & Text */
+        .fuxico-article p {
+            margin-bottom: 1.2em;
+        }
+
+        .fuxico-article a {
+            color: var(--text-link);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        [data-theme="zine"] .fuxico-article a:hover {
+            background: var(--acid-yellow);
+            color: #000;
+            text-decoration: none;
+        }
+
+        .fuxico-article strong { font-weight: 700; }
+        .fuxico-article em { font-style: italic; }
+        .fuxico-article s, .fuxico-article del { text-decoration: line-through; opacity: 0.75; }
+
+        /* Highlights */
+        .fuxico-article mark {
+            background-color: var(--mark-bg);
+            color: var(--mark-color);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        /* Blockquotes */
+        .fuxico-article blockquote {
+            border-left: 4px solid var(--electric-pink);
+            background: var(--callout-bg);
+            padding: 12px 18px;
+            margin: 1.4em 0;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        [data-theme="acad"] .fuxico-article blockquote {
+            border-left: 3px solid #71717a;
+            background: #fafafa;
+            color: #3f3f46;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* Obsidian Callouts */
+        .callout {
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--callout-color, var(--acid-yellow));
+            background: var(--callout-bg);
+            padding: 14px 18px;
+            margin: 1.5em 0;
+            border-radius: 2px;
+        }
+
+        .callout-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-family: var(--font-sub);
+            color: var(--callout-color, var(--acid-yellow));
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        [data-theme="acad"] .callout {
+            border: 1px solid #d4d4d8;
+            border-left: 4px solid #18181b;
+            background: #fbfbfb;
+            box-shadow: none;
+        }
+        [data-theme="acad"] .callout-title {
+            color: #18181b;
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+        }
+
+        .callout-note { --callout-color: #38bdf8; }
+        .callout-tip { --callout-color: #4ade80; }
+        .callout-warning { --callout-color: #facc15; }
+        .callout-danger { --callout-color: #f87171; }
+        .callout-info { --callout-color: #a78bfa; }
+        .callout-quote { --callout-color: #9f97ad; }
+
+        /* Code Blocks */
+        .code-block-wrapper {
+            margin: 1.5em 0;
+            border: 1px solid var(--border-color);
+            background: var(--code-bg);
+            box-shadow: var(--shadow-hard);
+            overflow: hidden;
+        }
+
+        [data-theme="acad"] .code-block-wrapper {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+        }
+
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--tape-black);
+            padding: 6px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .btn-copy-code {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
+        .btn-copy-code:hover {
+            color: var(--text-main);
+            border-color: var(--acid-yellow);
+        }
+
+        .fuxico-article pre {
+            padding: 14px 16px;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        .fuxico-article code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border: 1px solid var(--border-color);
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .fuxico-article code {
+            color: #18181b;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+        }
+
+        .fuxico-article pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Lists */
+        .fuxico-article ul, .fuxico-article ol {
+            margin: 1.2em 0 1.2em 2em;
+        }
+
+        .fuxico-article li {
+            margin-bottom: 0.4em;
+        }
+
+        .task-list-item {
+            list-style-type: none;
+            margin-left: -1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-list-item input[type="checkbox"] {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            cursor: default;
+            position: relative;
+        }
+
+        .task-list-item input[type="checkbox"]:checked {
+            background: var(--acid-yellow);
+            border-color: var(--acid-yellow);
+        }
+
+        .task-list-item input[type="checkbox"]:checked::after {
+            content: '✔';
+            position: absolute;
+            top: -3px;
+            left: 2px;
+            font-size: 11px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1.6em 0;
+        }
+
+        .fuxico-article table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+            margin: 0 auto;
+        }
+
+        .fuxico-article th {
+            background: var(--tape-black);
+            color: var(--text-main);
+            font-family: var(--font-sub);
+            font-weight: 700;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        [data-theme="zine"] .fuxico-article th {
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .fuxico-article th {
+            background: #f4f4f5;
+            color: #18181b;
+            border: 1px solid #d4d4d8;
+            font-family: var(--font-heading);
+            font-size: 0.88rem;
+        }
+
+        .fuxico-article td {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+        }
+
+        [data-theme="acad"] .fuxico-article td {
+            border: 1px solid #e4e4e7;
+        }
+
+        /* Images & Figures */
+        .fuxico-article img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1.8em auto;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-hard);
+        }
+
+        [data-theme="acad"] .fuxico-article img {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+        }
+
+        /* Horizontal Rule */
+        .fuxico-article hr {
+            border: none;
+            border-top: 2px dashed var(--border-color);
+            margin: 2.2em 0;
+        }
+
+        [data-theme="acad"] .fuxico-article hr {
+            border-top: 1px solid #d4d4d8;
+        }
+
+        /* Footer */
+        .doc-footer {
+            margin-top: 36px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .doc-footer a {
+            color: var(--acid-yellow);
+            text-decoration: none;
+        }
+
+        [data-theme="acad"] .doc-footer a {
+            color: #18181b;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="fuxico-container">
+        <div class="trans-stripe" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+        <div class="duct-tape">FUXICO // DOCUMENTO</div>
+
+        <nav class="doc-toolbar">
+            <div class="doc-breadcrumbs">
+                <a href="/">FUXICO</a>
+                <span>/</span>
+                <span>CLI.md</span>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn-tool" id="btnThemeToggle" onclick="toggleTheme()" title="Alternar entre visual Zine e Acadêmico">
+                    <span id="themeLabel">🏛️ Acadêmico</span>
+                </button>
+                <a href="?raw=1" class="btn-tool" title="Ver ou baixar markdown puro">
+                    ⬇ Raw
+                </a>
+                <button type="button" class="btn-tool" onclick="copyDocUrl()" title="Copiar link do documento">
+                    🔗 Copiar
+                </button>
+            </div>
+        </nav>
+
+        <article class="fuxico-article">
+            <h1 id="manual-das-ferramentas-de-linha-de-comando-fux">Manual das Ferramentas de Linha de Comando (<code>fux</code>)</h1>
+<div class="callout callout-note"><div class="callout-title">Note</div><div class="callout-content">O Fuxico oferece duas implementações de cliente de terminal com paridade funcional total:
+1. <strong>Cliente Nativo em Rust (<code>fux-cli</code>):</strong> Binário standalone compilado estaticamente com <code>musl</code>, zero dependências de bibliotecas dinâmicas, disponível para x86_64, aarch64, armv7, armv6, macOS e Windows.
+2. <strong>Cliente Universal em Bash (<code>fux</code>):</strong> Script portátil sem dependências externas além de <code>bash</code> e <code>curl</code>, pronto para rodar em qualquer sistema Unix (Linux, macOS, BSD, Termux no Android).</div></div>
+<hr>
+<h2 id="1-a-regra-de-ouro-da-ergonomia-unix">1. A Regra de Ouro da Ergonomia Unix</h2>
+<div class="callout callout-important"><div class="callout-title">Important</div><div class="callout-content"><strong>Deboche e telemetria vão para o <code>stderr</code>. A URL limpa vai para o <code>stdout</code>.</strong></div></div>
+<p>Graças a essa garantia arquitetural, o comando <code>fux</code> pode ser encadeado em qualquer pipeline shell, script automatizado ou comando de clipboard sem risco de quebrar o fluxo:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash"># Copia diretamente a URL gerada para a área de transferência:
+fux screenshot.png --copia
+
+# Armazena a URL limpa diretamente em uma variável de ambiente:
+URL=$(fux relatorio.pdf --caladinho)
+
+# Envia a saída de um comando via pipe para uma queima-de-arquivo imediata:
+journalctl -n 50 | fux -q | wl-copy</code></pre></div>
+<hr>
+<h2 id="2-tabela-de-opcoes-e-flags-bilingues-en-pt-br">2. Tabela de Opções e Flags Bilíngues (EN / PT-BR)</h2>
+<p>O Fuxico disponibiliza opções totalmente bilíngues:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align:left;">Flag Curta</th><th style="text-align:left;">Flag Longa (EN)</th><th style="text-align:left;">Flag Longa (PT-BR)</th><th style="text-align:left;">Descrição</th></tr></thead><tbody><tr><td style="text-align:left;"><code>-e &lt;DUR&gt;</code></td><td style="text-align:left;"><code>--expire &lt;DUR&gt;</code></td><td style="text-align:left;"><code>--caduca &lt;DUR&gt;</code></td><td style="text-align:left;">Duração de retenção (ex: <code>10m</code>, <code>2h</code>, <code>7d</code>, ou inteiro em horas).</td></tr><tr><td style="text-align:left;"><code>-q</code>, <code>-o</code></td><td style="text-align:left;"><code>--oneshot</code></td><td style="text-align:left;"><code>--queima</code></td><td style="text-align:left;">Queima-de-arquivo: apaga o arquivo imediatamente após o 1º download.</td></tr><tr><td style="text-align:left;"><code>-s</code></td><td style="text-align:left;"><code>--secret</code></td><td style="text-align:left;"><code>--segredo</code></td><td style="text-align:left;">Gera um slug criptográfico de 16 caracteres com alta entropia.</td></tr><tr><td style="text-align:left;"><code>-n &lt;NOME&gt;</code></td><td style="text-align:left;"><code>--name &lt;NOME&gt;</code></td><td style="text-align:left;"><code>--nome &lt;NOME&gt;</code></td><td style="text-align:left;">Define um apelido customizado para a rota (ex: <code>/&lt;slug&gt;/&lt;nome&gt;</code>).</td></tr><tr><td style="text-align:left;"><code>-u &lt;URL&gt;</code></td><td style="text-align:left;"><code>--url &lt;URL&gt;</code></td><td style="text-align:left;"><code>--encurta &lt;URL&gt;</code></td><td style="text-align:left;">Encurta a URL de destino informada e retorna o link curto.</td></tr><tr><td style="text-align:left;"><code>-c</code></td><td style="text-align:left;"><code>--clipboard</code></td><td style="text-align:left;"><code>--copia</code></td><td style="text-align:left;">Copia automaticamente a URL de saída para a área de transferência.</td></tr><tr><td style="text-align:left;"><code>-Q</code></td><td style="text-align:left;"><code>--quiet</code></td><td style="text-align:left;"><code>--calado</code>, <code>--caladinho</code></td><td style="text-align:left;">Silencia toda a telemetria do <code>stderr</code>, emitindo apenas a URL pura.</td></tr><tr><td style="text-align:left;"><code>-l</code></td><td style="text-align:left;"><code>--list</code></td><td style="text-align:left;"><code>--lista</code></td><td style="text-align:left;">Lista todas as fofocas e arquivos ativos na instância.</td></tr><tr><td style="text-align:left;"><code>-d &lt;SLUG&gt;</code></td><td style="text-align:left;"><code>--delete &lt;SLUG&gt;</code></td><td style="text-align:left;"><code>--apaga &lt;SLUG&gt;</code></td><td style="text-align:left;">Apaga o item informado utilizando a ficha de gestão (<code>X-Token</code>).</td></tr><tr><td style="text-align:left;"><code>-t &lt;TOK&gt;</code></td><td style="text-align:left;"><code>--token &lt;TOK&gt;</code></td><td style="text-align:left;"><code>--ficha &lt;TOK&gt;</code></td><td style="text-align:left;">Token de autorização mestre ou token de gestão (<code>X-Token</code>).</td></tr><tr><td style="text-align:left;"><code>-S &lt;URL&gt;</code></td><td style="text-align:left;"><code>--server &lt;URL&gt;</code></td><td style="text-align:left;"><code>--servidor &lt;URL&gt;</code></td><td style="text-align:left;">Define o endereço do servidor (padrão: <code>https://fuxico.2lp.in</code>).</td></tr><tr><td style="text-align:left;"><code>-D &lt;DIAL&gt;</code></td><td style="text-align:left;"><code>--dialect &lt;DIAL&gt;</code></td><td style="text-align:left;"><code>--dialeto &lt;DIAL&gt;</code></td><td style="text-align:left;">Dialeto do protocolo: <code>nullpointer</code> (0x0.st) ou <code>rustypaste</code>.</td></tr><tr><td style="text-align:left;"><code>-g</code></td><td style="text-align:left;"><code>--gist</code></td><td style="text-align:left;"><code>--gist</code></td><td style="text-align:left;">Modo gist: agrupa múltiplos arquivos em uma publicação conjunta.</td></tr></tbody></table></div>
+<hr>
+<h2 id="3-subcomandos-especiais">3. Subcomandos Especiais</h2>
+<h3 id="3-1-publicacao-de-gists-multi-arquivo">3.1 Publicação de Gists Multi-Arquivo</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash"># Publica múltiplos arquivos em um único gist com abas de código:
+fux gist script.py README.md style.css
+
+# Com expiração e cópia automática:
+fux gist main.rs config.toml --caduca 48h --copia</code></pre></div>
+<h3 id="3-2-criacao-rapida-de-repositorios-git-efemeros">3.2 Criação Rápida de Repositórios Git Efêmeros</h3>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash"># Cria um repositório git temporário e já configura o remote local &#039;fuxico&#039;:
+fux git init meu-projeto
+
+# Envia seus commits imediatamente via Git HTTP Smart Protocol:
+git push -u fuxico main</code></pre></div>
+<hr>
+<h2 id="4-arquivo-de-configuracao-unificado-config-fux-config-toml">4. Arquivo de Configuração Unificado (<code>~/.config/fux/config.toml</code>)</h2>
+<p>Ambos os clientes (Rust e Bash) compartilham o mesmo arquivo de configuração local, permitindo definir servidores, fichas e dialetos padrão:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>TOML</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-toml"># Endereço do servidor Fuxico
+server = &quot;https://fuxico.2lp.in&quot;
+
+# Token mestre para instâncias privadas (opcional)
+# token = &quot;sua-ficha-aqui&quot;
+
+# Dialeto de comunicação padrão (nullpointer ou rustypaste)
+dialect = &quot;nullpointer&quot;
+
+# Tempo padrão de retenção
+expires = &quot;24h&quot;
+
+# Queima-de-arquivo desativada por padrão
+oneshot = false
+
+# Copiar automaticamente para o clipboard
+clipboard = true</code></pre></div>
+        </article>
+
+        <div class="trans-stripe bottom" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+    </div>
+
+    <footer class="doc-footer">
+        <p>Postado em 2026-09-28 20:52:27 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'zine';
+            const next = current === 'zine' ? 'acad' : 'zine';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fuxico_theme', next);
+            updateThemeLabel(next);
+        }
+
+        function updateThemeLabel(theme) {
+            const label = document.getElementById('themeLabel');
+            if (label) {
+                label.innerText = theme === 'zine' ? '🏛️ Acadêmico' : '⚡ Zine';
+            }
+        }
+
+        function copyDocUrl() {
+            navigator.clipboard.writeText(window.location.href.split('?')[0])
+                .then(() => alert('Link copiado para a área de transferência!'));
+        }
+
+        function copyCode(btn) {
+            const pre = btn.closest('.code-block-wrapper').querySelector('pre');
+            if (pre) {
+                navigator.clipboard.writeText(pre.innerText).then(() => {
+                    const original = btn.innerText;
+                    btn.innerText = 'Copiado!';
+                    setTimeout(() => { btn.innerText = original; }, 2000);
+                });
+            }
+        }
+
+        // Initialize button label on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'zine';
+            updateThemeLabel(current);
+        });
+    </script>
+</body>
+</html>

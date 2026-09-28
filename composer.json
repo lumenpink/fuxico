@@ -31,6 +31,7 @@
         "build:clients": "./scripts/build_clients.sh",
         "build:clients:all": "./scripts/build_clients.sh --all",
         "verify:site": "./bin/verify-site.sh",
+        "docs:build": "php scripts/build_docs.php",
         "bundle": "./scripts/build_bundles.sh",
         "ci": [
             "@lint",
