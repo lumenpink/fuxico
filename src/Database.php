@@ -173,7 +173,7 @@ class Database
             $params[':search'] = '%'.trim($search).'%';
         }
 
-        if ($type !== null && in_array($type, ['file', 'url', 'doc'], true)) {
+        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
@@ -202,7 +202,7 @@ class Database
             $params[':search'] = '%'.trim($search).'%';
         }
 
-        if ($type !== null && in_array($type, ['file', 'url', 'doc'], true)) {
+        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
@@ -239,7 +239,7 @@ class Database
     }
 
     /**
-     * @return array{total_items: int, total_files: int, total_urls: int, total_bytes: int, total_views: int}
+     * @return array{total_items: int, total_files: int, total_urls: int, total_docs: int, total_gists: int, total_bytes: int, total_views: int}
      */
     public function getStats(): array
     {
@@ -248,6 +248,8 @@ class Database
                 COUNT(*) as total_items,
                 SUM(CASE WHEN type = "file" THEN 1 ELSE 0 END) as total_files,
                 SUM(CASE WHEN type = "url" THEN 1 ELSE 0 END) as total_urls,
+                SUM(CASE WHEN type = "doc" THEN 1 ELSE 0 END) as total_docs,
+                SUM(CASE WHEN type = "gist" THEN 1 ELSE 0 END) as total_gists,
                 SUM(size) as total_bytes,
                 SUM(views) as total_views
             FROM items
@@ -258,6 +260,8 @@ class Database
             'total_items' => (int) ($res['total_items'] ?? 0),
             'total_files' => (int) ($res['total_files'] ?? 0),
             'total_urls' => (int) ($res['total_urls'] ?? 0),
+            'total_docs' => (int) ($res['total_docs'] ?? 0),
+            'total_gists' => (int) ($res['total_gists'] ?? 0),
             'total_bytes' => (int) ($res['total_bytes'] ?? 0),
             'total_views' => (int) ($res['total_views'] ?? 0),
         ];

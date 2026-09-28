@@ -144,6 +144,16 @@ struct Cli {
         alias = "caladinho"
     )]
     quiet: bool,
+
+    /// Upload multiple files as a Gist
+    #[arg(
+        short = 'g',
+        long = "gist",
+        value_name = "FILES",
+        num_args = 1..,
+        help = "Upload multiple files as a Gist"
+    )]
+    gist: Vec<PathBuf>,
 }
 
 fn load_file_config(cli_config: Option<&Path>) -> FileConfig {
@@ -309,6 +319,76 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .call()?;
         let body: String = resp.body_mut().read_to_string()?;
         print!("{}", body);
+        return Ok(());
+    }
+
+    // 2.5 Gist Upload
+    if !cli.gist.is_empty() {
+        if !quiet {
+            eprintln!("empacotando o gist com {} arquivos...", cli.gist.len());
+        }
+
+        let mut files_map = serde_json::Map::new();
+        for path in &cli.gist {
+            let content = std::fs::read_to_string(path).map_err(|e| {
+                eprintln!("arquivo não encontrado ou inválido {}: {}", path.display(), e);
+                std::process::exit(1);
+            })?;
+            let file_name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("file")
+                .to_string();
+            let mut file_obj = serde_json::Map::new();
+            file_obj.insert("content".to_string(), serde_json::Value::String(content));
+            files_map.insert(file_name, serde_json::Value::Object(file_obj));
+        }
+
+        let mut payload = serde_json::Map::new();
+        payload.insert("files".to_string(), serde_json::Value::Object(files_map));
+        if let Some(ref name) = cli.name {
+            payload.insert("title".to_string(), serde_json::Value::String(name.clone()));
+        }
+        if let Some(ref exp) = expires {
+            payload.insert("expires".to_string(), serde_json::Value::String(exp.clone()));
+        }
+        if oneshot {
+            payload.insert("oneshot".to_string(), serde_json::Value::Bool(true));
+        }
+        if secret {
+            payload.insert("secret".to_string(), serde_json::Value::Bool(true));
+        }
+
+        let url = format!("{}/api/gist", server.trim_end_matches('/'));
+        let mut req = ureq::post(&url);
+
+        if !token.is_empty() {
+            req = req.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let mut resp = req.send_json(serde_json::Value::Object(payload))?;
+
+        if !quiet {
+            if let Some(x_token) = resp.headers().get("x-token").and_then(|v| v.to_str().ok()) {
+                eprintln!("Management Token (X-Token): {}", x_token);
+            }
+        }
+
+        let body: String = resp.body_mut().read_to_string()?;
+        let final_url = if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body) {
+            json_val.get("url").and_then(|u| u.as_str()).unwrap_or(&body).trim().to_string()
+        } else {
+            body.trim().to_string()
+        };
+
+        if cli.copy {
+            copy_to_clipboard(&final_url);
+            if !quiet {
+                eprintln!("link copiado pro clipboard.");
+            }
+        }
+
+        println!("{}", final_url);
         return Ok(());
     }
 

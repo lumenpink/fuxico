@@ -243,6 +243,15 @@ class App
 
         $xToken = bin2hex(random_bytes(16));
 
+        // 0. Multi-file Gist Upload (via files[] or type=gist)
+        $isGistUpload = (isset($_FILES['files']) && is_array($_FILES['files']['name'])) ||
+                        (isset($_POST['type']) && $_POST['type'] === 'gist');
+        if ($isGistUpload) {
+            $this->handleGistUpload($slug, $xToken, $oneshot, $expiresAt, $customName);
+
+            return;
+        }
+
         // 1. File Upload (supports 'file' and rustypaste 'oneshot' multipart field)
         $uploadFile = null;
         if (isset($_FILES['file']) && is_array($_FILES['file']) && ! empty($_FILES['file']['tmp_name'])) {
@@ -477,6 +486,81 @@ class App
         echo "{$this->getBaseUrl()}/{$slug}{$urlExt}\n";
     }
 
+    private function handleGistUpload(string $slug, string $xToken, bool $oneshot, ?int $expiresAt, string $customName): void
+    {
+        $files = [];
+        if (isset($_FILES['files']) && is_array($_FILES['files']['name'])) {
+            $count = count($_FILES['files']['name']);
+            for ($i = 0; $i < $count; $i++) {
+                $tmp = $_FILES['files']['tmp_name'][$i];
+                $name = $_FILES['files']['name'][$i];
+                if ($tmp && is_uploaded_file($tmp) && $_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
+                    $content = file_get_contents($tmp);
+                    if ($content !== false) {
+                        $files[basename($name)] = $content;
+                    }
+                }
+            }
+        } elseif (isset($_FILES['file']) && is_array($_FILES['file']) && ! empty($_FILES['file']['tmp_name'])) {
+            $content = file_get_contents($_FILES['file']['tmp_name']);
+            if ($content !== false) {
+                $files[$_FILES['file']['name']] = $content;
+            }
+        }
+
+        if (empty($files)) {
+            http_response_code(400);
+            header('Content-Type: text/plain');
+            echo "Error: No files provided for Gist.\n";
+
+            return;
+        }
+
+        $totalBytes = 0;
+        foreach ($files as $c) {
+            $totalBytes += strlen($c);
+        }
+        if ($totalBytes > $this->config->maxUploadSize) {
+            http_response_code(413);
+            header('Content-Type: text/plain');
+            echo "Error: Gist payload exceeds maximum allowed size.\n";
+
+            return;
+        }
+
+        $this->storage->storeGistFiles($slug, $files);
+
+        $defaultTheme = (isset($_POST['theme']) && strtolower((string) $_POST['theme']) === 'acad') ? 'acad' : 'zine';
+        $title = $customName !== '' ? $customName : (array_key_first($files) ?: 'Gist');
+        $bakedHtml = GistRenderer::render($files, [
+            'title' => $title,
+            'slug' => $slug,
+            'default_theme' => $defaultTheme,
+            'created_at' => time(),
+            'base_url' => $this->getBaseUrl(),
+        ]);
+        file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
+
+        $this->db->createItem([
+            'id' => bin2hex(random_bytes(8)),
+            'slug' => $slug,
+            'original_name' => $title,
+            'type' => 'gist',
+            'file_path' => "{$slug}.zip",
+            'mime_type' => 'application/zip',
+            'size' => $totalBytes,
+            'x_token' => $xToken,
+            'is_oneshot' => $oneshot ? 1 : 0,
+            'expires_at' => $expiresAt,
+            'created_at' => time(),
+            'views' => 0,
+        ]);
+
+        header("x-token: {$xToken}");
+        header('Content-Type: text/plain');
+        echo "{$this->getBaseUrl()}/{$slug}\n";
+    }
+
     private function handleItemRoute(string $path, string $method, ?string $authHeader): void
     {
         // Support subpaths like /<slug>.<ext>/<friendly_name>
@@ -499,8 +583,50 @@ class App
             return;
         }
 
-        // Check if requesting an asset inside a doc or item directory (e.g. /<slug>/assets/<filename>)
+        // Subpath handling (e.g. /<slug>/raw/<filename>, /<slug>/zip, /<slug>/assets/<filename>)
         if (count($parts) > 1) {
+            $subAction = $parts[1];
+
+            // 1. Raw file inside Gist: /<slug>/raw or /<slug>/raw/<filename>
+            if ($subAction === 'raw') {
+                $requestedFile = implode('/', array_slice($parts, 2));
+                if ($requestedFile === '') {
+                    $files = $this->storage->getGistFiles($slug);
+                    $first = array_key_first($files);
+                    $requestedFile = $first ?: '';
+                }
+                $content = $this->storage->getGistFile($slug, $requestedFile);
+                if ($content !== null) {
+                    $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
+                    $mime = match ($ext) {
+                        'md', 'markdown' => 'text/markdown; charset=UTF-8',
+                        'json' => 'application/json; charset=UTF-8',
+                        'html' => 'text/html; charset=UTF-8',
+                        'css' => 'text/css; charset=UTF-8',
+                        default => 'text/plain; charset=UTF-8',
+                    };
+                    header('Content-Type: '.$mime);
+                    echo $content;
+
+                    return;
+                }
+            }
+
+            // 2. Download ZIP: /<slug>/zip
+            if ($subAction === 'zip') {
+                $zipData = $this->storage->getGistZip($slug);
+                if ($zipData !== null) {
+                    $safeZipName = ($item['original_name'] ? preg_replace('/[^\w\-]/', '_', $item['original_name']) : $slug).'.zip';
+                    header('Content-Type: application/zip');
+                    header('Content-Disposition: attachment; filename="'.$safeZipName.'"');
+                    header('Content-Length: '.(string) strlen($zipData));
+                    echo $zipData;
+
+                    return;
+                }
+            }
+
+            // 3. Asset inside doc directory (e.g. /<slug>/assets/<filename>)
             $assetName = basename(end($parts));
             $assetPath = $this->storage->getFilesDir()."/{$slug}_assets/{$assetName}";
             if (file_exists($assetPath)) {
@@ -645,6 +771,49 @@ class App
                 return;
             }
 
+            // Rendered Gist Package
+            if ($item['type'] === 'gist') {
+                $this->db->incrementViews($slug);
+                $isOneshot = (bool) $item['is_oneshot'];
+                if ($isOneshot) {
+                    $this->db->deleteBySlug($slug);
+                }
+
+                $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+                $isRaw = isset($_GET['raw']) || ! str_contains($accept, 'text/html');
+
+                if ($isRaw) {
+                    $files = $this->storage->getGistFiles($slug);
+                    header('Content-Type: text/plain; charset=UTF-8');
+                    if (count($files) === 1) {
+                        echo reset($files);
+                    } else {
+                        foreach ($files as $name => $content) {
+                            echo "=== File: {$name} ===\n";
+                            echo $content."\n\n";
+                        }
+                    }
+
+                    return;
+                }
+
+                $htmlFilename = "{$slug}.html";
+                if (! $this->storage->fileExists($htmlFilename)) {
+                    $files = $this->storage->getGistFiles($slug);
+                    $baked = GistRenderer::render($files, [
+                        'title' => $item['original_name'] ?: $slug,
+                        'slug' => $slug,
+                        'created_at' => (int) $item['created_at'],
+                        'base_url' => $this->getBaseUrl(),
+                    ]);
+                    file_put_contents($this->storage->getFilePath($htmlFilename), $baked);
+                }
+
+                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', "{$slug}.html", true, $isOneshot);
+
+                return;
+            }
+
             // Stream File
             $this->db->incrementViews($slug);
             $mime = $item['mime_type'] ?: 'application/octet-stream';
@@ -709,6 +878,12 @@ class App
             http_response_code(401);
             header('Content-Type: application/json');
             echo json_encode(['error' => 'Unauthorized']);
+
+            return;
+        }
+
+        if ($endpoint === 'gist' && $method === 'POST') {
+            $this->handleGistApi($authHeader);
 
             return;
         }
@@ -841,6 +1016,155 @@ class App
         http_response_code(404);
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Not found']);
+    }
+
+    private function handleGistApi(?string $authHeader): void
+    {
+        if (! $this->config->publicMode && ! $this->config->isAuthorized($authHeader)) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Unauthorized']);
+
+            return;
+        }
+
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        $isJson = str_contains($contentType, 'application/json');
+
+        $files = [];
+        $title = '';
+        $expires = null;
+        $oneshot = false;
+        $secret = false;
+        $defaultTheme = 'zine';
+
+        if ($isJson) {
+            $body = file_get_contents('php://input');
+            if (! $body && isset($_POST['json'])) {
+                $body = (string) $_POST['json'];
+            }
+            $data = json_decode($body ?: '', true);
+            if (! is_array($data) || empty($data['files'])) {
+                http_response_code(400);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Missing or invalid "files" object.']);
+
+                return;
+            }
+
+            $title = (string) ($data['title'] ?? $data['description'] ?? '');
+            $expires = $data['expires'] ?? $data['expiration'] ?? null;
+            $oneshot = ! empty($data['oneshot']);
+            $secret = ! empty($data['secret']);
+            if (isset($data['theme']) && strtolower((string) $data['theme']) === 'acad') {
+                $defaultTheme = 'acad';
+            }
+
+            foreach ($data['files'] as $name => $fileData) {
+                $content = is_array($fileData) ? ($fileData['content'] ?? '') : (string) $fileData;
+                $files[(string) $name] = $content;
+            }
+        } else {
+            // Multipart
+            if (isset($_FILES['files']) && is_array($_FILES['files']['name'])) {
+                $count = count($_FILES['files']['name']);
+                for ($i = 0; $i < $count; $i++) {
+                    $tmp = $_FILES['files']['tmp_name'][$i];
+                    $name = $_FILES['files']['name'][$i];
+                    if ($tmp && is_uploaded_file($tmp) && $_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
+                        $content = file_get_contents($tmp);
+                        if ($content !== false) {
+                            $files[basename($name)] = $content;
+                        }
+                    }
+                }
+            } elseif (isset($_FILES['file']) && is_array($_FILES['file']) && ! empty($_FILES['file']['tmp_name'])) {
+                $content = file_get_contents($_FILES['file']['tmp_name']);
+                if ($content !== false) {
+                    $files[$_FILES['file']['name']] = $content;
+                }
+            }
+
+            $title = (string) ($_POST['title'] ?? $_POST['description'] ?? $_POST['customName'] ?? '');
+            $expires = $_POST['expires'] ?? null;
+            $oneshot = isset($_POST['oneshot']) && filter_var($_POST['oneshot'], FILTER_VALIDATE_BOOLEAN);
+            $secret = isset($_POST['secret']) && filter_var($_POST['secret'], FILTER_VALIDATE_BOOLEAN);
+            if (isset($_POST['theme']) && strtolower((string) $_POST['theme']) === 'acad') {
+                $defaultTheme = 'acad';
+            }
+        }
+
+        if (empty($files)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'No files provided for Gist.']);
+
+            return;
+        }
+
+        $totalBytes = 0;
+        foreach ($files as $c) {
+            $totalBytes += strlen($c);
+        }
+        if ($totalBytes > $this->config->maxUploadSize) {
+            http_response_code(413);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Gist payload exceeds maximum allowed size.']);
+
+            return;
+        }
+
+        $expiresAt = $this->parseExpiration($expires ? (string) $expires : null);
+        $slug = $this->generateSlug($secret);
+        $xToken = bin2hex(random_bytes(16));
+
+        $this->storage->storeGistFiles($slug, $files);
+
+        $firstFilename = array_key_first($files) ?: 'Gist';
+        $finalTitle = $title !== '' ? $title : $firstFilename;
+
+        $bakedHtml = GistRenderer::render($files, [
+            'title' => $finalTitle,
+            'slug' => $slug,
+            'default_theme' => $defaultTheme,
+            'created_at' => time(),
+            'base_url' => $this->getBaseUrl(),
+        ]);
+        file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
+
+        $this->db->createItem([
+            'id' => bin2hex(random_bytes(8)),
+            'slug' => $slug,
+            'original_name' => $finalTitle,
+            'type' => 'gist',
+            'file_path' => "{$slug}.zip",
+            'mime_type' => 'application/zip',
+            'size' => $totalBytes,
+            'x_token' => $xToken,
+            'is_oneshot' => $oneshot ? 1 : 0,
+            'expires_at' => $expiresAt,
+            'created_at' => time(),
+            'views' => 0,
+        ]);
+
+        header("x-token: {$xToken}");
+        $url = "{$this->getBaseUrl()}/{$slug}";
+
+        if ($isJson || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'slug' => $slug,
+                'url' => $url,
+                'raw_url' => "{$url}/raw",
+                'zip_url' => "{$url}/zip",
+                'x_token' => $xToken,
+                'files' => array_keys($files),
+                'total_bytes' => $totalBytes,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        } else {
+            header('Content-Type: text/plain');
+            echo "{$url}\n";
+        }
     }
 
     private function handlePainel(string $method): void

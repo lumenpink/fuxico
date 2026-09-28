@@ -1025,7 +1025,7 @@ class Views
             <section id="uploadTab" class="tab-pane active">
                 <div id="dropzone" class="dropzone">
                     <span class="dropzone-stamp" aria-hidden="true">CONFIDENCIAL // 100% EFÊMERO</span>
-                    <input type="file" id="fileInput" style="display:none;">
+                    <input type="file" id="fileInput" multiple style="display:none;">
                     <span class="drop-icon">📦</span>
                     <p class="drop-text" id="dropTitle">{$t('drop_idle')}</p>
                     <p class="drop-sub">{$t('drop_sub')} <span class="dymo-tape">MAX: {$maxSizeMb} MB</span></p>
@@ -1044,6 +1044,10 @@ class Views
                     <label class="option-item">
                         <input type="checkbox" id="optDoc">
                         <span class="option-label">📖 {$t('opt_doc')}{$tip('tip_doc')}</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" id="optGist">
+                        <span class="option-label">📦 {$t('opt_gist')}{$tip('tip_gist')}</span>
                     </label>
                 </div>
 
@@ -1167,13 +1171,13 @@ class Views
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
         const dropTitle = document.getElementById('dropTitle');
-        let selectedFile = null;
+        let selectedFiles = [];
 
         dropzone.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                selectFile(e.target.files[0]);
+                selectFiles(Array.from(e.target.files));
             }
         });
 
@@ -1193,22 +1197,30 @@ class Views
             dropzone.classList.remove('dragover');
             dropTitle.innerText = t('drop_idle');
             if (e.dataTransfer.files.length > 0) {
-                selectFile(e.dataTransfer.files[0]);
+                selectFiles(Array.from(e.dataTransfer.files));
             }
         });
 
-        function selectFile(file) {
-            selectedFile = file;
-            document.getElementById('selectedFileName').innerText = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-            if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-                const optDoc = document.getElementById('optDoc');
-                if (optDoc) optDoc.checked = true;
+        function selectFiles(files) {
+            selectedFiles = files;
+            if (files.length === 1) {
+                const file = files[0];
+                document.getElementById('selectedFileName').innerText = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+                    const optDoc = document.getElementById('optDoc');
+                    if (optDoc) optDoc.checked = true;
+                }
+            } else if (files.length > 1) {
+                const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+                document.getElementById('selectedFileName').innerText = '📦 ' + files.length + ' arquivos selecionados (' + (totalBytes / 1024).toFixed(1) + ' KB)';
+                const optGist = document.getElementById('optGist');
+                if (optGist) optGist.checked = true;
             }
         }
 
         // File Upload
         async function handleFileUpload() {
-            if (!selectedFile) {
+            if (selectedFiles.length === 0) {
                 alert(t('drop_idle'));
                 return;
             }
@@ -1217,8 +1229,17 @@ class Views
             btn.disabled = true;
             btn.innerText = t('btn_uploading');
 
+            const isGist = selectedFiles.length > 1 || (document.getElementById('optGist') && document.getElementById('optGist').checked);
             const fd = new FormData();
-            fd.append('file', selectedFile);
+
+            if (isGist) {
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    fd.append('files[]', selectedFiles[i]);
+                }
+                fd.append('type', 'gist');
+            } else {
+                fd.append('file', selectedFiles[0]);
+            }
 
             const expires = document.getElementById('optExpires').value;
             if (expires) fd.append('expires', expires);
@@ -1758,6 +1779,7 @@ HTML;
 
         .badge-file { background: var(--acid-yellow); color: #000; }
         .badge-doc { background: #c084fc; color: #000; }
+        .badge-gist { background: #34d399; color: #000; }
         .badge-url { background: #38bdf8; color: #000; }
         .badge-oneshot { background: var(--electric-pink); color: #fff; }
 
@@ -1889,6 +1911,7 @@ HTML;
                     <option value="">{$t('dash_filter_all')}</option>
                     <option value="file">{$t('dash_filter_files')}</option>
                     <option value="doc">{$t('dash_filter_docs')}</option>
+                    <option value="gist">{$t('dash_filter_gists')}</option>
                     <option value="url">{$t('dash_filter_urls')}</option>
                 </select>
             </div>
@@ -2071,6 +2094,8 @@ HTML;
                         typeBadge = '<span class="badge badge-file">' + escapeHtml(t('tab_file')) + '</span>';
                     } else if (item.type === 'doc') {
                         typeBadge = '<span class="badge badge-doc">📖 ' + escapeHtml(t('tab_doc')) + '</span>';
+                    } else if (item.type === 'gist') {
+                        typeBadge = '<span class="badge badge-gist">📦 ' + escapeHtml(t('tab_gist')) + '</span>';
                     } else {
                         typeBadge = '<span class="badge badge-url">URL</span>';
                     }

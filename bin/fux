@@ -29,6 +29,7 @@ DELETE_TARGET=""
 LIST_FILES=false
 COPY_CLIPBOARD=false
 SILENT=false
+IS_GIST=false
 
 # First pre-pass to check for --config / -C / --conf
 ARGS=("$@")
@@ -129,6 +130,7 @@ ${BOLD}Uso:${RESET}
     cat dump.sql | fux [opções]
     fux -q <arquivo>               (queima de arquivo: some no 1º download)
     fux -u <url>                   (encurtar fofoca)
+    fux -g <arq1> <arq2>...        (publicar gist multi-arquivo com abas)
     fux -d <slug>                  (queimar fofoca com token)
     fux -l                         (listar fofocas ativas)
 
@@ -140,6 +142,7 @@ ${BOLD}Opções (EN & PT-BR):${RESET}
     -q, -1, -o, --queima, --oneshot    Queima-de-arquivo (destruição no primeiro GET)
     -s, --secret, --segredo            Fofoca cifrada (slug de 16 caracteres indecifrável)
     -n, --name, --nome, --apelido <n>  Apelido customizado / slug
+    -g, --gist                         Publicar como Gist multi-arquivo com abas interativas
     -u, --url, --shorten, --encurta <u> Encurtar URL de destino
     -d, --delete, --apaga <slug>       Apagar / queimar fofoca
     -l, --list, --lista                Listar fofocas ativas (JSON)
@@ -151,6 +154,8 @@ ${BOLD}Opções (EN & PT-BR):${RESET}
 ${BOLD}Exemplos:${RESET}
     fux pedrada.pdf -q
     fux fofoca.png --caduca 2h --copia
+    fux gist app.py README.md config.json
+    fux -g main.rs Cargo.toml
     cat dump.sql | fux -e 2h
     fux --encurta https://exemplo.com --segredo
     url=\$(fux bafao.png --calado)
@@ -191,6 +196,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --name=*|--alias=*|--nome=*|--apelido=*)
             CUSTOM_NAME="${1#*=}"
+            shift
+            ;;
+        -g|--gist)
+            IS_GIST=true
             shift
             ;;
         -t|--token|--ficha)
@@ -353,7 +362,52 @@ if [[ -n "${TARGET_URL}" ]]; then
     exit 0
 fi
 
-# 4. Upload de Arquivo (ou stdin)
+# 4. Upload de Gist (multi-arquivo)
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 && "${POSITIONAL_ARGS[0]}" == "gist" ]]; then
+    IS_GIST=true
+    POSITIONAL_ARGS=("${POSITIONAL_ARGS[@]:1}")
+fi
+
+if [[ ${#POSITIONAL_ARGS[@]} -gt 1 ]]; then
+    IS_GIST=true
+fi
+
+if [[ "${IS_GIST}" == true ]]; then
+    if [[ ${#POSITIONAL_ARGS[@]} -eq 0 ]]; then
+        echo -e "${PINK}[fux]${RESET} especifique ao menos um arquivo para o gist" >&2
+        exit 1
+    fi
+    log "empacotando o gist com ${#POSITIONAL_ARGS[@]} arquivos..."
+    CURL_ARGS=("-s" "-f" "-D" "-")
+    for f in "${POSITIONAL_ARGS[@]}"; do
+        if [[ ! -f "$f" ]]; then
+            echo -e "${PINK}[fux]${RESET} arquivo não encontrado: $f" >&2
+            exit 1
+        fi
+        CURL_ARGS+=("-F" "files[]=@${f};filename=$(basename "$f")")
+    done
+    CURL_ARGS+=("-F" "type=gist")
+    if [[ -n "${CUSTOM_NAME}" ]]; then CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}"); fi
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+    if [[ "${SECRET}" == true ]]; then CURL_ARGS+=("-F" "secret="); fi
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/")
+    BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+    X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+    if [[ -n "$X_TOKEN" ]]; then
+        log "ficha de gerência (X-Token): ${X_TOKEN}"
+    fi
+
+    log "tá na rua! gist multi-arquivo publicado:"
+    echo "${BODY}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${BODY}"; fi
+    exit 0
+fi
+
+# 5. Upload de Arquivo (ou stdin)
 FILE_TO_UPLOAD=""
 TEMP_FILE=""
 

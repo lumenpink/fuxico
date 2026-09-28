@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (gist) suporte a gists multi-arquivo com visualizador tabulado e cli (closes #37)
   - (markdown) suporte a upload e baking estatico com temas zine e academico depressivo (closes #36)
   - (social) cartaz oficial e preview de compartilhamento para o Fuxico (closes #34)
   - (cli) add multi-platform cross-compilation with ARM32 SBC support (closes #29)

@@ -560,3 +560,41 @@ TOML);
     expect($get['status'])->toBe(200);
     expect($get['body'])->toBe('rustypaste dialect upload via rust');
 })->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');
+
+test('bash cli uploads multi-file gist via fux gist and serves raw and zip', function () use ($testEnv) {
+    $file1 = $testEnv->tempDir.'/app.py';
+    $file2 = $testEnv->tempDir.'/README.md';
+    file_put_contents($file1, "print('hello from gist')\n");
+    file_put_contents($file2, "# Gist Readme\nTest\n");
+
+    $res = $testEnv->runCmd("{$testEnv->bashBin} -S {$testEnv->host} -t tatanka gist ".escapeshellarg($file1).' '.escapeshellarg($file2));
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith($testEnv->host);
+
+    // Verify raw file
+    $rawRes = $testEnv->fetch("{$url}/raw/app.py");
+    expect($rawRes['status'])->toBe(200);
+    expect($rawRes['body'])->toBe("print('hello from gist')\n");
+
+    // Verify zip archive
+    $zipRes = $testEnv->fetch("{$url}/zip");
+    expect($zipRes['status'])->toBe(200);
+    expect(str_starts_with($zipRes['body'], "PK\x03\x04"))->toBeTrue();
+});
+
+test('rust cli uploads multi-file gist via fux -g', function () use ($testEnv) {
+    $file1 = $testEnv->tempDir.'/rust_gist.rs';
+    $file2 = $testEnv->tempDir.'/notes.txt';
+    file_put_contents($file1, "fn main() {}\n");
+    file_put_contents($file2, "Important notes\n");
+
+    $res = $testEnv->runCmd("{$testEnv->rustBin} -S {$testEnv->host} -t tatanka -g ".escapeshellarg($file1).' '.escapeshellarg($file2));
+    expect($res['code'])->toBe(0);
+    $url = trim($res['stdout']);
+    expect($url)->toStartWith($testEnv->host);
+
+    $rawRes = $testEnv->fetch("{$url}/raw/rust_gist.rs");
+    expect($rawRes['status'])->toBe(200);
+    expect($rawRes['body'])->toBe("fn main() {}\n");
+})->skip(fn () => ! file_exists($testEnv->rustBin), 'Rust binary not available in this environment');

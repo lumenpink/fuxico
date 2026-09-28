@@ -54,11 +54,13 @@ $fullVersion = $gitHash !== '' ? "{$version}+{$gitHash}" : $version;
 // 2. Define compilation order (topological dependency resolution)
 $compileFiles = [
     'Config.php',
+    'SimpleZip.php',
     'Storage.php',
     'MimeValidator.php',
     'Database.php',
     'I18n.php',
     'MarkdownRenderer.php',
+    'GistRenderer.php',
     'Views.php',
     'App.php',
 ];

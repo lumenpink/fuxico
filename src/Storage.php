@@ -144,6 +144,16 @@ class Storage
         if (is_dir($assetsDir)) {
             $this->deleteDirectory($assetsDir);
         }
+
+        $gistDir = $this->filesDir."/{$slug}_gist";
+        if (is_dir($gistDir)) {
+            $this->deleteDirectory($gistDir);
+        }
+
+        $zipFile = $this->getFilePath("{$slug}.zip");
+        if (file_exists($zipFile)) {
+            @unlink($zipFile);
+        }
     }
 
     public function deleteDirectory(string $dir): bool
@@ -158,6 +168,109 @@ class Storage
         }
 
         return @rmdir($dir);
+    }
+
+    /**
+     * Store files for a Gist in data/files/<slug>_gist/
+     *
+     * @param  array<string, string>  $files
+     */
+    public function storeGistFiles(string $slug, array $files): bool
+    {
+        $gistDir = $this->filesDir."/{$slug}_gist";
+        if (! is_dir($gistDir)) {
+            mkdir($gistDir, 0755, true);
+        }
+
+        foreach ($files as $name => $content) {
+            $cleanName = str_replace(['../', '..\\'], '', ltrim($name, '/\\'));
+            $cleanName = preg_replace('/[^\w\-.\/]/', '_', $cleanName) ?: 'file';
+            $filePath = $gistDir.'/'.$cleanName;
+            $fileSubdir = dirname($filePath);
+            if (! is_dir($fileSubdir)) {
+                mkdir($fileSubdir, 0755, true);
+            }
+            if (file_put_contents($filePath, $content) === false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Retrieve all files for a Gist.
+     *
+     * @return array<string, string> Map of relative filename => content
+     */
+    public function getGistFiles(string $slug): array
+    {
+        $gistDir = $this->filesDir."/{$slug}_gist";
+        if (! is_dir($gistDir)) {
+            return [];
+        }
+
+        $files = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($gistDir, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $fileInfo) {
+            if ($fileInfo->isFile()) {
+                $relative = substr($fileInfo->getPathname(), strlen($gistDir) + 1);
+                $relative = str_replace('\\', '/', $relative);
+                $content = file_get_contents($fileInfo->getPathname());
+                if ($content !== false) {
+                    $files[$relative] = $content;
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Retrieve a specific file from a Gist.
+     */
+    public function getGistFile(string $slug, string $filename): ?string
+    {
+        $cleanName = str_replace(['../', '..\\'], '', ltrim($filename, '/\\'));
+        $filePath = $this->filesDir."/{$slug}_gist/".$cleanName;
+        if (file_exists($filePath) && is_file($filePath)) {
+            $content = file_get_contents($filePath);
+
+            return $content !== false ? $content : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the ZIP archive binary for a Gist (generating and caching it if needed).
+     */
+    public function getGistZip(string $slug): ?string
+    {
+        $zipPath = $this->getFilePath("{$slug}.zip");
+        if (file_exists($zipPath)) {
+            $data = file_get_contents($zipPath);
+
+            return $data !== false ? $data : null;
+        }
+
+        $files = $this->getGistFiles($slug);
+        if (empty($files)) {
+            return null;
+        }
+
+        $zip = new SimpleZip;
+        foreach ($files as $name => $content) {
+            $zip->addFile($name, $content);
+        }
+
+        $zipBinary = $zip->build();
+        file_put_contents($zipPath, $zipBinary);
+
+        return $zipBinary;
     }
 
     /**
