@@ -848,6 +848,7 @@ class Views
         }
 
         .badge-file { background: var(--acid-yellow); color: #000; }
+        .badge-doc { background: #c084fc; color: #000; }
         .badge-url { background: #38bdf8; color: #000; }
         .badge-oneshot { background: var(--electric-pink); color: #fff; }
 
@@ -1040,6 +1041,10 @@ class Views
                         <input type="checkbox" id="optSecret">
                         <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
                     </label>
+                    <label class="option-item">
+                        <input type="checkbox" id="optDoc">
+                        <span class="option-label">📖 {$t('opt_doc')}{$tip('tip_doc')}</span>
+                    </label>
                 </div>
 
                 <div class="form-row">
@@ -1195,6 +1200,10 @@ class Views
         function selectFile(file) {
             selectedFile = file;
             document.getElementById('selectedFileName').innerText = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+                const optDoc = document.getElementById('optDoc');
+                if (optDoc) optDoc.checked = true;
+            }
         }
 
         // File Upload
@@ -1216,6 +1225,7 @@ class Views
 
             if (document.getElementById('optOneshot').checked) fd.append('oneshot', 'true');
             if (document.getElementById('optSecret').checked) fd.append('secret', 'true');
+            if (document.getElementById('optDoc').checked) fd.append('doc', 'true');
 
             const customName = document.getElementById('optCustomName').value.trim();
             if (customName) fd.append('customName', customName);
@@ -1747,6 +1757,7 @@ HTML;
         }
 
         .badge-file { background: var(--acid-yellow); color: #000; }
+        .badge-doc { background: #c084fc; color: #000; }
         .badge-url { background: #38bdf8; color: #000; }
         .badge-oneshot { background: var(--electric-pink); color: #fff; }
 
@@ -1877,6 +1888,7 @@ HTML;
                 <select id="dashType" class="form-control" style="flex:1;" onchange="loadDashboard()">
                     <option value="">{$t('dash_filter_all')}</option>
                     <option value="file">{$t('dash_filter_files')}</option>
+                    <option value="doc">{$t('dash_filter_docs')}</option>
                     <option value="url">{$t('dash_filter_urls')}</option>
                 </select>
             </div>
@@ -2053,10 +2065,21 @@ HTML;
 
                 let html = '';
                 data.items.forEach(item => {
-                    const sizeStr = item.type === 'file' ? (item.size / 1024).toFixed(1) + ' KB' : '-';
-                    const typeBadge = item.type === 'file' ? '<span class="badge badge-file">' + escapeHtml(t('tab_file')) + '</span>' : '<span class="badge badge-url">URL</span>';
+                    const sizeStr = item.type === 'url' ? '-' : (item.size / 1024).toFixed(1) + ' KB';
+                    let typeBadge = '';
+                    if (item.type === 'file') {
+                        typeBadge = '<span class="badge badge-file">' + escapeHtml(t('tab_file')) + '</span>';
+                    } else if (item.type === 'doc') {
+                        typeBadge = '<span class="badge badge-doc">📖 ' + escapeHtml(t('tab_doc')) + '</span>';
+                    } else {
+                        typeBadge = '<span class="badge badge-url">URL</span>';
+                    }
                     const oneshotBadge = item.is_oneshot ? '<span class="badge badge-oneshot">🔥 Oneshot</span>' : '';
                     const expStr = item.expires_at ? new Date(item.expires_at * 1000).toLocaleString() : escapeHtml(t('exp_none'));
+
+                    const openBtn = (item.type === 'file')
+                        ? '<button class="btn-action-icon" onclick="previewItem(\'' + escapeHtml(item.url) + '\', \'' + escapeHtml(item.mime_type) + '\')">' + escapeHtml(t('act_view')) + '</button> '
+                        : '<a class="btn-action-icon" href="' + escapeHtml(item.url) + '" target="_blank">' + escapeHtml(t('act_open')) + '</a> ';
 
                     html += '<tr>' +
                         '<td><strong style="color:var(--acid-yellow); font-family:var(--font-mono);">' + escapeHtml(item.slug) + '</strong><br><small style="color:var(--text-muted);">' + escapeHtml(item.original_name || '') + '</small></td>' +
@@ -2066,7 +2089,7 @@ HTML;
                         '<td>' + item.views + '</td>' +
                         '<td>' +
                             '<button class="btn-action-icon" onclick="copyText(\'' + escapeHtml(item.url) + '\')">' + escapeHtml(t('act_copy')) + '</button> ' +
-                            (item.type === 'file' ? '<button class="btn-action-icon" onclick="previewItem(\'' + escapeHtml(item.url) + '\', \'' + escapeHtml(item.mime_type) + '\')">' + escapeHtml(t('act_view')) + '</button> ' : '<a class="btn-action-icon" href="' + escapeHtml(item.url) + '" target="_blank">' + escapeHtml(t('act_open')) + '</a> ') +
+                            openBtn +
                             '<button class="btn-action-icon btn-delete" onclick="deleteItem(\'' + escapeHtml(item.slug) + '\')">' + escapeHtml(t('act_delete')) + '</button>' +
                         '</td>' +
                     '</tr>';
@@ -2148,4 +2171,3 @@ HTML;
 HTML;
     }
 }
-

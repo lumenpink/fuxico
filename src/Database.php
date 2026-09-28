@@ -173,7 +173,7 @@ class Database
             $params[':search'] = '%'.trim($search).'%';
         }
 
-        if ($type !== null && in_array($type, ['file', 'url'], true)) {
+        if ($type !== null && in_array($type, ['file', 'url', 'doc'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
@@ -202,7 +202,7 @@ class Database
             $params[':search'] = '%'.trim($search).'%';
         }
 
-        if ($type !== null && in_array($type, ['file', 'url'], true)) {
+        if ($type !== null && in_array($type, ['file', 'url', 'doc'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
         }
@@ -211,6 +211,20 @@ class Database
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    public function updateType(string $slug, string $type): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE items SET type = :type WHERE slug = :slug');
+
+        return $stmt->execute([':type' => $type, ':slug' => $slug]);
+    }
+
+    public function updateContent(string $slug, int $newSize): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE items SET size = :size WHERE slug = :slug');
+
+        return $stmt->execute([':size' => $newSize, ':slug' => $slug]);
     }
 
     /**

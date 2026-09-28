@@ -58,6 +58,7 @@ $compileFiles = [
     'MimeValidator.php',
     'Database.php',
     'I18n.php',
+    'MarkdownRenderer.php',
     'Views.php',
     'App.php',
 ];

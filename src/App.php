@@ -128,9 +128,7 @@ class App
         $purgedCount = 0;
 
         foreach ($expired as $item) {
-            if ($item['type'] === 'file' && ! empty($item['file_path'])) {
-                $this->storage->deleteFile($item['file_path']);
-            }
+            $this->storage->deleteItemFiles($item['slug'], $item['file_path'] ?? null);
             $this->db->deleteBySlug($item['slug']);
             $purgedCount++;
         }
@@ -284,13 +282,55 @@ class App
                 return;
             }
 
+            $isRenderDoc = isset($_POST['doc']) ||
+                           isset($_GET['doc']) ||
+                           (isset($_POST['render']) && in_array(strtolower((string) $_POST['render']), ['true', '1', 'md', 'markdown', 'doc'], true)) ||
+                           (isset($_POST['type']) && $_POST['type'] === 'doc') ||
+                           (isset($_SERVER['HTTP_FUXICO_DOC']) && filter_var($_SERVER['HTTP_FUXICO_DOC'], FILTER_VALIDATE_BOOLEAN));
+
+            $isMarkdown = $ext === 'md' || in_array($validation['mime'], ['text/markdown', 'text/x-markdown', 'text/plain'], true);
+            $itemType = ($isRenderDoc && $isMarkdown) ? 'doc' : 'file';
+
+            if ($itemType === 'doc') {
+                $rawMd = file_get_contents($this->storage->getFilePath($targetFilename));
+                if ($rawMd !== false) {
+                    $defaultTheme = (isset($_POST['theme']) && strtolower((string) $_POST['theme']) === 'acad') ? 'acad' : 'zine';
+                    $bakedHtml = MarkdownRenderer::render($rawMd, [
+                        'title' => pathinfo($file['name'], PATHINFO_FILENAME),
+                        'slug' => $slug,
+                        'original_name' => $file['name'],
+                        'default_theme' => $defaultTheme,
+                        'created_at' => time(),
+                        'base_url' => $this->getBaseUrl(),
+                    ]);
+                    file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
+                }
+
+                // Save attached assets if provided (e.g. assets[] multipart upload)
+                if (isset($_FILES['assets']) && is_array($_FILES['assets']['name'])) {
+                    $assetsDir = $this->storage->getFilesDir()."/{$slug}_assets";
+                    if (! is_dir($assetsDir)) {
+                        mkdir($assetsDir, 0755, true);
+                    }
+                    $countAssets = count($_FILES['assets']['name']);
+                    for ($ai = 0; $ai < $countAssets; $ai++) {
+                        $tmpAsset = $_FILES['assets']['tmp_name'][$ai] ?? null;
+                        $assetName = $_FILES['assets']['name'][$ai] ?? null;
+                        if ($tmpAsset && $assetName && is_uploaded_file($tmpAsset)) {
+                            $cleanName = basename($assetName);
+                            move_uploaded_file($tmpAsset, "{$assetsDir}/{$cleanName}");
+                        }
+                    }
+                }
+            }
+
             $this->db->createItem([
                 'id' => bin2hex(random_bytes(8)),
                 'slug' => $slug,
                 'original_name' => $file['name'],
-                'type' => 'file',
+                'type' => $itemType,
                 'file_path' => $targetFilename,
-                'mime_type' => $validation['mime'],
+                'mime_type' => $itemType === 'doc' ? 'text/markdown' : $validation['mime'],
                 'size' => (int) filesize($this->storage->getFilePath($targetFilename)),
                 'x_token' => $xToken,
                 'is_oneshot' => $oneshot ? 1 : 0,
@@ -301,7 +341,7 @@ class App
 
             header("x-token: {$xToken}");
             header('Content-Type: text/plain');
-            $urlExt = $ext !== '' ? ".{$ext}" : '';
+            $urlExt = ($itemType !== 'doc' && $ext !== '') ? ".{$ext}" : '';
             echo "{$this->getBaseUrl()}/{$slug}{$urlExt}\n";
 
             return;
@@ -459,6 +499,28 @@ class App
             return;
         }
 
+        // Check if requesting an asset inside a doc or item directory (e.g. /<slug>/assets/<filename>)
+        if (count($parts) > 1) {
+            $assetName = basename(end($parts));
+            $assetPath = $this->storage->getFilesDir()."/{$slug}_assets/{$assetName}";
+            if (file_exists($assetPath)) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $assetMime = $finfo ? finfo_file($finfo, $assetPath) : false;
+                if ($finfo && PHP_VERSION_ID < 80500) {
+                    finfo_close($finfo);
+                }
+                if (! $assetMime) {
+                    $assetMime = mime_content_type($assetPath) ?: 'application/octet-stream';
+                }
+                header('Content-Type: '.$assetMime);
+                header('Content-Length: '.(string) filesize($assetPath));
+                header('Cache-Control: public, max-age=86400');
+                readfile($assetPath);
+
+                return;
+            }
+        }
+
         // 1. Rustypaste DELETE /<slug>
         if ($method === 'DELETE') {
             $token = $authHeader;
@@ -476,9 +538,7 @@ class App
                 return;
             }
 
-            if ($item['type'] === 'file' && ! empty($item['file_path'])) {
-                $this->storage->deleteFile($item['file_path']);
-            }
+            $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
             $this->db->deleteBySlug($slug);
             http_response_code(200);
             header('Content-Type: text/plain');
@@ -499,9 +559,7 @@ class App
             }
 
             if (isset($_POST['delete'])) {
-                if ($item['type'] === 'file' && ! empty($item['file_path'])) {
-                    $this->storage->deleteFile($item['file_path']);
-                }
+                $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
                 $this->db->deleteBySlug($slug);
                 header('Content-Type: text/plain');
                 echo "File deleted.\n";
@@ -525,13 +583,11 @@ class App
             return;
         }
 
-        // 3. GET /<slug> (Serving File or Redirecting URL)
+        // 3. GET /<slug> (Serving File, Doc or Redirecting URL)
         if ($method === 'GET') {
             // Check expiration
             if ($item['expires_at'] !== null && $item['expires_at'] <= time()) {
-                if ($item['type'] === 'file' && ! empty($item['file_path'])) {
-                    $this->storage->deleteFile($item['file_path']);
-                }
+                $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
                 $this->db->deleteBySlug($slug);
                 http_response_code(404);
                 header('Content-Type: text/plain');
@@ -547,6 +603,44 @@ class App
                     $this->db->deleteBySlug($slug);
                 }
                 header('Location: '.$item['target_url'], true, 302);
+
+                return;
+            }
+
+            // Rendered Markdown Document
+            if ($item['type'] === 'doc') {
+                $this->db->incrementViews($slug);
+                $isOneshot = (bool) $item['is_oneshot'];
+                if ($isOneshot) {
+                    $this->db->deleteBySlug($slug);
+                }
+
+                $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+                $isRaw = isset($_GET['raw']) || ! str_contains($accept, 'text/html');
+
+                if ($isRaw) {
+                    $this->storage->streamFile($item['file_path'], 'text/plain; charset=UTF-8', $item['original_name'] ?: "{$slug}.md", true, $isOneshot);
+
+                    return;
+                }
+
+                $htmlFilename = "{$slug}.html";
+                if (! $this->storage->fileExists($htmlFilename)) {
+                    $rawMd = file_get_contents($this->storage->getFilePath($item['file_path']));
+                    if ($rawMd !== false) {
+                        $baked = MarkdownRenderer::render($rawMd, [
+                            'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
+                            'slug' => $slug,
+                            'original_name' => $item['original_name'] ?: "{$slug}.md",
+                            'created_at' => (int) $item['created_at'],
+                            'base_url' => $this->getBaseUrl(),
+                        ]);
+                        file_put_contents($this->storage->getFilePath($htmlFilename), $baked);
+                    }
+                }
+
+                $htmlDisplayName = $item['original_name'] ? pathinfo($item['original_name'], PATHINFO_FILENAME).'.html' : "{$slug}.html";
+                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', $htmlDisplayName, true, $isOneshot);
 
                 return;
             }
@@ -667,10 +761,77 @@ class App
 
                 return;
             }
-            if ($item['type'] === 'file' && ! empty($item['file_path'])) {
-                $this->storage->deleteFile($item['file_path']);
-            }
+            $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
             $this->db->deleteBySlug($slug);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+
+            return;
+        }
+
+        if (str_starts_with($endpoint, 'items/') && ($method === 'PATCH' || $method === 'PUT')) {
+            if (! $isAuthorized) {
+                http_response_code(401);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Unauthorized']);
+
+                return;
+            }
+
+            $slug = substr($endpoint, 6);
+            $item = $this->db->findBySlug($slug);
+            if (! $item) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Item not found']);
+
+                return;
+            }
+
+            $body = json_decode((string) file_get_contents('php://input'), true) ?? [];
+
+            // Change Type (file <-> doc)
+            if (isset($body['type']) && in_array($body['type'], ['file', 'doc'], true)) {
+                $newType = (string) $body['type'];
+                $this->db->updateType($slug, $newType);
+
+                if ($newType === 'doc' && ! empty($item['file_path'])) {
+                    $rawMd = file_get_contents($this->storage->getFilePath($item['file_path']));
+                    if ($rawMd !== false) {
+                        $baked = MarkdownRenderer::render($rawMd, [
+                            'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
+                            'slug' => $slug,
+                            'original_name' => $item['original_name'] ?: "{$slug}.md",
+                            'created_at' => (int) $item['created_at'],
+                            'base_url' => $this->getBaseUrl(),
+                        ]);
+                        file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
+                    }
+                } elseif ($newType === 'file') {
+                    $htmlFile = $this->storage->getFilePath("{$slug}.html");
+                    if (file_exists($htmlFile)) {
+                        @unlink($htmlFile);
+                    }
+                }
+            }
+
+            // Edit Content
+            if (isset($body['content']) && is_string($body['content']) && ! empty($item['file_path'])) {
+                file_put_contents($this->storage->getFilePath($item['file_path']), $body['content']);
+                $newSize = strlen($body['content']);
+                $this->db->updateContent($slug, $newSize);
+
+                if ($item['type'] === 'doc' || ($body['type'] ?? '') === 'doc') {
+                    $baked = MarkdownRenderer::render($body['content'], [
+                        'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
+                        'slug' => $slug,
+                        'original_name' => $item['original_name'] ?: "{$slug}.md",
+                        'created_at' => (int) $item['created_at'],
+                        'base_url' => $this->getBaseUrl(),
+                    ]);
+                    file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
+                }
+            }
+
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
 

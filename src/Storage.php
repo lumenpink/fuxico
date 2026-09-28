@@ -111,6 +111,11 @@ class Storage
         return true;
     }
 
+    public function getFilesDir(): string
+    {
+        return $this->filesDir;
+    }
+
     public function deleteFile(string $filename): bool
     {
         $path = $this->getFilePath($filename);
@@ -119,6 +124,40 @@ class Storage
         }
 
         return true;
+    }
+
+    /**
+     * Completely removes all physical files, baked HTML, and asset directory for an item.
+     */
+    public function deleteItemFiles(string $slug, ?string $filePath = null): void
+    {
+        if ($filePath !== null && $filePath !== '') {
+            $this->deleteFile($filePath);
+        }
+
+        $htmlFile = $this->getFilePath("{$slug}.html");
+        if (file_exists($htmlFile)) {
+            @unlink($htmlFile);
+        }
+
+        $assetsDir = $this->filesDir."/{$slug}_assets";
+        if (is_dir($assetsDir)) {
+            $this->deleteDirectory($assetsDir);
+        }
+    }
+
+    public function deleteDirectory(string $dir): bool
+    {
+        if (! is_dir($dir)) {
+            return false;
+        }
+        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        foreach ($files as $file) {
+            $target = $dir.'/'.$file;
+            is_dir($target) ? $this->deleteDirectory($target) : @unlink($target);
+        }
+
+        return @rmdir($dir);
     }
 
     /**
@@ -154,9 +193,11 @@ class Storage
             return;
         }
 
-        // Clean any output buffers
-        while (ob_get_level() > 0) {
-            ob_end_clean();
+        // Clean any output buffers (preserve test buffers in CLI)
+        if (php_sapi_name() !== 'cli') {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
         }
 
         $start = 0;
