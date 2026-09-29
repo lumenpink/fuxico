@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (auth) suporte a multi-usuários com controle de acesso por post e gestão no painel
   - (git) suporte a repositórios git efêmeros com git http smart protocol e baking estático (closes #38)
   - (gist) suporte a gists multi-arquivo com visualizador tabulado e cli (closes #37)
   - (markdown) suporte a upload e baking estatico com temas zine e academico depressivo (closes #36)

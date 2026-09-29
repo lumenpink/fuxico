@@ -204,15 +204,69 @@ class App
         $this->handleItemRoute($path, $method, $authHeader);
     }
 
+    /**
+     * Resolve caller authentication into user context.
+     *
+     * @return array{authenticated: bool, role: string, user_id: ?string, username: string, is_master: bool}|null
+     */
+    public function resolveAuth(?string $authHeader): ?array
+    {
+        if ($authHeader === null || trim($authHeader) === '') {
+            $tokenParam = $_POST['token'] ?? $_GET['token'] ?? null;
+            if ($tokenParam !== null && is_string($tokenParam) && trim($tokenParam) !== '') {
+                $authHeader = trim($tokenParam);
+            } else {
+                return null;
+            }
+        }
+
+        $token = trim($authHeader);
+        if (str_starts_with($token, 'Bearer ')) {
+            $token = trim(substr($token, 7));
+        }
+
+        if ($token === '') {
+            return null;
+        }
+
+        // 1. Check Master Tokens in Config (FUXICO_AUTH_TOKENS)
+        if ($this->config->isAuthorized($token)) {
+            return [
+                'authenticated' => true,
+                'role' => 'admin',
+                'user_id' => null,
+                'username' => 'mestre',
+                'is_master' => true,
+            ];
+        }
+
+        // 2. Check Database users table
+        $user = $this->db->findUserByToken($token);
+        if ($user) {
+            return [
+                'authenticated' => true,
+                'role' => (string) ($user['role'] ?? 'member'),
+                'user_id' => (string) $user['id'],
+                'username' => (string) $user['username'],
+                'is_master' => false,
+            ];
+        }
+
+        return null;
+    }
+
     private function handleUpload(?string $authHeader): void
     {
-        if (! $this->config->publicMode && ! $this->config->isAuthorized($authHeader)) {
+        $auth = $this->resolveAuth($authHeader);
+        if (! $this->config->publicMode && $auth === null) {
             http_response_code(401);
             header('Content-Type: text/plain; charset=UTF-8');
             echo "401 Unauthorized: Ficha ou token de acesso inválido ou ausente. Esta instância é privada. Envie o token via 'Authorization: Bearer <token>' ou use 'fux -t <ficha>'.\n";
 
             return;
         }
+
+        $userId = $auth['user_id'] ?? null;
 
         $isSecret = isset($_POST['secret']) || isset($_GET['secret']);
         $oneshot = isset($_POST['oneshot']) ||
@@ -253,7 +307,7 @@ class App
         $isGistUpload = (isset($_FILES['files']) && is_array($_FILES['files']['name'])) ||
                         (isset($_POST['type']) && $_POST['type'] === 'gist');
         if ($isGistUpload) {
-            $this->handleGistUpload($slug, $xToken, $oneshot, $expiresAt, $customName);
+            $this->handleGistUpload($slug, $xToken, $oneshot, $expiresAt, $customName, $userId);
 
             return;
         }
@@ -352,6 +406,7 @@ class App
                 'expires_at' => $expiresAt,
                 'created_at' => time(),
                 'views' => 0,
+                'user_id' => $userId,
             ]);
 
             header("x-token: {$xToken}");
@@ -369,7 +424,7 @@ class App
         $isRemoteFetch = isset($_POST['remote']) || (isset($_POST['url']) && ! isset($_POST['shorten']) && isset($_POST['fetch']));
 
         if ($isRemoteFetch && $urlCandidate) {
-            $this->handleRemoteFetch($urlCandidate, $slug, $xToken, $oneshot, $expiresAt);
+            $this->handleRemoteFetch($urlCandidate, $slug, $xToken, $oneshot, $expiresAt, $userId);
 
             return;
         }
@@ -396,6 +451,7 @@ class App
                 'expires_at' => $expiresAt,
                 'created_at' => time(),
                 'views' => 0,
+                'user_id' => $userId,
             ]);
 
             header("x-token: {$xToken}");
@@ -410,7 +466,7 @@ class App
         echo "Bad Request: No file or URL provided.\n";
     }
 
-    private function handleRemoteFetch(string $remoteUrl, string $slug, string $xToken, bool $oneshot, ?int $expiresAt): void
+    private function handleRemoteFetch(string $remoteUrl, string $slug, string $xToken, bool $oneshot, ?int $expiresAt, ?string $userId = null): void
     {
         if (! filter_var($remoteUrl, FILTER_VALIDATE_URL)) {
             http_response_code(400);
@@ -484,6 +540,7 @@ class App
             'expires_at' => $expiresAt,
             'created_at' => time(),
             'views' => 0,
+            'user_id' => $userId,
         ]);
 
         header("x-token: {$xToken}");
@@ -492,7 +549,7 @@ class App
         echo "{$this->getBaseUrl()}/{$slug}{$urlExt}\n";
     }
 
-    private function handleGistUpload(string $slug, string $xToken, bool $oneshot, ?int $expiresAt, string $customName): void
+    private function handleGistUpload(string $slug, string $xToken, bool $oneshot, ?int $expiresAt, string $customName, ?string $userId = null): void
     {
         $files = [];
         if (isset($_FILES['files']) && is_array($_FILES['files']['name'])) {
@@ -560,6 +617,7 @@ class App
             'expires_at' => $expiresAt,
             'created_at' => time(),
             'views' => 0,
+            'user_id' => $userId,
         ]);
 
         header("x-token: {$xToken}");
@@ -666,8 +724,10 @@ class App
             if (str_starts_with((string) $token, 'Bearer ')) {
                 $token = substr((string) $token, 7);
             }
-            $isMaster = $this->config->isAuthorized($authHeader);
-            $isOwner = $token === $item['x_token'];
+            $auth = $this->resolveAuth($authHeader);
+            $isMaster = $auth !== null && $auth['role'] === 'admin';
+            $isUserOwner = $auth !== null && ! empty($item['user_id']) && $item['user_id'] === $auth['user_id'];
+            $isOwner = ($token !== null && $token !== '' && $token === $item['x_token']) || $isUserOwner;
 
             if (! $isMaster && ! $isOwner) {
                 http_response_code(401);
@@ -899,7 +959,8 @@ class App
 
     private function handleList(?string $authHeader): void
     {
-        if (! $this->config->isAuthorized($authHeader)) {
+        $auth = $this->resolveAuth($authHeader);
+        if ($auth === null) {
             http_response_code(401);
             header('Content-Type: application/json; charset=UTF-8');
             echo json_encode([
@@ -910,7 +971,8 @@ class App
             return;
         }
 
-        $items = $this->db->listItems(500, 0, null, 'file');
+        $userIdFilter = $auth['role'] === 'member' ? $auth['user_id'] : null;
+        $items = $this->db->listItems(500, 0, null, 'file', $userIdFilter);
         $list = [];
         foreach ($items as $item) {
             if ($item['is_oneshot']) {
@@ -924,13 +986,15 @@ class App
             ];
         }
 
+        http_response_code(200);
         header('Content-Type: application/json');
         echo json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
     private function handleApi(string $endpoint, string $method, ?string $authHeader): void
     {
-        $isAuthorized = $this->config->isAuthorized($authHeader);
+        $auth = $this->resolveAuth($authHeader);
+        $isAuthorized = $auth !== null;
 
         // In private mode, all API endpoints require authorization
         // In public mode, GET stats and items are publicly readable
@@ -940,6 +1004,182 @@ class App
             echo json_encode([
                 'error' => 'Unauthorized',
                 'message' => 'Ficha ou token de acesso inválido ou ausente. Esta rota requer autenticação.',
+            ]);
+
+            return;
+        }
+
+        if ($endpoint === 'me' && $method === 'GET') {
+            header('Content-Type: application/json; charset=UTF-8');
+            if ($auth) {
+                http_response_code(200);
+                echo json_encode($auth);
+            } else {
+                http_response_code(401);
+                echo json_encode([
+                    'authenticated' => false,
+                    'role' => null,
+                    'error' => 'Unauthorized',
+                ]);
+            }
+
+            return;
+        }
+
+        if ($endpoint === 'users' && $method === 'GET') {
+            if (! $auth || $auth['role'] !== 'admin') {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Apenas a fuxiqueira-mor (administradora) pode gerenciar usuárias.',
+                ]);
+
+                return;
+            }
+
+            $users = $this->db->listUsers();
+            http_response_code(200);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'users' => $users,
+                'total' => count($users),
+            ]);
+
+            return;
+        }
+
+        if ($endpoint === 'users' && $method === 'POST') {
+            if (! $auth || $auth['role'] !== 'admin') {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Apenas a fuxiqueira-mor (administradora) pode cadastrar novas fuxiqueiras.',
+                ]);
+
+                return;
+            }
+
+            $body = json_decode((string) file_get_contents('php://input'), true) ?? $_POST;
+            $username = trim((string) ($body['username'] ?? ''));
+            $role = in_array($body['role'] ?? '', ['admin', 'member'], true) ? $body['role'] : 'member';
+
+            if ($username === '' || ! preg_match('/^[a-zA-Z0-9_\-\.]{2,32}$/', $username)) {
+                http_response_code(400);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Bad Request',
+                    'message' => 'Nome de fuxiqueira inválido. Deve ter entre 2 e 32 caracteres (letras, números, hífen, underline ou ponto).',
+                ]);
+
+                return;
+            }
+
+            if ($this->db->findUserByUsername($username)) {
+                http_response_code(409);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Conflict',
+                    'message' => "Já existe uma fuxiqueira cadastrada com o apelido '{$username}'.",
+                ]);
+
+                return;
+            }
+
+            $id = bin2hex(random_bytes(8));
+            $token = 'fux_'.bin2hex(random_bytes(16));
+            $this->db->createUser([
+                'id' => $id,
+                'username' => $username,
+                'token' => $token,
+                'role' => $role,
+                'created_at' => time(),
+            ]);
+
+            http_response_code(201);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => true,
+                'user' => [
+                    'id' => $id,
+                    'username' => $username,
+                    'token' => $token,
+                    'role' => $role,
+                    'created_at' => time(),
+                ],
+                'message' => "Fuxiqueira '{$username}' cadastrada com sucesso!",
+            ]);
+
+            return;
+        }
+
+        if (preg_match('#^users/([a-zA-Z0-9_\-]+)/token$#', $endpoint, $m) && $method === 'POST') {
+            if (! $auth || $auth['role'] !== 'admin') {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Apenas a fuxiqueira-mor pode regenerar fichas.',
+                ]);
+
+                return;
+            }
+
+            $userId = $m[1];
+            $user = $this->db->findUserById($userId);
+            if (! $user) {
+                http_response_code(404);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(['error' => 'User not found']);
+
+                return;
+            }
+
+            $newToken = 'fux_'.bin2hex(random_bytes(16));
+            $this->db->updateUserToken($userId, $newToken);
+
+            http_response_code(200);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => true,
+                'id' => $userId,
+                'username' => $user['username'],
+                'token' => $newToken,
+                'message' => "Nova ficha da fuxiqueira '{$user['username']}' gerada com sucesso!",
+            ]);
+
+            return;
+        }
+
+        if (preg_match('#^users/([a-zA-Z0-9_\-]+)$#', $endpoint, $m) && $method === 'DELETE') {
+            if (! $auth || $auth['role'] !== 'admin') {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Apenas a fuxiqueira-mor pode remover usuárias.',
+                ]);
+
+                return;
+            }
+
+            $userId = $m[1];
+            $user = $this->db->findUserById($userId);
+            if (! $user) {
+                http_response_code(404);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(['error' => 'User not found']);
+
+                return;
+            }
+
+            $this->db->deleteUser($userId);
+            http_response_code(200);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => true,
+                'message' => "Fuxiqueira '{$user['username']}' removida.",
             ]);
 
             return;
@@ -958,8 +1198,10 @@ class App
         }
 
         if ($endpoint === 'stats' && $method === 'GET') {
+            $userIdFilter = ($auth && $auth['role'] === 'member') ? $auth['user_id'] : null;
+            http_response_code(200);
             header('Content-Type: application/json');
-            echo json_encode($this->db->getStats());
+            echo json_encode($this->db->getStats($userIdFilter));
 
             return;
         }
@@ -970,9 +1212,17 @@ class App
             $search = isset($_GET['search']) ? (string) $_GET['search'] : null;
             $type = isset($_GET['type']) ? (string) $_GET['type'] : null;
 
-            $items = $this->db->listItems($limit, $offset, $search, $type);
-            $total = $this->db->countItems($search, $type);
+            $userIdFilter = null;
+            if ($auth && $auth['role'] === 'member') {
+                $userIdFilter = $auth['user_id'];
+            } elseif ($auth && $auth['role'] === 'admin' && isset($_GET['user_id']) && trim((string) $_GET['user_id']) !== '') {
+                $userIdFilter = trim((string) $_GET['user_id']);
+            }
 
+            $items = $this->db->listItems($limit, $offset, $search, $type, $userIdFilter);
+            $total = $this->db->countItems($search, $type, $userIdFilter);
+
+            http_response_code(200);
             header('Content-Type: application/json');
             echo json_encode([
                 'items' => array_map(function ($i) {
@@ -1008,8 +1258,21 @@ class App
 
                 return;
             }
+
+            if ($auth && $auth['role'] === 'member' && ($item['user_id'] ?? null) !== $auth['user_id']) {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Você só tem permissão para excluir as suas próprias fofocas.',
+                ]);
+
+                return;
+            }
+
             $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
             $this->db->deleteBySlug($slug);
+            http_response_code(200);
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
 
@@ -1023,6 +1286,26 @@ class App
                 echo json_encode([
                     'error' => 'Unauthorized',
                     'message' => 'Ficha ou token de acesso inválido ou ausente para edição.',
+                ]);
+
+                return;
+            }
+
+            $slug = substr($endpoint, 6);
+            $item = $this->db->findBySlug($slug);
+            if (! $item) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Item not found']);
+
+                return;
+            }
+
+            if ($auth && $auth['role'] === 'member' && ($item['user_id'] ?? null) !== $auth['user_id']) {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Você só tem permissão para editar as suas próprias fofocas.',
                 ]);
 
                 return;
@@ -1095,7 +1378,8 @@ class App
 
     private function handleGistApi(?string $authHeader): void
     {
-        if (! $this->config->publicMode && ! $this->config->isAuthorized($authHeader)) {
+        $auth = $this->resolveAuth($authHeader);
+        if (! $this->config->publicMode && $auth === null) {
             http_response_code(401);
             header('Content-Type: application/json; charset=UTF-8');
             echo json_encode([
@@ -1105,6 +1389,8 @@ class App
 
             return;
         }
+
+        $userId = $auth['user_id'] ?? null;
 
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
         $isJson = str_contains($contentType, 'application/json');
@@ -1223,6 +1509,7 @@ class App
             'expires_at' => $expiresAt,
             'created_at' => time(),
             'views' => 0,
+            'user_id' => $userId,
         ]);
 
         header("x-token: {$xToken}");
@@ -1250,6 +1537,8 @@ class App
         $repoPath = $this->storage->getRepoPath($slug);
         [$user, $pass] = $this->getGitAuthCredentials($authHeader);
         $token = ($pass !== null && $pass !== '') ? $pass : ($user ?? '');
+        $auth = $this->resolveAuth($token) ?? $this->resolveAuth($authHeader);
+        $isAdmin = $auth && $auth['role'] === 'admin';
 
         if ($gitAction === 'info/refs') {
             $service = $_GET['service'] ?? '';
@@ -1270,9 +1559,9 @@ class App
                 $item = $this->db->findBySlug($slug);
 
                 if ($item) {
-                    $isMaster = $this->config->isAuthorized($authHeader) || in_array($token, $this->config->authTokens, true);
-                    $isOwner = $token !== '' && $token === $item['x_token'];
-                    if (! $isMaster && ! $isOwner) {
+                    $isOwner = ($auth && ! empty($item['user_id']) && $auth['user_id'] === $item['user_id'])
+                        || ($token !== '' && $token === $item['x_token']);
+                    if (! $isAdmin && ! $isOwner) {
                         header('WWW-Authenticate: Basic realm="Fuxico Git"');
                         http_response_code(401);
                         echo "Authentication required\n";
@@ -1289,8 +1578,7 @@ class App
                         return;
                     }
 
-                    $isMaster = $this->config->isAuthorized($authHeader) || in_array($token, $this->config->authTokens, true);
-                    if (! $this->config->publicMode && ! $isMaster) {
+                    if (! $this->config->publicMode && $auth === null) {
                         http_response_code(401);
                         echo "Unauthorized\n";
 
@@ -1311,6 +1599,7 @@ class App
                         'expires_at' => null,
                         'created_at' => time(),
                         'views' => 0,
+                        'user_id' => $auth['user_id'] ?? null,
                     ]);
 
                     $html = RepoRenderer::render(['has_commits' => false], [
@@ -1348,10 +1637,10 @@ class App
 
         if ($gitAction === 'git-receive-pack' && $method === 'POST') {
             $item = $this->db->findBySlug($slug);
-            $isMaster = $this->config->isAuthorized($authHeader) || in_array($token, $this->config->authTokens, true);
-            $isOwner = $item && $token !== '' && $token === $item['x_token'];
+            $isOwner = ($auth && ! empty($item['user_id']) && $auth['user_id'] === $item['user_id'])
+                || ($item && $token !== '' && $token === $item['x_token']);
 
-            if (! $isMaster && ! $isOwner) {
+            if (! $isAdmin && ! $isOwner) {
                 http_response_code(401);
                 header('Content-Type: text/plain');
                 echo "Unauthorized\n";
@@ -1404,8 +1693,8 @@ class App
 
     private function handleGitApi(?string $authHeader): void
     {
-        $isAuthorized = $this->config->isAuthorized($authHeader);
-        if (! $this->config->publicMode && ! $isAuthorized) {
+        $auth = $this->resolveAuth($authHeader);
+        if (! $this->config->publicMode && $auth === null) {
             http_response_code(401);
             header('Content-Type: application/json; charset=UTF-8');
             echo json_encode([
@@ -1415,6 +1704,8 @@ class App
 
             return;
         }
+
+        $userId = $auth['user_id'] ?? null;
 
         $rawBody = (string) file_get_contents('php://input');
         $jsonData = json_decode($rawBody, true);
@@ -1461,6 +1752,7 @@ class App
             'expires_at' => $expiresAt,
             'created_at' => time(),
             'views' => 0,
+            'user_id' => $userId,
         ]);
 
         $html = RepoRenderer::render(['has_commits' => false], [

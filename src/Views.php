@@ -1784,6 +1784,48 @@ HTML;
         .badge-url { background: #38bdf8; color: #000; }
         .badge-oneshot { background: var(--electric-pink); color: #fff; }
 
+        .dash-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .dash-tab-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 8px 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .dash-tab-btn.active {
+            background: var(--acid-yellow);
+            color: #000;
+            border-color: #000;
+            box-shadow: 2px 2px 0px var(--electric-pink);
+        }
+
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--tape-black);
+            border: 1px solid var(--acid-yellow);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            box-shadow: 2px 2px 0px #000;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -1883,59 +1925,99 @@ HTML;
         <!-- 2. Dashboard View -->
         <section id="dashView" style="display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                <a href="/" class="btn-action-icon">{$t('painel_back_home')}</a>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <a href="/" class="btn-action-icon">{$t('painel_back_home')}</a>
+                    <div id="userBadge" class="user-badge" style="display:none;"></div>
+                </div>
                 <button type="button" class="btn-action-icon btn-delete" onclick="logoutVault()">{$t('painel_logout_btn')}</button>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div id="statFiles" class="stat-val">0</div>
-                    <div class="stat-label">{$t('stat_files')}</div>
+            <!-- Dashboard Sub Tabs -->
+            <div id="dashNavTabs" class="dash-tabs">
+                <button id="tabBtnItems" class="dash-tab-btn active" onclick="switchDashTab('items')">{$t('tab_fofocas')}</button>
+                <button id="tabBtnUsers" class="dash-tab-btn" style="display:none;" onclick="switchDashTab('users')">{$t('tab_fuxiqueiras')}</button>
+            </div>
+
+            <!-- Tab 1: Fofocas & Arquivos -->
+            <div id="dashItemsSection">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div id="statFiles" class="stat-val">0</div>
+                        <div class="stat-label">{$t('stat_files')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="statUrls" class="stat-val">0</div>
+                        <div class="stat-label">{$t('stat_urls')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="statBytes" class="stat-val">0 MB</div>
+                        <div class="stat-label">{$t('stat_bytes')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="statViews" class="stat-val">0</div>
+                        <div class="stat-label">{$t('stat_views')}</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div id="statUrls" class="stat-val">0</div>
-                    <div class="stat-label">{$t('stat_urls')}</div>
+
+                <div class="filter-row">
+                    <input type="text" id="dashSearch" class="form-control" style="flex:2;" placeholder="{$t('dash_search')}" oninput="debounce(loadDashboard, 300)()">
+                    <select id="dashType" class="form-control" style="flex:1;" onchange="loadDashboard()">
+                        <option value="">{$t('dash_filter_all')}</option>
+                        <option value="file">{$t('dash_filter_files')}</option>
+                        <option value="doc">{$t('dash_filter_docs')}</option>
+                        <option value="gist">{$t('dash_filter_gists')}</option>
+                        <option value="git">{$t('dash_filter_gits')}</option>
+                        <option value="url">{$t('dash_filter_urls')}</option>
+                    </select>
                 </div>
-                <div class="stat-card">
-                    <div id="statBytes" class="stat-val">0 MB</div>
-                    <div class="stat-label">{$t('stat_bytes')}</div>
-                </div>
-                <div class="stat-card">
-                    <div id="statViews" class="stat-val">0</div>
-                    <div class="stat-label">{$t('stat_views')}</div>
+
+                <div style="overflow-x:auto;">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>{$t('col_slug')}</th>
+                                <th id="thAuthor" style="display:none;">{$t('col_author')}</th>
+                                <th>{$t('col_type')}</th>
+                                <th>{$t('col_size')}</th>
+                                <th>{$t('col_exp')}</th>
+                                <th>{$t('col_views')}</th>
+                                <th>{$t('col_actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align:center; color:var(--text-muted);">{$t('dash_auth_required')}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="filter-row">
-                <input type="text" id="dashSearch" class="form-control" style="flex:2;" placeholder="{$t('dash_search')}" oninput="debounce(loadDashboard, 300)()">
-                <select id="dashType" class="form-control" style="flex:1;" onchange="loadDashboard()">
-                    <option value="">{$t('dash_filter_all')}</option>
-                    <option value="file">{$t('dash_filter_files')}</option>
-                    <option value="doc">{$t('dash_filter_docs')}</option>
-                    <option value="gist">{$t('dash_filter_gists')}</option>
-                    <option value="git">{$t('dash_filter_gits')}</option>
-                    <option value="url">{$t('dash_filter_urls')}</option>
-                </select>
-            </div>
+            <!-- Tab 2: Fuxiqueiras & Fichas (Admin Only) -->
+            <div id="dashUsersSection" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                    <h3 style="font-family:var(--font-heading); font-size:1.1rem; color:var(--acid-yellow); text-transform:uppercase; letter-spacing:1px;">{$t('users_title')}</h3>
+                    <button type="button" class="btn-action-icon" style="border-color:var(--acid-yellow); color:var(--acid-yellow);" onclick="openNewUserModal()">{$t('btn_new_user')}</button>
+                </div>
 
-            <div style="overflow-x:auto;">
-                <table class="dash-table">
-                    <thead>
-                        <tr>
-                            <th>{$t('col_slug')}</th>
-                            <th>{$t('col_type')}</th>
-                            <th>{$t('col_size')}</th>
-                            <th>{$t('col_exp')}</th>
-                            <th>{$t('col_views')}</th>
-                            <th>{$t('col_actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashTableBody">
-                        <tr>
-                            <td colspan="6" style="text-align:center; color:var(--text-muted);">{$t('dash_auth_required')}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>{$t('col_username')}</th>
+                                <th>{$t('col_role')}</th>
+                                <th>{$t('col_token')}</th>
+                                <th>{$t('col_created')}</th>
+                                <th>{$t('col_actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align:center; color:var(--text-muted);">{$t('users_empty')}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -1956,6 +2038,34 @@ HTML;
         </div>
     </div>
 
+    <!-- New User Modal -->
+    <div id="newUserModal" class="modal" onclick="closeNewUserModal()">
+        <div class="modal-card" style="width:100%; max-width:440px;" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeNewUserModal()">×</button>
+            <h3 style="font-family:var(--font-heading); font-size:1.2rem; color:var(--acid-yellow); margin-bottom:16px; text-transform:uppercase;">{$t('modal_new_user_title')}</h3>
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('username_label')}</label>
+                <input type="text" id="newUsernameInput" class="form-control" placeholder="{$t('username_placeholder')}">
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('role_label')}</label>
+                <select id="newUserRoleSelect" class="form-control">
+                    <option value="member">{$t('role_member')}</option>
+                    <option value="admin">{$t('role_admin')}</option>
+                </select>
+            </div>
+            <button type="button" class="btn-action" style="margin-top:0;" onclick="submitNewUser()">{$t('btn_create_user')}</button>
+            <div id="newUserError" style="display:none; color:var(--electric-pink); margin-top:12px; font-size:0.85rem; font-weight:700;"></div>
+            <div id="newUserSuccess" style="display:none; margin-top:14px; background:var(--tape-black); border:1px solid var(--acid-yellow); padding:12px;">
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">{$t('user_created_success')}</p>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="createdTokenDisplay" class="form-control" readonly style="font-size:0.8rem;">
+                    <button type="button" class="btn-action-icon" onclick="copyCreatedToken()">{$t('act_copy')}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <p style="margin-bottom: 8px;">{$t('footer_credit_prefix')} <a href="{$footerTravestiLink}" target="_blank" rel="noopener noreferrer" style="color:var(--electric-pink); font-weight:700;">{$t('footer_travesti_text')}</a> :)</p>
         <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank" rel="noopener noreferrer">Codeberg</a> // 100% 0x0.st &amp; rustypaste drop-in protocol</p>
@@ -1968,6 +2078,8 @@ HTML;
         const dashView = document.getElementById('dashView');
         const tokenInput = document.getElementById('painelTokenInput');
         const loginError = document.getElementById('loginError');
+
+        let currentUser = null;
 
         function t(k) { return I18N[k] || k; }
 
@@ -1983,15 +2095,17 @@ HTML;
                 tokenInput.value = savedToken;
             }
 
-            if (IS_PUBLIC_MODE) {
+            if (IS_PUBLIC_MODE && !savedToken) {
+                currentUser = { authenticated: false, role: 'guest', username: 'Visitante' };
                 showDashboard();
                 return;
             }
 
             if (savedToken) {
                 try {
-                    const res = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + savedToken } });
+                    const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + savedToken } });
                     if (res.ok) {
+                        currentUser = await res.json();
                         showDashboard();
                         return;
                     } else {
@@ -2015,7 +2129,53 @@ HTML;
         function showDashboard() {
             loginView.style.display = 'none';
             dashView.style.display = 'block';
-            loadDashboard();
+            updateUserUI();
+            switchDashTab('items');
+        }
+
+        function updateUserUI() {
+            const userBadge = document.getElementById('userBadge');
+            const tabBtnUsers = document.getElementById('tabBtnUsers');
+            const thAuthor = document.getElementById('thAuthor');
+
+            if (currentUser && currentUser.authenticated) {
+                userBadge.style.display = 'inline-flex';
+                const roleName = currentUser.role === 'admin' ? t('role_admin') : t('role_member');
+                userBadge.innerHTML = '👤 <strong style="color:var(--acid-yellow);">' + escapeHtml(currentUser.username) + '</strong> <span class="badge" style="margin-left:4px; background:' + (currentUser.role === 'admin' ? 'var(--electric-pink); color:#fff;' : 'var(--acid-yellow); color:#000;') + '">' + escapeHtml(roleName) + '</span>';
+
+                if (currentUser.role === 'admin') {
+                    tabBtnUsers.style.display = 'inline-block';
+                    thAuthor.style.display = '';
+                } else {
+                    tabBtnUsers.style.display = 'none';
+                    thAuthor.style.display = 'none';
+                }
+            } else {
+                userBadge.style.display = 'none';
+                tabBtnUsers.style.display = 'none';
+                thAuthor.style.display = 'none';
+            }
+        }
+
+        function switchDashTab(tab) {
+            const tabBtnItems = document.getElementById('tabBtnItems');
+            const tabBtnUsers = document.getElementById('tabBtnUsers');
+            const dashItemsSection = document.getElementById('dashItemsSection');
+            const dashUsersSection = document.getElementById('dashUsersSection');
+
+            if (tab === 'items') {
+                tabBtnItems.classList.add('active');
+                tabBtnUsers.classList.remove('active');
+                dashItemsSection.style.display = 'block';
+                dashUsersSection.style.display = 'none';
+                loadDashboard();
+            } else if (tab === 'users') {
+                tabBtnUsers.classList.add('active');
+                tabBtnItems.classList.remove('active');
+                dashUsersSection.style.display = 'block';
+                dashItemsSection.style.display = 'none';
+                loadUsers();
+            }
         }
 
         async function unlockVault() {
@@ -2030,8 +2190,9 @@ HTML;
 
             try {
                 const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-                const res = await fetch('/api/stats', { headers });
+                const res = await fetch('/api/me', { headers });
                 if (res.ok) {
+                    currentUser = await res.json();
                     if (token) localStorage.setItem('fuxico_token', token);
                     showDashboard();
                 } else {
@@ -2052,6 +2213,7 @@ HTML;
         function logoutVault() {
             localStorage.removeItem('fuxico_token');
             tokenInput.value = '';
+            currentUser = null;
             showLogin();
         }
 
@@ -2063,9 +2225,11 @@ HTML;
         async function loadDashboard() {
             const tbody = document.getElementById('dashTableBody');
             const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            const colCount = isAdmin ? 7 : 6;
 
             if (!IS_PUBLIC_MODE && !token) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_auth_required')) + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_auth_required')) + '</td></tr>';
                 return;
             }
 
@@ -2088,13 +2252,13 @@ HTML;
                 const res = await fetch('/api/items?search=' + search + '&type=' + type, { headers });
 
                 if (!res.ok) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';
                     return;
                 }
 
                 const data = await res.json();
                 if (!data.items || data.items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_empty')) + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_empty')) + '</td></tr>';
                     return;
                 }
 
@@ -2120,8 +2284,13 @@ HTML;
                         ? '<button class="btn-action-icon" onclick="previewItem(\'' + escapeHtml(item.url) + '\', \'' + escapeHtml(item.mime_type) + '\')">' + escapeHtml(t('act_view')) + '</button> '
                         : '<a class="btn-action-icon" href="' + escapeHtml(item.url) + '" target="_blank">' + escapeHtml(t('act_open')) + '</a> ';
 
+                    const authorCol = isAdmin
+                        ? '<td><small style="color:var(--text-muted);">' + escapeHtml(item.author || t('author_anon')) + '</small></td>'
+                        : '';
+
                     html += '<tr>' +
                         '<td><strong style="color:var(--acid-yellow); font-family:var(--font-mono);">' + escapeHtml(item.slug) + '</strong><br><small style="color:var(--text-muted);">' + escapeHtml(item.original_name || '') + '</small></td>' +
+                        authorCol +
                         '<td>' + typeBadge + '</td>' +
                         '<td>' + sizeStr + '</td>' +
                         '<td>' + oneshotBadge + ' <small style="color:var(--text-muted);">' + expStr + '</small></td>' +
@@ -2135,8 +2304,146 @@ HTML;
                 });
                 tbody.innerHTML = html;
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--electric-pink);">Erro ao carregar dados: ' + escapeHtml(err.message) + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--electric-pink);">Erro ao carregar dados: ' + escapeHtml(err.message) + '</td></tr>';
             }
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--electric-pink);">Erro ao carregar fuxiqueiras.</td></tr>';
+                    return;
+                }
+                const data = await res.json();
+                if (!data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('users_empty')) + '</td></tr>';
+                    return;
+                }
+                let html = '';
+                data.users.forEach(u => {
+                    const roleLabel = u.role === 'admin' ? t('role_admin') : t('role_member');
+                    const roleBadge = '<span class="badge" style="background:' + (u.role === 'admin' ? 'var(--electric-pink); color:#fff;' : 'var(--acid-yellow); color:#000;') + '">' + escapeHtml(roleLabel) + '</span>';
+                    const createdStr = u.created_at ? new Date(u.created_at * 1000).toLocaleString() : '-';
+                    const maskedToken = u.token ? (u.token.substring(0, 8) + '••••••••') : '-';
+
+                    html += '<tr>' +
+                        '<td><strong style="color:var(--acid-yellow); font-family:var(--font-mono);">' + escapeHtml(u.username) + '</strong></td>' +
+                        '<td>' + roleBadge + '</td>' +
+                        '<td><code>' + escapeHtml(maskedToken) + '</code> <button class="btn-action-icon" style="padding:2px 6px; font-size:0.7rem;" onclick="copyText(\'' + escapeHtml(u.token) + '\')">' + escapeHtml(t('act_copy')) + '</button></td>' +
+                        '<td><small style="color:var(--text-muted);">' + escapeHtml(createdStr) + '</small></td>' +
+                        '<td>' +
+                            '<button class="btn-action-icon" onclick="regenUserToken(\'' + escapeHtml(u.id) + '\')">' + escapeHtml(t('act_regen_token')) + '</button> ' +
+                            '<button class="btn-action-icon btn-delete" onclick="deleteUser(\'' + escapeHtml(u.id) + '\')">' + escapeHtml(t('act_delete')) + '</button>' +
+                        '</td>' +
+                    '</tr>';
+                });
+                tbody.innerHTML = html;
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--electric-pink);">Erro: ' + escapeHtml(err.message) + '</td></tr>';
+            }
+        }
+
+        async function regenUserToken(userId) {
+            if (!confirm(t('regen_confirm'))) return;
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            try {
+                const res = await fetch('/api/users/' + userId + '/token', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message + '\n\nNova Ficha: ' + data.token);
+                    loadUsers();
+                } else {
+                    alert('Erro: ' + (data.message || 'Falha ao regenerar ficha.'));
+                }
+            } catch (err) {
+                alert('Erro: ' + err.message);
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm(t('delete_user_confirm'))) return;
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            try {
+                const res = await fetch('/api/users/' + userId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loadUsers();
+                } else {
+                    alert('Erro: ' + (data.message || 'Falha ao remover fuxiqueira.'));
+                }
+            } catch (err) {
+                alert('Erro: ' + err.message);
+            }
+        }
+
+        function openNewUserModal() {
+            document.getElementById('newUsernameInput').value = '';
+            document.getElementById('newUserRoleSelect').value = 'member';
+            document.getElementById('newUserError').style.display = 'none';
+            document.getElementById('newUserSuccess').style.display = 'none';
+            document.getElementById('createdTokenDisplay').value = '';
+            document.getElementById('newUserModal').classList.add('open');
+        }
+
+        function closeNewUserModal() {
+            document.getElementById('newUserModal').classList.remove('open');
+            loadUsers();
+        }
+
+        async function submitNewUser() {
+            const username = document.getElementById('newUsernameInput').value.trim();
+            const role = document.getElementById('newUserRoleSelect').value;
+            const errEl = document.getElementById('newUserError');
+            const succEl = document.getElementById('newUserSuccess');
+            const tokenDisplay = document.getElementById('createdTokenDisplay');
+
+            errEl.style.display = 'none';
+            succEl.style.display = 'none';
+
+            if (!username) {
+                errEl.innerText = 'Apelido da fuxiqueira é obrigatório.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            try {
+                const res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, role })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    tokenDisplay.value = data.user.token;
+                    succEl.style.display = 'block';
+                } else {
+                    errEl.innerText = data.message || 'Falha ao cadastrar fuxiqueira.';
+                    errEl.style.display = 'block';
+                }
+            } catch (err) {
+                errEl.innerText = 'Erro: ' + err.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        function copyCreatedToken() {
+            const token = document.getElementById('createdTokenDisplay').value;
+            if (token) copyText(token);
         }
 
         async function deleteItem(slug) {

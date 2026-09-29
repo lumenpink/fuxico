@@ -108,3 +108,84 @@ test('aggregates stats correctly', function () use ($testEnv) {
     expect($stats['total_bytes'])->toBe(100);
     expect($stats['total_views'])->toBe(7);
 });
+
+test('manages users, roles and user_id post filtering', function () use ($testEnv) {
+    // Create users
+    $user1 = [
+        'id' => 'u1',
+        'username' => 'lorena',
+        'token' => 'fux_lorena_123',
+        'role' => 'admin',
+        'created_at' => time(),
+    ];
+    $user2 = [
+        'id' => 'u2',
+        'username' => 'babalu',
+        'token' => 'fux_babalu_456',
+        'role' => 'member',
+        'created_at' => time(),
+    ];
+
+    expect($testEnv->db()->createUser($user1))->toBeTrue();
+    expect($testEnv->db()->createUser($user2))->toBeTrue();
+
+    // Find users
+    $found = $testEnv->db()->findUserByToken('fux_lorena_123');
+    expect($found)->not->toBeNull();
+    expect($found['username'])->toBe('lorena');
+    expect($found['role'])->toBe('admin');
+
+    $foundByUname = $testEnv->db()->findUserByUsername('LORENA');
+    expect($foundByUname)->not->toBeNull();
+    expect($foundByUname['id'])->toBe('u1');
+
+    // Create items for user2 and anonymous
+    $testEnv->db()->createItem([
+        'id' => 'item-u2',
+        'slug' => 'babalu-secret',
+        'type' => 'file',
+        'x_token' => 'xtok1',
+        'created_at' => time(),
+        'user_id' => 'u2',
+    ]);
+    $testEnv->db()->createItem([
+        'id' => 'item-anon',
+        'slug' => 'anon-note',
+        'type' => 'doc',
+        'x_token' => 'xtok2',
+        'created_at' => time(),
+        'user_id' => null,
+    ]);
+
+    // List all (admin view)
+    $all = $testEnv->db()->listItems();
+    expect(count($all))->toBe(2);
+
+    // List user2 only (member view)
+    $u2Items = $testEnv->db()->listItems(100, 0, null, null, 'u2');
+    expect(count($u2Items))->toBe(1);
+    expect($u2Items[0]['slug'])->toBe('babalu-secret');
+    expect($u2Items[0]['author'])->toBe('babalu');
+    expect($testEnv->db()->countItems(null, null, 'u2'))->toBe(1);
+
+    // List user1 (has no items yet)
+    $u1Items = $testEnv->db()->listItems(100, 0, null, null, 'u1');
+    expect(count($u1Items))->toBe(0);
+
+    // Users list with items count
+    $usersList = $testEnv->db()->listUsers();
+    expect(count($usersList))->toBe(2);
+    $babaluEntry = array_values(array_filter($usersList, fn ($u) => $u['username'] === 'babalu'))[0];
+    expect((int) $babaluEntry['items_count'])->toBe(1);
+
+    // Update user token
+    $testEnv->db()->updateUserToken('u2', 'fux_babalu_new_token');
+    expect($testEnv->db()->findUserByToken('fux_babalu_456'))->toBeNull();
+    expect($testEnv->db()->findUserByToken('fux_babalu_new_token'))->not->toBeNull();
+
+    // Delete user (unlinks items)
+    $testEnv->db()->deleteUser('u2');
+    expect($testEnv->db()->findUserById('u2'))->toBeNull();
+    $itemAfter = $testEnv->db()->findBySlug('babalu-secret');
+    expect($itemAfter['user_id'])->toBeNull();
+});

@@ -44,14 +44,40 @@ class Database
                 is_oneshot INTEGER DEFAULT 0,
                 expires_at INTEGER NULL,
                 created_at INTEGER NOT NULL,
-                views INTEGER DEFAULT 0
+                views INTEGER DEFAULT 0,
+                user_id TEXT NULL
             );
 
             CREATE INDEX IF NOT EXISTS idx_items_slug ON items(slug);
             CREATE INDEX IF NOT EXISTS idx_items_expires ON items(expires_at);
             CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
             CREATE INDEX IF NOT EXISTS idx_items_created ON items(created_at);
+
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT NOT NULL UNIQUE,
+                token TEXT NOT NULL UNIQUE,
+                role TEXT NOT NULL DEFAULT "member",
+                created_at INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_users_token ON users(token);
+            CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
         ');
+
+        // Check if user_id column exists on pre-existing items table
+        $columns = $this->pdo->query('PRAGMA table_info(items)')->fetchAll();
+        $hasUserId = false;
+        foreach ($columns as $col) {
+            if (($col['name'] ?? '') === 'user_id') {
+                $hasUserId = true;
+                break;
+            }
+        }
+        if (! $hasUserId) {
+            $this->pdo->exec('ALTER TABLE items ADD COLUMN user_id TEXT NULL;');
+        }
+        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);');
     }
 
     public function isSlugTaken(string $slug): bool
@@ -81,7 +107,8 @@ class Database
      *   is_oneshot?: int,
      *   expires_at?: ?int,
      *   created_at?: int,
-     *   views?: int
+     *   views?: int,
+     *   user_id?: ?string
      * } $data
      */
     public function createItem(array $data): bool
@@ -89,10 +116,10 @@ class Database
         $stmt = $this->pdo->prepare('
             INSERT INTO items (
                 id, slug, original_name, type, target_url, file_path,
-                mime_type, size, x_token, is_oneshot, expires_at, created_at, views
+                mime_type, size, x_token, is_oneshot, expires_at, created_at, views, user_id
             ) VALUES (
                 :id, :slug, :original_name, :type, :target_url, :file_path,
-                :mime_type, :size, :x_token, :is_oneshot, :expires_at, :created_at, :views
+                :mime_type, :size, :x_token, :is_oneshot, :expires_at, :created_at, :views, :user_id
             )
         ');
 
@@ -110,6 +137,7 @@ class Database
             ':expires_at' => $data['expires_at'] ?? null,
             ':created_at' => $data['created_at'] ?? time(),
             ':views' => $data['views'] ?? 0,
+            ':user_id' => $data['user_id'] ?? null,
         ]);
     }
 
@@ -163,22 +191,34 @@ class Database
     /**
      * @return array<array<string, mixed>>
      */
-    public function listItems(int $limit = 100, int $offset = 0, ?string $search = null, ?string $type = null): array
+    public function listItems(int $limit = 100, int $offset = 0, ?string $search = null, ?string $type = null, ?string $userId = null): array
     {
-        $sql = 'SELECT id, slug, original_name, type, target_url, file_path, mime_type, size, is_oneshot, expires_at, created_at, views FROM items WHERE 1=1';
+        $sql = '
+            SELECT items.id, items.slug, items.original_name, items.type, items.target_url, items.file_path,
+                   items.mime_type, items.size, items.is_oneshot, items.expires_at, items.created_at, items.views,
+                   items.user_id, users.username as author
+            FROM items
+            LEFT JOIN users ON items.user_id = users.id
+            WHERE 1=1
+        ';
         $params = [];
 
         if ($search !== null && trim($search) !== '') {
-            $sql .= ' AND (slug LIKE :search OR original_name LIKE :search OR target_url LIKE :search)';
+            $sql .= ' AND (items.slug LIKE :search OR items.original_name LIKE :search OR items.target_url LIKE :search)';
             $params[':search'] = '%'.trim($search).'%';
         }
 
         if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist', 'git'], true)) {
-            $sql .= ' AND type = :type';
+            $sql .= ' AND items.type = :type';
             $params[':type'] = $type;
         }
 
-        $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
+        if ($userId !== null && trim($userId) !== '') {
+            $sql .= ' AND items.user_id = :user_id';
+            $params[':user_id'] = $userId;
+        }
+
+        $sql .= ' ORDER BY items.created_at DESC LIMIT :limit OFFSET :offset';
         $stmt = $this->pdo->prepare($sql);
 
         foreach ($params as $key => $val) {
@@ -192,7 +232,7 @@ class Database
         return $stmt->fetchAll();
     }
 
-    public function countItems(?string $search = null, ?string $type = null): int
+    public function countItems(?string $search = null, ?string $type = null, ?string $userId = null): int
     {
         $sql = 'SELECT COUNT(*) FROM items WHERE 1=1';
         $params = [];
@@ -205,6 +245,11 @@ class Database
         if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist', 'git'], true)) {
             $sql .= ' AND type = :type';
             $params[':type'] = $type;
+        }
+
+        if ($userId !== null && trim($userId) !== '') {
+            $sql .= ' AND user_id = :user_id';
+            $params[':user_id'] = $userId;
         }
 
         $stmt = $this->pdo->prepare($sql);
@@ -241,9 +286,9 @@ class Database
     /**
      * @return array{total_items: int, total_files: int, total_urls: int, total_docs: int, total_gists: int, total_gits: int, total_bytes: int, total_views: int}
      */
-    public function getStats(): array
+    public function getStats(?string $userId = null): array
     {
-        $stmt = $this->pdo->query('
+        $sql = '
             SELECT
                 COUNT(*) as total_items,
                 SUM(CASE WHEN type = "file" THEN 1 ELSE 0 END) as total_files,
@@ -254,7 +299,15 @@ class Database
                 SUM(size) as total_bytes,
                 SUM(views) as total_views
             FROM items
-        ');
+        ';
+        $params = [];
+        if ($userId !== null && trim($userId) !== '') {
+            $sql .= ' WHERE user_id = :user_id';
+            $params[':user_id'] = $userId;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         $res = $stmt->fetch();
 
         return [
@@ -267,5 +320,97 @@ class Database
             'total_bytes' => (int) ($res['total_bytes'] ?? 0),
             'total_views' => (int) ($res['total_views'] ?? 0),
         ];
+    }
+
+    /**
+     * @param  array{id: string, username: string, token: string, role?: string, created_at?: int}  $data
+     */
+    public function createUser(array $data): bool
+    {
+        $stmt = $this->pdo->prepare('
+            INSERT INTO users (id, username, token, role, created_at)
+            VALUES (:id, :username, :token, :role, :created_at)
+        ');
+
+        return $stmt->execute([
+            ':id' => $data['id'],
+            ':username' => trim($data['username']),
+            ':token' => trim($data['token']),
+            ':role' => $data['role'] ?? 'member',
+            ':created_at' => $data['created_at'] ?? time(),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findUserByToken(string $token): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE token = :token LIMIT 1');
+        $stmt->execute([':token' => trim($token)]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findUserById(string $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findUserByUsername(string $username): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = :username COLLATE NOCASE LIMIT 1');
+        $stmt->execute([':username' => trim($username)]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function listUsers(): array
+    {
+        $stmt = $this->pdo->query('
+            SELECT users.id, users.username, users.token, users.role, users.created_at,
+                   COUNT(items.id) as items_count
+            FROM users
+            LEFT JOIN items ON users.id = items.user_id
+            GROUP BY users.id
+            ORDER BY users.created_at ASC
+        ');
+
+        return $stmt->fetchAll();
+    }
+
+    public function deleteUser(string $id): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE items SET user_id = NULL WHERE user_id = :id');
+        $stmt->execute([':id' => $id]);
+
+        $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
+
+        return $stmt->execute([':id' => $id]);
+    }
+
+    public function updateUserToken(string $id, string $newToken): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET token = :token WHERE id = :id');
+
+        return $stmt->execute([
+            ':token' => trim($newToken),
+            ':id' => $id,
+        ]);
     }
 }
