@@ -775,9 +775,8 @@
 <li>Membros só podem excluir itens criados sob a sua própria ficha. Tentativas de apagar itens alheios retornam <code>403 Forbidden: Você só tem permissão para excluir as suas próprias fofocas.</code></li>
 </ul>
 <ul>
-<li><strong>Edição e Alternância de Formato (<code>PATCH /api/items/{slug}</code>):</strong></li>
-<li>Permite alterar o tipo entre arquivo puro e documento renderizado (<code>{ &quot;type&quot;: &quot;doc&quot; }</code> ou <code>{ &quot;type&quot;: &quot;file&quot; }</code>), ou editar o conteúdo de texto do item (<code>{ &quot;content&quot;: &quot;...&quot; }</code>).</li>
-<li>Sujeito às mesmas regras de isolamento de propriedade (<code>403 Forbidden</code> para itens alheios).</li>
+<li><strong>Edição de Parâmetros e Formato (<code>PATCH /api/items/{slug}</code>):</strong></li>
+<p>  Permite atualizar configurações, ciclo de vida e metadados de um fuxico existente.   - <strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code>   - <strong>Parâmetros do Payload (JSON):</strong>     | Campo | Tipo | Descrição |     | :--- | :--- | :--- |     | <code>expires</code> | String/Int/Null | Novo prazo de expiração (ex: <code>&quot;24h&quot;</code>, <code>&quot;7d&quot;</code>, timestamp unix ou <code>null</code>/<code>&quot;never&quot;</code> para remover retenção). |     | <code>max<em>downloads</code> | Int/Null | Quantidade máxima de downloads permitidos antes de evaporar/deletar o item (ou <code>null</code> para ilimitado). |     | <code>is</em>oneshot</code> | Boolean | Se <code>true</code>, o item evapora no 1º download. Se <code>false</code>, desativa modo queima. |     | <code>original<em>name</code> | String | Nome amigável de exibição e download do arquivo. |     | <code>target</em>url</code> | String | Nova URL de destino (válido para itens do tipo <code>url</code>). |     | <code>recalculate_hash</code>| Boolean | Se <code>true</code>, recalcula o checksum SHA-256 do arquivo físico em disco. |     | <code>type</code> | String | Alterna o modo entre arquivo puro (<code>&quot;file&quot;</code>) e documento renderizado (<code>&quot;doc&quot;</code>). |     | <code>content</code> | String | Atualiza o conteúdo textual do arquivo em disco e regera HTML se for documento. |   - Sujeito às regras de isolamento de propriedade (<code>403 Forbidden</code> caso um membro tente editar item de outra fuxiqueira). Retorna <code>200 OK</code> com o objeto atualizado.</p>
 </ul>
 <hr>
 <h3 id="3-4-interface-web-embutida-get-painel">3.4 Interface Web Embutida (<code>GET /painel</code>)</h3>
@@ -825,7 +824,7 @@
     </div>
 
     <footer class="doc-footer">
-        <p>Postado em 2026-09-29 10:51:02 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+        <p>Postado em 2026-09-29 12:12:14 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
     </footer>
 
     <script>

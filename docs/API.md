@@ -192,9 +192,21 @@ O Fuxico implementa isolamento estrito de dados entre usuárias:
   - Administradoras podem apagar qualquer item da instância.
   - Membros só podem excluir itens criados sob a sua própria ficha. Tentativas de apagar itens alheios retornam `403 Forbidden: Você só tem permissão para excluir as suas próprias fofocas.`
 
-- **Edição e Alternância de Formato (`PATCH /api/items/{slug}`):**
-  - Permite alterar o tipo entre arquivo puro e documento renderizado (`{ "type": "doc" }` ou `{ "type": "file" }`), ou editar o conteúdo de texto do item (`{ "content": "..." }`).
-  - Sujeito às mesmas regras de isolamento de propriedade (`403 Forbidden` para itens alheios).
+- **Edição de Parâmetros e Formato (`PATCH /api/items/{slug}`):**
+  Permite atualizar configurações, ciclo de vida e metadados de um fuxico existente.
+  - **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`
+  - **Parâmetros do Payload (JSON):**
+    | Campo | Tipo | Descrição |
+    | :--- | :--- | :--- |
+    | `expires` | String/Int/Null | Novo prazo de expiração (ex: `"24h"`, `"7d"`, timestamp unix ou `null`/`"never"` para remover retenção). |
+    | `max_downloads` | Int/Null | Quantidade máxima de downloads permitidos antes de evaporar/deletar o item (ou `null` para ilimitado). |
+    | `is_oneshot` | Boolean | Se `true`, o item evapora no 1º download. Se `false`, desativa modo queima. |
+    | `original_name` | String | Nome amigável de exibição e download do arquivo. |
+    | `target_url` | String | Nova URL de destino (válido para itens do tipo `url`). |
+    | `recalculate_hash`| Boolean | Se `true`, recalcula o checksum SHA-256 do arquivo físico em disco. |
+    | `type` | String | Alterna o modo entre arquivo puro (`"file"`) e documento renderizado (`"doc"`). |
+    | `content` | String | Atualiza o conteúdo textual do arquivo em disco e regera HTML se for documento. |
+  - Sujeito às regras de isolamento de propriedade (`403 Forbidden` caso um membro tente editar item de outra fuxiqueira). Retorna `200 OK` com o objeto atualizado.
 
 ---
 

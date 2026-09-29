@@ -42,6 +42,8 @@ class Database
                 size INTEGER DEFAULT 0,
                 x_token TEXT NOT NULL,
                 is_oneshot INTEGER DEFAULT 0,
+                max_downloads INTEGER NULL,
+                hash TEXT NULL,
                 expires_at INTEGER NULL,
                 created_at INTEGER NOT NULL,
                 views INTEGER DEFAULT 0,
@@ -65,17 +67,29 @@ class Database
             CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
         ');
 
-        // Check if user_id column exists on pre-existing items table
+        // Check if user_id, max_downloads, hash columns exist on pre-existing items table
         $columns = $this->pdo->query('PRAGMA table_info(items)')->fetchAll();
         $hasUserId = false;
+        $hasMaxDownloads = false;
+        $hasHash = false;
         foreach ($columns as $col) {
-            if (($col['name'] ?? '') === 'user_id') {
+            $colName = $col['name'] ?? '';
+            if ($colName === 'user_id') {
                 $hasUserId = true;
-                break;
+            } elseif ($colName === 'max_downloads') {
+                $hasMaxDownloads = true;
+            } elseif ($colName === 'hash') {
+                $hasHash = true;
             }
         }
         if (! $hasUserId) {
             $this->pdo->exec('ALTER TABLE items ADD COLUMN user_id TEXT NULL;');
+        }
+        if (! $hasMaxDownloads) {
+            $this->pdo->exec('ALTER TABLE items ADD COLUMN max_downloads INTEGER NULL DEFAULT NULL;');
+        }
+        if (! $hasHash) {
+            $this->pdo->exec('ALTER TABLE items ADD COLUMN hash TEXT NULL DEFAULT NULL;');
         }
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);');
     }
@@ -105,6 +119,8 @@ class Database
      *   size?: int,
      *   x_token: string,
      *   is_oneshot?: int,
+     *   max_downloads?: ?int,
+     *   hash?: ?string,
      *   expires_at?: ?int,
      *   created_at?: int,
      *   views?: int,
@@ -116,10 +132,10 @@ class Database
         $stmt = $this->pdo->prepare('
             INSERT INTO items (
                 id, slug, original_name, type, target_url, file_path,
-                mime_type, size, x_token, is_oneshot, expires_at, created_at, views, user_id
+                mime_type, size, x_token, is_oneshot, max_downloads, hash, expires_at, created_at, views, user_id
             ) VALUES (
                 :id, :slug, :original_name, :type, :target_url, :file_path,
-                :mime_type, :size, :x_token, :is_oneshot, :expires_at, :created_at, :views, :user_id
+                :mime_type, :size, :x_token, :is_oneshot, :max_downloads, :hash, :expires_at, :created_at, :views, :user_id
             )
         ');
 
@@ -134,6 +150,8 @@ class Database
             ':size' => $data['size'] ?? 0,
             ':x_token' => $data['x_token'],
             ':is_oneshot' => $data['is_oneshot'] ?? 0,
+            ':max_downloads' => $data['max_downloads'] ?? null,
+            ':hash' => $data['hash'] ?? null,
             ':expires_at' => $data['expires_at'] ?? null,
             ':created_at' => $data['created_at'] ?? time(),
             ':views' => $data['views'] ?? 0,
@@ -270,6 +288,29 @@ class Database
         $stmt = $this->pdo->prepare('UPDATE items SET size = :size WHERE slug = :slug');
 
         return $stmt->execute([':size' => $newSize, ':slug' => $slug]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    public function updateItemParameters(string $slug, array $params): bool
+    {
+        $allowed = ['expires_at', 'max_downloads', 'is_oneshot', 'original_name', 'target_url', 'hash', 'mime_type'];
+        $sets = [];
+        $binds = [':slug' => $slug];
+        foreach ($params as $k => $v) {
+            if (in_array($k, $allowed, true)) {
+                $sets[] = "{$k} = :{$k}";
+                $binds[":{$k}"] = $v;
+            }
+        }
+        if (empty($sets)) {
+            return false;
+        }
+        $sql = 'UPDATE items SET '.implode(', ', $sets).' WHERE slug = :slug';
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute($binds);
     }
 
     /**

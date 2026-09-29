@@ -798,7 +798,10 @@ class App
             // Redirect URL
             if ($item['type'] === 'url') {
                 $this->db->incrementViews($slug);
-                if ($item['is_oneshot']) {
+                $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
+                $viewsAfter = (int) $item['views'] + 1;
+                $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
+                if ($shouldBurn) {
                     $this->db->deleteBySlug($slug);
                 }
                 header('Location: '.$item['target_url'], true, 302);
@@ -809,8 +812,11 @@ class App
             // Rendered Markdown Document
             if ($item['type'] === 'doc') {
                 $this->db->incrementViews($slug);
-                $isOneshot = (bool) $item['is_oneshot'];
-                if ($isOneshot) {
+                $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
+                $viewsAfter = (int) $item['views'] + 1;
+                $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
+                if ($shouldBurn) {
+                    $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
                     $this->db->deleteBySlug($slug);
                 }
 
@@ -818,7 +824,7 @@ class App
                 $isRaw = isset($_GET['raw']) || ! str_contains($accept, 'text/html');
 
                 if ($isRaw) {
-                    $this->storage->streamFile($item['file_path'], 'text/plain; charset=UTF-8', $item['original_name'] ?: "{$slug}.md", true, $isOneshot);
+                    $this->storage->streamFile($item['file_path'], 'text/plain; charset=UTF-8', $item['original_name'] ?: "{$slug}.md", true, $shouldBurn);
 
                     return;
                 }
@@ -839,7 +845,7 @@ class App
                 }
 
                 $htmlDisplayName = $item['original_name'] ? pathinfo($item['original_name'], PATHINFO_FILENAME).'.html' : "{$slug}.html";
-                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', $htmlDisplayName, true, $isOneshot);
+                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', $htmlDisplayName, true, $shouldBurn);
 
                 return;
             }
@@ -847,8 +853,11 @@ class App
             // Rendered Gist Package
             if ($item['type'] === 'gist') {
                 $this->db->incrementViews($slug);
-                $isOneshot = (bool) $item['is_oneshot'];
-                if ($isOneshot) {
+                $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
+                $viewsAfter = (int) $item['views'] + 1;
+                $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
+                if ($shouldBurn) {
+                    $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
                     $this->db->deleteBySlug($slug);
                 }
 
@@ -882,7 +891,7 @@ class App
                     file_put_contents($this->storage->getFilePath($htmlFilename), $baked);
                 }
 
-                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', "{$slug}.html", true, $isOneshot);
+                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', "{$slug}.html", true, $shouldBurn);
 
                 return;
             }
@@ -890,8 +899,11 @@ class App
             // Rendered Git Repository
             if ($item['type'] === 'git') {
                 $this->db->incrementViews($slug);
-                $isOneshot = (bool) $item['is_oneshot'];
-                if ($isOneshot) {
+                $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
+                $viewsAfter = (int) $item['views'] + 1;
+                $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
+                if ($shouldBurn) {
+                    $this->storage->deleteItemFiles($slug, $item['file_path'] ?? null);
                     $this->db->deleteBySlug($slug);
                 }
 
@@ -926,7 +938,7 @@ class App
                     file_put_contents($this->storage->getFilePath($htmlFilename), $baked);
                 }
 
-                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', "{$slug}.html", true, $isOneshot);
+                $this->storage->streamFile($htmlFilename, 'text/html; charset=UTF-8', "{$slug}.html", true, $shouldBurn);
 
                 return;
             }
@@ -941,13 +953,15 @@ class App
                       $mime === 'application/pdf';
 
             $displayName = count($parts) > 1 ? end($parts) : ($item['original_name'] ?: $item['file_path']);
-            $isOneshot = (bool) $item['is_oneshot'];
+            $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
+            $viewsAfter = (int) $item['views'] + 1;
+            $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
 
-            if ($isOneshot) {
+            if ($shouldBurn) {
                 $this->db->deleteBySlug($slug);
             }
 
-            $this->storage->streamFile($item['file_path'], $mime, $displayName, $inline, $isOneshot);
+            $this->storage->streamFile($item['file_path'], $mime, $displayName, $inline, $shouldBurn);
 
             return;
         }
@@ -1353,6 +1367,7 @@ class App
             $item = $this->db->findBySlug($slug);
             if (! $item) {
                 http_response_code(404);
+                header('Content-Type: application/json; charset=UTF-8');
                 echo json_encode(['error' => 'Item not found']);
 
                 return;
@@ -1369,16 +1384,63 @@ class App
                 return;
             }
 
-            $slug = substr($endpoint, 6);
-            $item = $this->db->findBySlug($slug);
-            if (! $item) {
-                http_response_code(404);
-                echo json_encode(['error' => 'Item not found']);
+            $rawBody = (string) file_get_contents('php://input');
+            $jsonData = json_decode($rawBody, true);
+            $body = is_array($jsonData) ? $jsonData : $_POST;
 
-                return;
+            // Update item lifecycle and metadata parameters
+            $params = [];
+
+            // 1. Expiration
+            if (array_key_exists('expires', $body) || array_key_exists('expires_at', $body)) {
+                $expVal = $body['expires'] ?? $body['expires_at'];
+                if ($expVal === null || $expVal === '' || $expVal === 'never' || $expVal === 0 || $expVal === '0') {
+                    $params['expires_at'] = null;
+                } else {
+                    $params['expires_at'] = $this->parseExpiration((string) $expVal);
+                }
             }
 
-            $body = json_decode((string) file_get_contents('php://input'), true) ?? [];
+            // 2. Max downloads quota
+            if (array_key_exists('max_downloads', $body)) {
+                $mdVal = $body['max_downloads'];
+                if ($mdVal === null || $mdVal === '' || (int) $mdVal <= 0) {
+                    $params['max_downloads'] = null;
+                } else {
+                    $params['max_downloads'] = (int) $mdVal;
+                }
+            }
+
+            // 3. Oneshot toggle
+            if (array_key_exists('is_oneshot', $body)) {
+                $params['is_oneshot'] = filter_var($body['is_oneshot'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+
+            // 4. Original name
+            if (array_key_exists('original_name', $body)) {
+                $nameVal = trim((string) $body['original_name']);
+                $params['original_name'] = $nameVal !== '' ? $nameVal : null;
+            }
+
+            // 5. Target URL (for shortened links)
+            if (array_key_exists('target_url', $body)) {
+                $urlVal = trim((string) $body['target_url']);
+                $params['target_url'] = $urlVal !== '' ? $urlVal : null;
+            }
+
+            // 6. Checksum / Hash
+            if (! empty($body['recalculate_hash']) && ! empty($item['file_path'])) {
+                $realFilePath = $this->storage->getFilePath($item['file_path']);
+                if (file_exists($realFilePath)) {
+                    $params['hash'] = hash_file('sha256', $realFilePath);
+                }
+            } elseif (array_key_exists('hash', $body)) {
+                $params['hash'] = trim((string) $body['hash']) ?: null;
+            }
+
+            if (! empty($params)) {
+                $this->db->updateItemParameters($slug, $params);
+            }
 
             // Change Type (file <-> doc)
             if (isset($body['type']) && in_array($body['type'], ['file', 'doc'], true)) {
@@ -1410,6 +1472,7 @@ class App
                 file_put_contents($this->storage->getFilePath($item['file_path']), $body['content']);
                 $newSize = strlen($body['content']);
                 $this->db->updateContent($slug, $newSize);
+                $this->db->updateItemParameters($slug, ['hash' => hash('sha256', $body['content'])]);
 
                 if ($item['type'] === 'doc' || ($body['type'] ?? '') === 'doc') {
                     $baked = MarkdownRenderer::render($body['content'], [
@@ -1423,8 +1486,15 @@ class App
                 }
             }
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true]);
+            $updatedItem = $this->db->findBySlug($slug);
+
+            http_response_code(200);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => true,
+                'item' => $updatedItem,
+                'message' => 'Fuxico atualizado com sucesso!',
+            ]);
 
             return;
         }

@@ -2070,6 +2070,65 @@ HTML;
         </div>
     </div>
 
+    <!-- Modal: Ajustar Parâmetros do Fuxico -->
+    <div id="editItemModal" class="modal" onclick="closeEditItemModal()">
+        <div class="modal-card" style="width:100%; max-width:520px;" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeEditItemModal()">×</button>
+            <h3 style="font-family:var(--font-heading); font-size:1.2rem; color:var(--acid-yellow); margin-bottom:16px; text-transform:uppercase;">{$t('modal_edit_params_title')}</h3>
+            <div id="editItemError" style="display:none; color:var(--electric-pink); margin-bottom:12px; font-size:0.85rem; font-weight:700;"></div>
+            <div id="editItemSuccess" style="display:none; color:var(--acid-green); margin-bottom:12px; font-size:0.85rem; font-weight:700;"></div>
+
+            <input type="hidden" id="editItemSlug">
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_orig_name')}</label>
+                <input type="text" id="editItemNameInput" class="form-control">
+            </div>
+
+            <div id="editItemTargetUrlGroup" style="margin-bottom:12px; display:none;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_target_url')}</label>
+                <input type="text" id="editItemTargetUrlInput" class="form-control">
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_expires')}</label>
+                <select id="editItemExpiresSelect" class="form-control">
+                    <option value="keep">{$t('opt_exp_keep')}</option>
+                    <option value="never">{$t('opt_exp_never')}</option>
+                    <option value="1h">{$t('opt_exp_1h')}</option>
+                    <option value="24h">{$t('opt_exp_24h')}</option>
+                    <option value="7d">{$t('opt_exp_7d')}</option>
+                    <option value="30d">{$t('opt_exp_30d')}</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_max_downloads')}</label>
+                <input type="number" id="editItemMaxDownloadsInput" class="form-control" min="1" placeholder="ex: 5">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-main); cursor:pointer;">
+                    <input type="checkbox" id="editItemOneshotCheckbox">
+                    {$t('label_is_oneshot')}
+                </label>
+            </div>
+
+            <div id="editItemHashGroup" style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:4px; font-weight:700;">{$t('label_hash')}</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="text" id="editItemHashDisplay" class="form-control" readonly style="font-family:var(--font-mono); font-size:0.75rem;">
+                    <button class="btn-action-icon" type="button" onclick="recalcItemHash()" style="white-space:nowrap;">{$t('btn_recalc_hash')}</button>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" class="btn-action-icon" onclick="closeEditItemModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitEditItem()" style="padding:8px 16px;">{$t('btn_save_params')}</button>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <p style="margin-bottom: 8px;">{$t('footer_credit_prefix')} <a href="{$footerTravestiLink}" target="_blank" rel="noopener noreferrer" style="color:var(--electric-pink); font-weight:700;">{$t('footer_travesti_text')}</a> :)</p>
         <p><strong>FUXICO</strong> // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank" rel="noopener noreferrer">Codeberg</a> // 100% 0x0.st &amp; rustypaste drop-in protocol</p>
@@ -2267,7 +2326,9 @@ HTML;
                 }
 
                 let html = '';
+                window.dashItemsCache = {};
                 data.items.forEach(item => {
+                    window.dashItemsCache[item.slug] = item;
                     const sizeStr = item.type === 'url' ? '-' : (item.size / 1024).toFixed(1) + ' KB';
                     let typeBadge = '';
                     if (item.type === 'file') {
@@ -2281,7 +2342,8 @@ HTML;
                     } else {
                         typeBadge = '<span class="badge badge-url">URL</span>';
                     }
-                    const oneshotBadge = item.is_oneshot ? '<span class="badge badge-oneshot">🔥 Oneshot</span>' : '';
+                    const oneshotBadge = item.is_oneshot ? '<span class="badge badge-oneshot">🔥 Oneshot</span> ' : '';
+                    const maxDlBadge = item.max_downloads ? '<span class="badge" style="background:var(--tape-black); border:1px solid var(--acid-yellow); color:var(--acid-yellow); margin-right:4px;">📥 ' + item.views + '/' + item.max_downloads + '</span> ' : '';
                     const expStr = item.expires_at ? new Date(item.expires_at * 1000).toLocaleString() : escapeHtml(t('exp_none'));
 
                     const openBtn = (item.type === 'file')
@@ -2297,11 +2359,12 @@ HTML;
                         authorCol +
                         '<td>' + typeBadge + '</td>' +
                         '<td>' + sizeStr + '</td>' +
-                        '<td>' + oneshotBadge + ' <small style="color:var(--text-muted);">' + expStr + '</small></td>' +
+                        '<td>' + oneshotBadge + maxDlBadge + '<small style="color:var(--text-muted);">' + expStr + '</small></td>' +
                         '<td>' + item.views + '</td>' +
                         '<td>' +
                             '<button class="btn-action-icon" onclick="copyText(\'' + escapeHtml(item.url) + '\')">' + escapeHtml(t('act_copy')) + '</button> ' +
                             openBtn +
+                            '<button class="btn-action-icon" onclick="openEditItemModal(\'' + escapeHtml(item.slug) + '\')">⚙️ ' + escapeHtml(t('act_edit_params')) + '</button> ' +
                             '<button class="btn-action-icon btn-delete" onclick="deleteItem(\'' + escapeHtml(item.slug) + '\')">' + escapeHtml(t('act_delete')) + '</button>' +
                         '</td>' +
                     '</tr>';
@@ -2504,6 +2567,127 @@ HTML;
         function closeModal() {
             document.getElementById('previewModal').classList.remove('open');
             document.getElementById('modalBody').innerHTML = '';
+        }
+
+        function openEditItemModal(slug) {
+            const item = (window.dashItemsCache && window.dashItemsCache[slug]) || null;
+            if (!item) return;
+
+            document.getElementById('editItemSlug').value = item.slug;
+            document.getElementById('editItemNameInput').value = item.original_name || '';
+            document.getElementById('editItemExpiresSelect').value = 'keep';
+            document.getElementById('editItemMaxDownloadsInput').value = item.max_downloads || '';
+            document.getElementById('editItemOneshotCheckbox').checked = !!item.is_oneshot;
+            document.getElementById('editItemHashDisplay').value = item.hash || '';
+
+            const targetUrlGroup = document.getElementById('editItemTargetUrlGroup');
+            const targetUrlInput = document.getElementById('editItemTargetUrlInput');
+            if (item.type === 'url') {
+                targetUrlGroup.style.display = 'block';
+                targetUrlInput.value = item.target_url || '';
+            } else {
+                targetUrlGroup.style.display = 'none';
+                targetUrlInput.value = '';
+            }
+
+            const hashGroup = document.getElementById('editItemHashGroup');
+            if (item.type === 'file' || item.type === 'doc') {
+                hashGroup.style.display = 'block';
+            } else {
+                hashGroup.style.display = 'none';
+            }
+
+            document.getElementById('editItemError').style.display = 'none';
+            document.getElementById('editItemSuccess').style.display = 'none';
+            document.getElementById('editItemModal').classList.add('open');
+        }
+
+        function closeEditItemModal() {
+            document.getElementById('editItemModal').classList.remove('open');
+        }
+
+        async function recalcItemHash() {
+            const slug = document.getElementById('editItemSlug').value;
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            const errEl = document.getElementById('editItemError');
+            const succEl = document.getElementById('editItemSuccess');
+            errEl.style.display = 'none';
+            succEl.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/items/' + encodeURIComponent(slug), {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ recalculate_hash: true })
+                });
+                const data = await res.json();
+                if (res.ok && data.item) {
+                    document.getElementById('editItemHashDisplay').value = data.item.hash || '';
+                    if (window.dashItemsCache) window.dashItemsCache[slug] = data.item;
+                    succEl.innerText = 'Hash recalculado com sucesso!';
+                    succEl.style.display = 'block';
+                } else {
+                    errEl.innerText = data.message || 'Erro ao recalcular hash.';
+                    errEl.style.display = 'block';
+                }
+            } catch (err) {
+                errEl.innerText = 'Erro: ' + err.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        async function submitEditItem() {
+            const slug = document.getElementById('editItemSlug').value;
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            const errEl = document.getElementById('editItemError');
+            const succEl = document.getElementById('editItemSuccess');
+            errEl.style.display = 'none';
+            succEl.style.display = 'none';
+
+            const payload = {
+                original_name: document.getElementById('editItemNameInput').value.trim(),
+                is_oneshot: document.getElementById('editItemOneshotCheckbox').checked
+            };
+
+            const expChoice = document.getElementById('editItemExpiresSelect').value;
+            if (expChoice !== 'keep') {
+                payload.expires = expChoice;
+            }
+
+            const maxDl = document.getElementById('editItemMaxDownloadsInput').value.trim();
+            payload.max_downloads = maxDl ? parseInt(maxDl, 10) : null;
+
+            const targetUrlGroup = document.getElementById('editItemTargetUrlGroup');
+            if (targetUrlGroup.style.display !== 'none') {
+                payload.target_url = document.getElementById('editItemTargetUrlInput').value.trim();
+            }
+
+            try {
+                const res = await fetch('/api/items/' + encodeURIComponent(slug), {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    succEl.innerText = t('params_saved_success') || 'Parâmetros atualizados com sucesso!';
+                    succEl.style.display = 'block';
+                    loadDashboard();
+                    setTimeout(() => { closeEditItemModal(); }, 700);
+                } else {
+                    errEl.innerText = data.message || 'Erro ao atualizar parâmetros.';
+                    errEl.style.display = 'block';
+                }
+            } catch (err) {
+                errEl.innerText = 'Erro: ' + err.message;
+                errEl.style.display = 'block';
+            }
         }
 
         function copyText(str) {
