@@ -269,3 +269,49 @@ test('RBAC ownership: member cannot edit another members item parameters, but ad
     expect($itemUpdated['original_name'])->toBe('admin_ajustou.txt');
     expect((int) $itemUpdated['max_downloads'])->toBe(100);
 });
+
+test('PATCH /api/items/{slug} migrates .md file to doc and rebakes HTML with Joaju diagrams', function () use ($paramEnv) {
+    $slug = 'fux-md-migracao';
+    $filePath = 'fux-md-migracao.md';
+    $mdContent = "# Titulo da Nota\n\n```d2\na -> b\n```\n";
+    file_put_contents($paramEnv->storage()->getFilePath($filePath), $mdContent);
+
+    $paramEnv->db()->createItem([
+        'id' => uniqid('item_'),
+        'slug' => $slug,
+        'type' => 'file',
+        'file_path' => $filePath,
+        'original_name' => 'documento.md',
+        'mime_type' => 'text/markdown',
+        'size' => strlen($mdContent),
+        'x_token' => 'test-x-token-123',
+        'created_at' => time(),
+    ]);
+
+    // Initial state: no .html file exists
+    expect(file_exists($paramEnv->storage()->getFilePath("{$slug}.html")))->toBeFalse();
+
+    // PATCH to migrate to doc and rebake
+    $_SERVER['REQUEST_METHOD'] = 'PATCH';
+    $_SERVER['REQUEST_URI'] = "/api/items/{$slug}";
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer master-token';
+    $_POST = [
+        'type' => 'doc',
+        'rebake' => true,
+    ];
+
+    ob_start();
+    $paramEnv->app()->handleRequest();
+    ob_get_clean();
+
+    expect(http_response_code())->toBe(200);
+    $updated = $paramEnv->db()->findBySlug($slug);
+    expect($updated['type'])->toBe('doc');
+
+    // .html file was baked!
+    $htmlPath = $paramEnv->storage()->getFilePath("{$slug}.html");
+    expect(file_exists($htmlPath))->toBeTrue();
+    $bakedHtml = file_get_contents($htmlPath);
+    expect($bakedHtml)->toContain('Titulo da Nota');
+    expect($bakedHtml)->toContain('.diagram-figure');
+});

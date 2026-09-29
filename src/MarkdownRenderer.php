@@ -20,7 +20,7 @@ class MarkdownRenderer
      */
     public static function render(string $markdown, array $options = []): string
     {
-        $parsed = self::parse($markdown);
+        $parsed = self::parse($markdown, $options);
         $bodyHtml = $parsed['html'];
         $meta = $parsed['meta'];
 
@@ -448,6 +448,106 @@ class MarkdownRenderer
         .callout-info { --callout-color: #a78bfa; }
         .callout-quote { --callout-color: #9f97ad; }
 
+        /* Diagram Figures (Joaju Native Baking) */
+        .diagram-figure {
+            margin: 1.8em 0;
+            border: 2px solid var(--border-color);
+            background: var(--code-bg);
+            box-shadow: var(--shadow-hard);
+            overflow: hidden;
+            display: block;
+        }
+
+        [data-theme="acad"] .diagram-figure {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+            background: #ffffff;
+        }
+
+        .diagram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--tape-black);
+            padding: 8px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        [data-theme="acad"] .diagram-header {
+            background: #f4f4f5;
+            border-bottom: 1px solid #d4d4d8;
+            color: #52525b;
+        }
+
+        .diagram-badge {
+            font-weight: 700;
+            color: var(--acid-yellow);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        [data-theme="acad"] .diagram-badge {
+            color: #18181b;
+        }
+
+        .diagram-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-diagram-action {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-diagram-action:hover {
+            color: var(--text-main);
+            border-color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .btn-diagram-action:hover {
+            color: #000;
+            border-color: #000;
+        }
+
+        .diagram-viewport {
+            width: 100%;
+            overflow-x: auto;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+        }
+
+        [data-theme="acad"] .diagram-viewport {
+            background: #ffffff;
+            padding: 24px;
+        }
+
+        .diagram-viewport svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .diagram-source {
+            border-top: 1px dashed var(--border-color);
+            background: var(--code-bg);
+        }
+
         /* Code Blocks */
         .code-block-wrapper {
             margin: 1.5em 0;
@@ -723,8 +823,22 @@ class MarkdownRenderer
                 .then(() => alert('Link copiado para a área de transferência!'));
         }
 
+        function toggleDiagramSource(btn) {
+            const fig = btn.closest('.diagram-figure');
+            if (!fig) return;
+            const src = fig.querySelector('.diagram-source');
+            const view = fig.querySelector('.diagram-viewport');
+            if (src && view) {
+                const isHidden = src.style.display === 'none' || getComputedStyle(src).display === 'none';
+                src.style.display = isHidden ? 'block' : 'none';
+                view.style.display = isHidden ? 'none' : 'flex';
+                btn.innerText = isHidden ? 'Visual' : 'Código';
+            }
+        }
+
         function copyCode(btn) {
-            const pre = btn.closest('.code-block-wrapper').querySelector('pre');
+            const container = btn.closest('.code-block-wrapper') || btn.closest('.diagram-figure');
+            const pre = container ? container.querySelector('pre') : null;
             if (pre) {
                 navigator.clipboard.writeText(pre.innerText).then(() => {
                     const original = btn.innerText;
@@ -750,7 +864,7 @@ HTML;
      *
      * @return array{html: string, meta: array<string, mixed>}
      */
-    public static function parse(string $markdown): array
+    public static function parse(string $markdown, array $options = []): array
     {
         $meta = [];
         $markdown = str_replace(["\r\n", "\r"], "\n", $markdown);
@@ -776,28 +890,70 @@ HTML;
         while ($i < $count) {
             $line = $lines[$i];
 
-            // 2. Fenced Code Block
+            // 2. Fenced Code Block & Joaju Diagram Rendering
             if (preg_match('/^```(\w*)/', $line, $matches)) {
                 if ($inList) {
                     $htmlOutput[] = "</{$listType}>";
                     $inList = false;
                 }
 
-                $lang = htmlspecialchars($matches[1] ?: 'text', ENT_QUOTES, 'UTF-8');
-                $codeLines = [];
+                $rawLang = strtolower(trim($matches[1] ?: 'text'));
+                $lang = htmlspecialchars($rawLang, ENT_QUOTES, 'UTF-8');
+                $rawCodeLines = [];
                 $i++;
                 while ($i < $count && ! str_starts_with($lines[$i], '```')) {
-                    $codeLines[] = htmlspecialchars($lines[$i], ENT_QUOTES, 'UTF-8');
+                    $rawCodeLines[] = $lines[$i];
                     $i++;
                 }
-                $codeContent = implode("\n", $codeLines);
-                $htmlOutput[] = '<div class="code-block-wrapper">'
-                    .'<div class="code-block-header">'
-                    .'<span>'.strtoupper($lang).'</span>'
-                    .'<button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button>'
-                    .'</div>'
-                    ."<pre><code class=\"language-{$lang}\">{$codeContent}</code></pre>"
-                    .'</div>';
+                $rawCode = implode("\n", $rawCodeLines);
+                $escapedCode = htmlspecialchars($rawCode, ENT_QUOTES, 'UTF-8');
+
+                $diagramEngines = [
+                    'kinship' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
+                    'kinship2' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
+                    'heredograma' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
+                    'pedigree' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
+                    'd2' => ['engine' => 'd2', 'label' => 'DIAGRAMA D2'],
+                    'plantuml' => ['engine' => 'plantuml', 'label' => 'PLANTUML'],
+                    'puml' => ['engine' => 'plantuml', 'label' => 'PLANTUML'],
+                    'graphviz' => ['engine' => 'graphviz', 'label' => 'GRAPHVIZ'],
+                    'dot' => ['engine' => 'graphviz', 'label' => 'GRAPHVIZ (DOT)'],
+                    'mermaid' => ['engine' => 'mermaid', 'label' => 'MERMAID'],
+                ];
+
+                $renderedSvg = null;
+                if (isset($diagramEngines[$rawLang])) {
+                    $engineInfo = $diagramEngines[$rawLang];
+                    $renderedSvg = self::renderJoajuDiagram($rawCode, $engineInfo['engine'], $options);
+                }
+
+                if ($renderedSvg !== null) {
+                    $engineInfo = $diagramEngines[$rawLang];
+                    $label = htmlspecialchars($engineInfo['label'], ENT_QUOTES, 'UTF-8');
+                    $htmlOutput[] = '<figure class="diagram-figure diagram-'.$engineInfo['engine'].'" data-engine="'.$engineInfo['engine'].'">'
+                        .'<div class="diagram-header">'
+                        .'<span class="diagram-badge">⚡ '.$label.'</span>'
+                        .'<div class="diagram-actions">'
+                        .'<button type="button" class="btn-diagram-action" onclick="toggleDiagramSource(this)">Código</button>'
+                        .'<button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button>'
+                        .'</div>'
+                        .'</div>'
+                        .'<div class="diagram-viewport">'
+                        .$renderedSvg
+                        .'</div>'
+                        .'<div class="diagram-source" style="display:none;">'
+                        ."<pre><code class=\"language-{$lang}\">{$escapedCode}</code></pre>"
+                        .'</div>'
+                        .'</figure>';
+                } else {
+                    $htmlOutput[] = '<div class="code-block-wrapper">'
+                        .'<div class="code-block-header">'
+                        .'<span>'.strtoupper($lang).'</span>'
+                        .'<button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button>'
+                        .'</div>'
+                        ."<pre><code class=\"language-{$lang}\">{$escapedCode}</code></pre>"
+                        .'</div>';
+                }
                 $i++;
 
                 continue;
@@ -1133,5 +1289,66 @@ HTML;
         $text = preg_replace('/[^a-z0-9\-]+/i', '-', $text);
 
         return trim((string) $text, '-');
+    }
+
+    /**
+     * Renders a diagram code block via Joaju API (/render) into clean inline SVG.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public static function renderJoajuDiagram(string $rawCode, string $engine, array $options = []): ?string
+    {
+        if (getenv('FUXICO_DISABLE_DIAGRAMS') === '1' || ($options['disable_diagrams'] ?? false)) {
+            return null;
+        }
+
+        $joajuUrl = (string) ($options['joaju_url'] ?? getenv('FUXICO_JOAJU_URL') ?: 'https://joaju.lumen.pink/render');
+
+        $trimmed = trim($rawCode);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $wrappedCode = str_starts_with($trimmed, '```') ? $trimmed : "```{$engine}\n{$trimmed}\n```";
+        $payload = json_encode([
+            'code' => $wrappedCode,
+            'engine' => $engine,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if ($payload === false) {
+            return null;
+        }
+
+        $ch = curl_init($joajuUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => (int) ($options['joaju_timeout'] ?? 10),
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_FOLLOWLOCATION => true,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (PHP_VERSION_ID < 80500) {
+            curl_close($ch);
+        }
+
+        if ($httpCode !== 200 || ! is_string($response)) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+        if (! is_array($data) || empty($data['svg']) || ! is_string($data['svg'])) {
+            return null;
+        }
+
+        $svg = $data['svg'];
+        $svg = preg_replace('/<\?xml[^>]*\?>/i', '', $svg) ?? $svg;
+        $svg = preg_replace('/<!DOCTYPE[^>]*>/i', '', $svg) ?? $svg;
+
+        return trim($svg);
     }
 }

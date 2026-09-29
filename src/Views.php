@@ -2114,6 +2114,22 @@ HTML;
                 </label>
             </div>
 
+            <div id="editItemTypeGroup" style="margin-bottom:12px; display:none;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_item_type')}</label>
+                <select id="editItemTypeSelect" class="form-control">
+                    <option value="keep">{$t('opt_type_keep')}</option>
+                    <option value="file">{$t('opt_type_file')}</option>
+                    <option value="doc">{$t('opt_type_doc')}</option>
+                </select>
+            </div>
+
+            <div id="editItemRebakeGroup" style="margin-bottom:12px; display:none;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-main); cursor:pointer;">
+                    <input type="checkbox" id="editItemRebakeCheckbox">
+                    {$t('label_rebake_diagrams')}
+                </label>
+            </div>
+
             <div id="editItemHashGroup" style="margin-bottom:16px;">
                 <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:4px; font-weight:700;">{$t('label_hash')}</label>
                 <div style="display:flex; gap:6px;">
@@ -2597,6 +2613,22 @@ HTML;
                 hashGroup.style.display = 'none';
             }
 
+            const typeGroup = document.getElementById('editItemTypeGroup');
+            const typeSelect = document.getElementById('editItemTypeSelect');
+            const rebakeGroup = document.getElementById('editItemRebakeGroup');
+            const rebakeCheck = document.getElementById('editItemRebakeCheckbox');
+            rebakeCheck.checked = false;
+
+            if (item.type === 'file' || item.type === 'doc') {
+                typeGroup.style.display = 'block';
+                typeSelect.value = item.type;
+                rebakeGroup.style.display = (item.type === 'doc' || (item.original_name && item.original_name.endsWith('.md'))) ? 'block' : 'none';
+            } else {
+                typeGroup.style.display = 'none';
+                typeSelect.value = 'keep';
+                rebakeGroup.style.display = 'none';
+            }
+
             document.getElementById('editItemError').style.display = 'none';
             document.getElementById('editItemSuccess').style.display = 'none';
             document.getElementById('editItemModal').classList.add('open');
@@ -2659,6 +2691,15 @@ HTML;
 
             const maxDl = document.getElementById('editItemMaxDownloadsInput').value.trim();
             payload.max_downloads = maxDl ? parseInt(maxDl, 10) : null;
+
+            const typeChoice = document.getElementById('editItemTypeSelect').value;
+            if (typeChoice !== 'keep') {
+                payload.type = typeChoice;
+            }
+
+            if (document.getElementById('editItemRebakeCheckbox').checked) {
+                payload.rebake = true;
+            }
 
             const targetUrlGroup = document.getElementById('editItemTargetUrlGroup');
             if (targetUrlGroup.style.display !== 'none') {

@@ -1465,6 +1465,18 @@ class App
                         @unlink($htmlFile);
                     }
                 }
+            } elseif (! empty($body['rebake']) && $item['type'] === 'doc' && ! empty($item['file_path'])) {
+                $rawMd = file_get_contents($this->storage->getFilePath($item['file_path']));
+                if ($rawMd !== false) {
+                    $baked = MarkdownRenderer::render($rawMd, [
+                        'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
+                        'slug' => $slug,
+                        'original_name' => $item['original_name'] ?: "{$slug}.md",
+                        'created_at' => (int) $item['created_at'],
+                        'base_url' => $this->getBaseUrl(),
+                    ]);
+                    file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
+                }
             }
 
             // Edit Content

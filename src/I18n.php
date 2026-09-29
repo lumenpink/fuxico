@@ -140,6 +140,11 @@ class I18n
             'btn_recalc_hash' => 'Recalcular Hash',
             'btn_save_params' => 'Salvar Parâmetros ⚡',
             'params_saved_success' => 'Parâmetros atualizados com sucesso!',
+            'label_item_type' => 'Tipo de Exibição:',
+            'opt_type_keep' => 'Manter atual',
+            'opt_type_file' => 'Arquivo normal (Download direto)',
+            'opt_type_doc' => 'Documento renderizado (Markdown com Joaju)',
+            'label_rebake_diagrams' => 'Recompilar HTML e diagramas Joaju',
         ],
         'en' => [
             'app_name' => 'FUXICO',
@@ -269,6 +274,11 @@ class I18n
             'btn_recalc_hash' => 'Recalculate Hash',
             'btn_save_params' => 'Save Parameters ⚡',
             'params_saved_success' => 'Parameters updated successfully!',
+            'label_item_type' => 'Display Format:',
+            'opt_type_keep' => 'Keep current',
+            'opt_type_file' => 'Raw file (Direct download)',
+            'opt_type_doc' => 'Rendered document (Markdown with Joaju)',
+            'label_rebake_diagrams' => 'Re-bake HTML & Joaju diagrams',
         ],
     ];
 
