@@ -2358,7 +2358,7 @@ HTML;
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message + '\n\nNova Ficha: ' + data.token);
+                    alert(data.message + '\\n\\nNova Ficha: ' + data.token);
                     loadUsers();
                 } else {
                     alert('Erro: ' + (data.message || 'Falha ao regenerar ficha.'));

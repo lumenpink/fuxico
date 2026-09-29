@@ -24,6 +24,7 @@
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
 ### Bug Fixes
+  - (views) escapar quebras de linha em strings javascript no painel
   - (git) garantir compatibilidade de branch HEAD em bare repos para smart HTTP push
   - (ci) corrigir schema de imagem de container no ci.yml
   - (site) enforce inline frame containment, add global image reset, and fix asset caching
