@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - canonical joaju diagram engines, academic tables, and legacy tag cleanup
   - (markdown) embutir diagramas (kinship, d2, plantuml) via Joaju no baking HTML (closes #44, closes #43)
   - (fuxico) permitir edição de parâmetros e metadados (closes #42)
   - (auth) permitir chaves e senhas arbitrárias para fuxiqueiras

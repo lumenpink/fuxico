@@ -29,11 +29,11 @@ MD;
     }
 });
 
-test('bakes kinship pedigree diagram block into inline SVG', function () {
+test('bakes kinship2 pedigree diagram block into inline SVG', function () {
     $md = <<<'MD'
 # Heredograma Familiar
 
-```kinship
+```kinship2
 id, pai, mae, sexo, fenotipo
 1, 0, 0, M, higido
 2, 0, 0, F, afetado
@@ -43,15 +43,65 @@ MD;
 
     $parsed = MarkdownRenderer::parse($md);
 
-    if (str_contains($parsed['html'], 'class="diagram-figure diagram-kinship"')) {
-        expect($parsed['html'])->toContain('class="diagram-figure diagram-kinship"');
+    if (str_contains($parsed['html'], 'class="diagram-figure diagram-kinship2"')) {
+        expect($parsed['html'])->toContain('class="diagram-figure diagram-kinship2"');
         expect($parsed['html'])->toContain('<div class="diagram-viewport">');
         expect($parsed['html'])->toContain('<svg');
         expect($parsed['html'])->toContain('class="diagram-source"');
         expect($parsed['html'])->toContain('id, pai, mae');
     } else {
         expect($parsed['html'])->toContain('class="code-block-wrapper"');
-        expect($parsed['html'])->toContain('class="language-kinship"');
+        expect($parsed['html'])->toContain('class="language-kinship2"');
+    }
+});
+
+test('bakes pedtools pedigree diagram block into inline SVG', function () {
+    $md = <<<'MD'
+# Heredograma Pedtools
+
+```pedtools
+id, pai, mae, sexo
+1, 0, 0, 1
+2, 0, 0, 2
+3, 1, 2, 1
+```
+MD;
+
+    $parsed = MarkdownRenderer::parse($md, ['joaju_url' => 'http://localhost:3000/render']);
+
+    if (str_contains($parsed['html'], 'class="diagram-figure diagram-pedtools"')) {
+        expect($parsed['html'])->toContain('class="diagram-figure diagram-pedtools"');
+        expect($parsed['html'])->toContain('<div class="diagram-viewport">');
+        expect($parsed['html'])->toContain('<svg');
+        expect($parsed['html'])->toContain('class="diagram-source"');
+        expect($parsed['html'])->toContain('id, pai, mae');
+    } else {
+        expect($parsed['html'])->toContain('class="code-block-wrapper"');
+        expect($parsed['html'])->toContain('class="language-pedtools"');
+    }
+});
+
+test('bakes table diagram block into HTML table in viewport', function () {
+    $md = <<<'MD'
+# Tabela Acadêmica
+
+```table
+Amostra, Controle, Tratamento
+1, 10.2, 15.4
+2, 11.0, 14.8
+```
+MD;
+
+    $parsed = MarkdownRenderer::parse($md, ['joaju_url' => 'http://localhost:3000/render']);
+
+    if (str_contains($parsed['html'], 'class="diagram-figure diagram-table"')) {
+        expect($parsed['html'])->toContain('class="diagram-figure diagram-table"');
+        expect($parsed['html'])->toContain('<div class="diagram-viewport">');
+        expect($parsed['html'])->toContain('class="diagram-source"');
+        expect($parsed['html'])->toContain('Amostra');
+    } else {
+        expect($parsed['html'])->toContain('class="code-block-wrapper"');
+        expect($parsed['html'])->toContain('class="language-table"');
     }
 });
 
@@ -84,6 +134,30 @@ MD;
     expect($parsed['html'])->toContain('<span>PYTHON</span>');
     expect($parsed['html'])->toContain('class="language-python"');
     expect($parsed['html'])->not->toContain('class="diagram-figure"');
+});
+
+test('legacy diagram tags (kinship, heredograma, pedigree, puml, dot) are not recognized as diagrams', function () {
+    $md = <<<'MD'
+```kinship
+1, 0, 0, M
+```
+
+```heredograma
+1, 0, 0, M
+```
+
+```puml
+@startuml
+@enduml
+```
+MD;
+
+    $parsed = MarkdownRenderer::parse($md);
+
+    expect($parsed['html'])->not->toContain('class="diagram-figure"');
+    expect($parsed['html'])->toContain('class="language-kinship"');
+    expect($parsed['html'])->toContain('class="language-heredograma"');
+    expect($parsed['html'])->toContain('class="language-puml"');
 });
 
 test('render produces standalone html with baked SVG diagrams and toggle script', function () {

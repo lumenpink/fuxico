@@ -543,6 +543,17 @@ class MarkdownRenderer
             margin: 0 auto;
         }
 
+        .diagram-table .diagram-viewport {
+            display: block;
+            padding: 16px 20px;
+        }
+
+        .diagram-table .joaju-academic-table-wrapper {
+            margin: 0 auto;
+            width: 100%;
+            overflow-x: auto;
+        }
+
         .diagram-source {
             border-top: 1px dashed var(--border-color);
             background: var(--code-bg);
@@ -909,15 +920,14 @@ HTML;
                 $escapedCode = htmlspecialchars($rawCode, ENT_QUOTES, 'UTF-8');
 
                 $diagramEngines = [
-                    'kinship' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
-                    'kinship2' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
-                    'heredograma' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
-                    'pedigree' => ['engine' => 'kinship', 'label' => 'HEREDOGRAMA (KINSHIP)'],
+                    'pedtools' => ['engine' => 'pedtools', 'label' => 'HEREDOGRAMA (PEDTOOLS)'],
+                    'kinship2' => ['engine' => 'kinship2', 'label' => 'HEREDOGRAMA (KINSHIP2)'],
+                    'openchemlib' => ['engine' => 'openchemlib', 'label' => 'QUÍMICA (OPENCHEMLIB)'],
+                    'openbabel' => ['engine' => 'openbabel', 'label' => 'QUÍMICA (OPENBABEL)'],
+                    'table' => ['engine' => 'table', 'label' => 'TABELA ACADÊMICA'],
                     'd2' => ['engine' => 'd2', 'label' => 'DIAGRAMA D2'],
                     'plantuml' => ['engine' => 'plantuml', 'label' => 'PLANTUML'],
-                    'puml' => ['engine' => 'plantuml', 'label' => 'PLANTUML'],
                     'graphviz' => ['engine' => 'graphviz', 'label' => 'GRAPHVIZ'],
-                    'dot' => ['engine' => 'graphviz', 'label' => 'GRAPHVIZ (DOT)'],
                     'mermaid' => ['engine' => 'mermaid', 'label' => 'MERMAID'],
                 ];
 
@@ -1341,7 +1351,15 @@ HTML;
         }
 
         $data = json_decode($response, true);
-        if (! is_array($data) || empty($data['svg']) || ! is_string($data['svg'])) {
+        if (! is_array($data)) {
+            return null;
+        }
+
+        if (! empty($data['html']) && is_string($data['html'])) {
+            return trim($data['html']);
+        }
+
+        if (empty($data['svg']) || ! is_string($data['svg'])) {
             return null;
         }
 
