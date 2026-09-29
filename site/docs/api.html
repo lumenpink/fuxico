@@ -702,13 +702,86 @@
 <h4 id="authentication">Authentication:</h4>
 <p>Requires <code>Authorization: Bearer &lt;master<em>token&gt;</code> OR <code>Authorization: Bearer &lt;x</em>token&gt;</code>.</p>
 <hr>
-<h2 id="3-web-dashboard-rest-api">3. Web Dashboard REST API</h2>
-<p>Protected by <code>Authorization: Bearer &lt;master_token&gt;</code>.</p>
+<h2 id="3-web-dashboard-multi-user-rest-api">3. Web Dashboard & Multi-User REST API</h2>
+<p>O Fuxico inclui uma API REST robusta para o painel de controle (<code>/painel</code>) e automações administrativas, com suporte a múltiplos usuários (fuxiqueiras) e controle de acesso baseado em papéis (<strong>RBAC</strong>).</p>
+<h3 id="3-1-autenticacao-e-resolucao-de-identidade-get-api-me">3.1 Autenticação e Resolução de Identidade (<code>GET /api/me</code>)</h3>
+<p>Resolve a ficha de acesso fornecida e retorna o contexto do usuário autenticado.</p>
 <ul>
-<li><code>GET /api/stats</code>: Returns overall item counts, total bytes, and views.</li>
-<li><code>GET /api/items?search=&amp;type=&amp;limit=50&amp;offset=0</code>: Returns paginated records with total count.</li>
-<li><code>DELETE /api/items/&lt;slug&gt;</code>: Deletes the item by slug.</li>
+<li><strong>Método:</strong> <code>GET</code></li>
+<li><strong>Cabeçalho:</strong> <code>Authorization: Bearer &lt;token&gt;</code> (ou parâmetro <code>?token=&lt;token&gt;</code>)</li>
+<li><strong>Resposta de Sucesso (<code>200 OK</code>):</strong></li>
+<p>  ``<code>json   {     &quot;authenticated&quot;: true,     &quot;role&quot;: &quot;admin&quot;,     &quot;user<em>id&quot;: &quot;a1b2c3d4e5f6&quot;,     &quot;username&quot;: &quot;mona</em>lisa&quot;,     &quot;is_master&quot;: false   }   </code>``</p>
+<li><strong>Resposta para Token Mestre de Configuração:</strong></li>
+<p>  Retorna <code>role: &quot;admin&quot;</code>, <code>username: &quot;mestre&quot;</code>, <code>user<em>id: null</code> e <code>is</em>master: true</code>.</p>
+<li><strong>Resposta de Falha (<code>401 Unauthorized</code>):</strong> Retornado quando o token é inválido ou ausente.</li>
 </ul>
+<hr>
+<h3 id="3-2-gestao-de-usuarias-fuxiqueiras-restrito-a-admin">3.2 Gestão de Usuárias / Fuxiqueiras (Restrito a <code>admin</code>)</h3>
+<p>Somente a <strong>fuxiqueira-mor</strong> (<code>role: admin</code> ou token mestre) possui autorização para consultar, criar, alterar ou remover usuárias. Tentativas por usuárias <code>member</code> retornam <code>403 Forbidden</code>.</p>
+<h4 id="listar-usuarias-get-api-users">Listar Usuárias (<code>GET /api/users</code>)</h4>
+<ul>
+<li><strong>Método:</strong> <code>GET</code></li>
+<li><strong>Resposta (<code>200 OK</code>):</strong></li>
+<p>  ``<code>json   {     &quot;users&quot;: [       {         &quot;id&quot;: &quot;7f8b1a2c3d4e&quot;,         &quot;username&quot;: &quot;sylvia&quot;,         &quot;role&quot;: &quot;admin&quot;,         &quot;created<em>at&quot;: 1726839600,         &quot;item</em>count&quot;: 14,         &quot;total_bytes&quot;: 10485760       }     ],     &quot;total&quot;: 1   }   </code>``</p>
+</ul>
+<h4 id="cadastrar-nova-fuxiqueira-post-api-users">Cadastrar Nova Fuxiqueira (<code>POST /api/users</code>)</h4>
+<p>Cria uma nova usuária no sistema. Permite opcionalmente definir uma <strong>ficha/senha arbitrária personalizada</strong>.</p>
+<ul>
+<li><strong>Método:</strong> <code>POST</code></li>
+<li><strong>Headers:</strong> <code>Content-Type: application/json</code></li>
+<li><strong>Payload:</strong></li>
+</ul>
+<div class="table-wrapper"><table><thead><tr><th style="text-align:left;">Campo</th><th style="text-align:left;">Tipo</th><th style="text-align:left;">Obrigatório</th><th style="text-align:left;">Descrição</th></tr></thead><tbody><tr><td style="text-align:left;"><code>username</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Sim</td><td style="text-align:left;">Identificador único de 2 a 32 caracteres (<code>[a-zA-Z0-9_\-\.]</code>).</td></tr><tr><td style="text-align:left;"><code>role</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Não</td><td style="text-align:left;"><code>admin</code> (fuxiqueira-mor) ou <code>member</code> (fuxiqueira comum, padrão).</td></tr><tr><td style="text-align:left;"><code>token</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Não</td><td style="text-align:left;">Chave/senha personalizada arbitrária (4 a 128 caracteres). Se omitido ou em branco, um token aleatório <code>fux_&lt;32-hex&gt;</code> é gerado.</td></tr></tbody></table></div>
+<ul>
+<li><strong>Respostas:</strong></li>
+<li><code>201 Created</code>: Usuária cadastrada com sucesso. Retorna o objeto com a ficha gerada/atribuída.</li>
+<li><code>400 Bad Request</code>: Formato de username ou comprimento de senha inválido.</li>
+<li><code>409 Conflict</code>: Username já cadastrado ou ficha/senha já em uso por outra usuária ou token mestre.</li>
+</ul>
+<h4 id="atualizar-ou-regenerar-ficha-post-api-users-id-token">Atualizar ou Regenerar Ficha (<code>POST /api/users/{id}/token</code>)</h4>
+<p>Atualiza a chave de acesso de uma fuxiqueira. Permite informar uma nova chave arbitrária ou sortear uma aleatória.</p>
+<ul>
+<li><strong>Método:</strong> <code>POST /api/users/{id}/token</code></li>
+<li><strong>Payload (JSON opcional):</strong></li>
+<p>  ``<code>json   {     &quot;token&quot;: &quot;minha-nova-senha-arbitraria-2026&quot;   }   </code>`<code>   <em>(Se </code>{ "token": "" }<code> ou corpo vazio for enviado, uma nova ficha aleatória </code>fux_<hex>` é gerada).</em></p>
+<li><strong>Respostas:</strong></li>
+<li><code>200 OK</code>: Ficha atualizada. O token antigo é imediatamente revogado.</li>
+<li><code>404 Not Found</code>: Usuária não encontrada.</li>
+<li><code>409 Conflict</code>: Ficha arbitrária já em uso por outro usuário ou token mestre.</li>
+</ul>
+<h4 id="excluir-fuxiqueira-delete-api-users-id">Excluir Fuxiqueira (<code>DELETE /api/users/{id}</code>)</h4>
+<p>Remove a conta da usuária do banco de dados.</p>
+<ul>
+<li><strong>Método:</strong> <code>DELETE /api/users/{id}</code></li>
+<li><strong>Respostas:</strong> <code>200 OK</code> (removida) ou <code>404 Not Found</code>.</li>
+</ul>
+<hr>
+<h3 id="3-3-itens-e-isolamento-de-propriedade-ownership-isolation">3.3 Itens e Isolamento de Propriedade (Ownership Isolation)</h3>
+<p>O Fuxico implementa isolamento estrito de dados entre usuárias:</p>
+<ul>
+<li><strong>Estatísticas (<code>GET /api/stats</code>):</strong></li>
+<li>Para <code>admin</code>: Retorna os totais globais da instância.</li>
+<li>Para <code>member</code>: Retorna estritamente os contadores e bytes pertencentes à usuária conectada.</li>
+</ul>
+<ul>
+<li><strong>Listagem de Itens (<code>GET /api/items</code>):</strong></li>
+<li>Parâmetros: <code>search</code> (termo de busca), <code>type</code> (<code>file</code>, <code>url</code>, <code>gist</code>, <code>git</code>, <code>doc</code>), <code>limit</code> (padrão 50, máx 200), <code>offset</code>.</li>
+<li><strong>Filtro de Membro:</strong> Para usuárias com perfil <code>member</code>, a busca é forçada estritamente ao seu próprio <code>user_id</code>. Itens de outras usuárias não são retornados.</li>
+<li><strong>Filtro de Admin:</strong> Administradoras podem visualizar itens globais ou passar <code>?user_id=&lt;id&gt;</code> para inspecionar o acervo de uma fuxiqueira específica.</li>
+</ul>
+<ul>
+<li><strong>Exclusão de Itens (<code>DELETE /api/items/{slug}</code>):</strong></li>
+<li>Administradoras podem apagar qualquer item da instância.</li>
+<li>Membros só podem excluir itens criados sob a sua própria ficha. Tentativas de apagar itens alheios retornam <code>403 Forbidden: Você só tem permissão para excluir as suas próprias fofocas.</code></li>
+</ul>
+<ul>
+<li><strong>Edição e Alternância de Formato (<code>PATCH /api/items/{slug}</code>):</strong></li>
+<li>Permite alterar o tipo entre arquivo puro e documento renderizado (<code>{ &quot;type&quot;: &quot;doc&quot; }</code> ou <code>{ &quot;type&quot;: &quot;file&quot; }</code>), ou editar o conteúdo de texto do item (<code>{ &quot;content&quot;: &quot;...&quot; }</code>).</li>
+<li>Sujeito às mesmas regras de isolamento de propriedade (<code>403 Forbidden</code> para itens alheios).</li>
+</ul>
+<hr>
+<h3 id="3-4-interface-web-embutida-get-painel">3.4 Interface Web Embutida (<code>GET /painel</code>)</h3>
+<p>O painel administrativo do Fuxico é servido no endpoint <code>/painel</code>. Possui estética zine/pajubá responsiva, suporte a temas (Zine e Acadêmico), armazenamento de token em <code>localStorage</code>, visualizador de arquivos em modal, terminal de upload e gaveta de gestão de fuxiqueiras com cadastro e regeneração de fichas.</p>
 <hr>
 <h2 id="4-client-cli-dialect-specifications-fux">4. Client CLI & Dialect Specifications (<code>fux</code>)</h2>
 <p>Both Bash (<code>bin/fux</code>) and Native Rust (<code>cli/target/release/fux</code>) clients support dual dialect selection via <code>-D, --dialect, --dialeto &lt;nullpointer|rustypaste&gt;</code> and configuration files (<code>~/.config/fux/config.toml</code>):</p>
@@ -752,7 +825,7 @@
     </div>
 
     <footer class="doc-footer">
-        <p>Postado em 2026-09-28 20:52:56 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+        <p>Postado em 2026-09-29 10:51:02 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
     </footer>
 
     <script>

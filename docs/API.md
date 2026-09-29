@@ -85,13 +85,122 @@ Requires `Authorization: Bearer <master_token>` OR `Authorization: Bearer <x_tok
 
 ---
 
-## 3. Web Dashboard REST API
+## 3. Web Dashboard & Multi-User REST API
 
-Protected by `Authorization: Bearer <master_token>`.
+O Fuxico inclui uma API REST robusta para o painel de controle (`/painel`) e automações administrativas, com suporte a múltiplos usuários (fuxiqueiras) e controle de acesso baseado em papéis (**RBAC**).
 
-- `GET /api/stats`: Returns overall item counts, total bytes, and views.
-- `GET /api/items?search=&type=&limit=50&offset=0`: Returns paginated records with total count.
-- `DELETE /api/items/<slug>`: Deletes the item by slug.
+### 3.1 Autenticação e Resolução de Identidade (`GET /api/me`)
+
+Resolve a ficha de acesso fornecida e retorna o contexto do usuário autenticado.
+
+- **Método:** `GET`
+- **Cabeçalho:** `Authorization: Bearer <token>` (ou parâmetro `?token=<token>`)
+- **Resposta de Sucesso (`200 OK`):**
+  ```json
+  {
+    "authenticated": true,
+    "role": "admin",
+    "user_id": "a1b2c3d4e5f6",
+    "username": "mona_lisa",
+    "is_master": false
+  }
+  ```
+- **Resposta para Token Mestre de Configuração:**
+  Retorna `role: "admin"`, `username: "mestre"`, `user_id: null` e `is_master: true`.
+- **Resposta de Falha (`401 Unauthorized`):** Retornado quando o token é inválido ou ausente.
+
+---
+
+### 3.2 Gestão de Usuárias / Fuxiqueiras (Restrito a `admin`)
+
+Somente a **fuxiqueira-mor** (`role: admin` ou token mestre) possui autorização para consultar, criar, alterar ou remover usuárias. Tentativas por usuárias `member` retornam `403 Forbidden`.
+
+#### Listar Usuárias (`GET /api/users`)
+- **Método:** `GET`
+- **Resposta (`200 OK`):**
+  ```json
+  {
+    "users": [
+      {
+        "id": "7f8b1a2c3d4e",
+        "username": "sylvia",
+        "role": "admin",
+        "created_at": 1726839600,
+        "item_count": 14,
+        "total_bytes": 10485760
+      }
+    ],
+    "total": 1
+  }
+  ```
+
+#### Cadastrar Nova Fuxiqueira (`POST /api/users`)
+Cria uma nova usuária no sistema. Permite opcionalmente definir uma **ficha/senha arbitrária personalizada**.
+
+- **Método:** `POST`
+- **Headers:** `Content-Type: application/json`
+- **Payload:**
+  | Campo | Tipo | Obrigatório | Descrição |
+  | :--- | :--- | :--- | :--- |
+  | `username` | String | Sim | Identificador único de 2 a 32 caracteres (`[a-zA-Z0-9_\-\.]`). |
+  | `role` | String | Não | `admin` (fuxiqueira-mor) ou `member` (fuxiqueira comum, padrão). |
+  | `token` | String | Não | Chave/senha personalizada arbitrária (4 a 128 caracteres). Se omitido ou em branco, um token aleatório `fux_<32-hex>` é gerado. |
+
+- **Respostas:**
+  - `201 Created`: Usuária cadastrada com sucesso. Retorna o objeto com a ficha gerada/atribuída.
+  - `400 Bad Request`: Formato de username ou comprimento de senha inválido.
+  - `409 Conflict`: Username já cadastrado ou ficha/senha já em uso por outra usuária ou token mestre.
+
+#### Atualizar ou Regenerar Ficha (`POST /api/users/{id}/token`)
+Atualiza a chave de acesso de uma fuxiqueira. Permite informar uma nova chave arbitrária ou sortear uma aleatória.
+
+- **Método:** `POST /api/users/{id}/token`
+- **Payload (JSON opcional):**
+  ```json
+  {
+    "token": "minha-nova-senha-arbitraria-2026"
+  }
+  ```
+  *(Se `{ "token": "" }` ou corpo vazio for enviado, uma nova ficha aleatória `fux_<hex>` é gerada).*
+- **Respostas:**
+  - `200 OK`: Ficha atualizada. O token antigo é imediatamente revogado.
+  - `404 Not Found`: Usuária não encontrada.
+  - `409 Conflict`: Ficha arbitrária já em uso por outro usuário ou token mestre.
+
+#### Excluir Fuxiqueira (`DELETE /api/users/{id}`)
+Remove a conta da usuária do banco de dados.
+
+- **Método:** `DELETE /api/users/{id}`
+- **Respostas:** `200 OK` (removida) ou `404 Not Found`.
+
+---
+
+### 3.3 Itens e Isolamento de Propriedade (Ownership Isolation)
+
+O Fuxico implementa isolamento estrito de dados entre usuárias:
+
+- **Estatísticas (`GET /api/stats`):**
+  - Para `admin`: Retorna os totais globais da instância.
+  - Para `member`: Retorna estritamente os contadores e bytes pertencentes à usuária conectada.
+
+- **Listagem de Itens (`GET /api/items`):**
+  - Parâmetros: `search` (termo de busca), `type` (`file`, `url`, `gist`, `git`, `doc`), `limit` (padrão 50, máx 200), `offset`.
+  - **Filtro de Membro:** Para usuárias com perfil `member`, a busca é forçada estritamente ao seu próprio `user_id`. Itens de outras usuárias não são retornados.
+  - **Filtro de Admin:** Administradoras podem visualizar itens globais ou passar `?user_id=<id>` para inspecionar o acervo de uma fuxiqueira específica.
+
+- **Exclusão de Itens (`DELETE /api/items/{slug}`):**
+  - Administradoras podem apagar qualquer item da instância.
+  - Membros só podem excluir itens criados sob a sua própria ficha. Tentativas de apagar itens alheios retornam `403 Forbidden: Você só tem permissão para excluir as suas próprias fofocas.`
+
+- **Edição e Alternância de Formato (`PATCH /api/items/{slug}`):**
+  - Permite alterar o tipo entre arquivo puro e documento renderizado (`{ "type": "doc" }` ou `{ "type": "file" }`), ou editar o conteúdo de texto do item (`{ "content": "..." }`).
+  - Sujeito às mesmas regras de isolamento de propriedade (`403 Forbidden` para itens alheios).
+
+---
+
+### 3.4 Interface Web Embutida (`GET /painel`)
+
+O painel administrativo do Fuxico é servido no endpoint `/painel`. Possui estética zine/pajubá responsiva, suporte a temas (Zine e Acadêmico), armazenamento de token em `localStorage`, visualizador de arquivos em modal, terminal de upload e gaveta de gestão de fuxiqueiras com cadastro e regeneração de fichas.
 
 ---
 
