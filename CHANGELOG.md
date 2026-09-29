@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (auth) permitir chaves e senhas arbitrárias para fuxiqueiras
   - (meta) gerar card oficial de opengraph e banner social GOST 11 (closes #33)
   - (auth) suporte a multi-usuários com controle de acesso por post e gestão no painel
   - (git) suporte a repositórios git efêmeros com git http smart protocol e baking estático (closes #38)

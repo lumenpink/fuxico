@@ -1088,7 +1088,35 @@ class App
             }
 
             $id = bin2hex(random_bytes(8));
-            $token = 'fux_'.bin2hex(random_bytes(16));
+            $rawToken = trim((string) ($body['token'] ?? ''));
+            if ($rawToken !== '') {
+                if (strlen($rawToken) < 4 || strlen($rawToken) > 128) {
+                    http_response_code(400);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode([
+                        'error' => 'Bad Request',
+                        'message' => 'Ficha/senha inválida. Deve ter entre 4 e 128 caracteres.',
+                    ]);
+
+                    return;
+                }
+
+                if ($this->config->isAuthorized($rawToken) || $this->db->findUserByToken($rawToken)) {
+                    http_response_code(409);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode([
+                        'error' => 'Conflict',
+                        'message' => 'Esta ficha/senha já está em uso.',
+                    ]);
+
+                    return;
+                }
+
+                $token = $rawToken;
+            } else {
+                $token = 'fux_'.bin2hex(random_bytes(16));
+            }
+
             $this->db->createUser([
                 'id' => $id,
                 'username' => $username,
@@ -1136,7 +1164,37 @@ class App
                 return;
             }
 
-            $newToken = 'fux_'.bin2hex(random_bytes(16));
+            $body = json_decode((string) file_get_contents('php://input'), true) ?? $_POST;
+            $rawToken = trim((string) ($body['token'] ?? ''));
+            if ($rawToken !== '') {
+                if (strlen($rawToken) < 4 || strlen($rawToken) > 128) {
+                    http_response_code(400);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode([
+                        'error' => 'Bad Request',
+                        'message' => 'Ficha/senha inválida. Deve ter entre 4 e 128 caracteres.',
+                    ]);
+
+                    return;
+                }
+
+                $existingUser = $this->db->findUserByToken($rawToken);
+                if ($this->config->isAuthorized($rawToken) || ($existingUser && $existingUser['id'] !== $userId)) {
+                    http_response_code(409);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode([
+                        'error' => 'Conflict',
+                        'message' => 'Esta ficha/senha já está em uso.',
+                    ]);
+
+                    return;
+                }
+
+                $newToken = $rawToken;
+            } else {
+                $newToken = 'fux_'.bin2hex(random_bytes(16));
+            }
+
             $this->db->updateUserToken($userId, $newToken);
 
             http_response_code(200);
@@ -1146,7 +1204,7 @@ class App
                 'id' => $userId,
                 'username' => $user['username'],
                 'token' => $newToken,
-                'message' => "Nova ficha da fuxiqueira '{$user['username']}' gerada com sucesso!",
+                'message' => "Ficha da fuxiqueira '{$user['username']}' atualizada com sucesso!",
             ]);
 
             return;

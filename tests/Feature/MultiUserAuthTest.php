@@ -387,3 +387,76 @@ test('Item ownership isolation: member cannot see or delete another members item
     expect(http_response_code())->toBe(200);
     expect($multiUserEnv->db()->findBySlug('fb-slug'))->toBeNull();
 });
+
+test('admin can create users with arbitrary tokens and update user tokens to arbitrary keys', function () use ($multiUserEnv) {
+    // 1. Admin creates a user with custom arbitrary token
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_SERVER['REQUEST_URI'] = '/api/users';
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer master-secret-token';
+    $_POST = [
+        'username' => 'sylvia_rivera',
+        'role' => 'admin',
+        'token' => 'minha-chave-custom-2026',
+    ];
+
+    ob_start();
+    $multiUserEnv->app()->handleRequest();
+    $outCreate = ob_get_clean();
+
+    expect(http_response_code())->toBe(201);
+    $resCreate = json_decode($outCreate, true);
+    expect($resCreate['success'])->toBeTrue();
+    expect($resCreate['user']['token'])->toBe('minha-chave-custom-2026');
+    $sylviaId = $resCreate['user']['id'];
+
+    // 2. Auth resolves directly using the custom token
+    $auth = $multiUserEnv->app()->resolveAuth('minha-chave-custom-2026');
+    expect($auth)->not->toBeNull();
+    expect($auth['username'])->toBe('sylvia_rivera');
+    expect($auth['role'])->toBe('admin');
+
+    // 3. Conflict on duplicate custom token (against another user or master token)
+    $_POST = [
+        'username' => 'outra_fuxiqueira',
+        'role' => 'member',
+        'token' => 'minha-chave-custom-2026',
+    ];
+    ob_start();
+    $multiUserEnv->app()->handleRequest();
+    $outDup = ob_get_clean();
+    expect(http_response_code())->toBe(409);
+
+    // Conflict on master token
+    $_POST = [
+        'username' => 'clonadora_mestre',
+        'role' => 'member',
+        'token' => 'master-secret-token',
+    ];
+    ob_start();
+    $multiUserEnv->app()->handleRequest();
+    $outMasterDup = ob_get_clean();
+    expect(http_response_code())->toBe(409);
+
+    // 4. Update user token to another arbitrary key
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_SERVER['REQUEST_URI'] = "/api/users/{$sylviaId}/token";
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer master-secret-token';
+    $_POST = [
+        'token' => 'nova-senha-arbitraria-999',
+    ];
+
+    ob_start();
+    $multiUserEnv->app()->handleRequest();
+    $outUpdate = ob_get_clean();
+
+    expect(http_response_code())->toBe(200);
+    $resUpdate = json_decode($outUpdate, true);
+    expect($resUpdate['success'])->toBeTrue();
+    expect($resUpdate['token'])->toBe('nova-senha-arbitraria-999');
+
+    // Verify old token is revoked and new token works
+    expect($multiUserEnv->app()->resolveAuth('minha-chave-custom-2026'))->toBeNull();
+    $newAuth = $multiUserEnv->app()->resolveAuth('nova-senha-arbitraria-999');
+    expect($newAuth)->not->toBeNull();
+    expect($newAuth['username'])->toBe('sylvia_rivera');
+});

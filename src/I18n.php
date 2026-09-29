@@ -117,9 +117,12 @@ class I18n
             'modal_new_user_title' => 'Cadastrar Nova Fuxiqueira',
             'username_label' => 'Apelido da Fuxiqueira:',
             'username_placeholder' => 'ex: babado_forte',
+            'token_label' => 'Ficha / Senha (opcional):',
+            'token_placeholder' => 'Deixe em branco para gerar aleatória ou digite sua chave',
             'role_label' => 'Papel no Fuxico:',
             'btn_create_user' => 'Emitir Ficha ⚡',
             'user_created_success' => 'Fuxiqueira criada com sucesso! Copie a ficha de acesso:',
+            'regen_prompt' => 'Digite a nova ficha/senha para a fuxiqueira (ou deixe em branco para sortear uma aleatória):',
         ],
         'en' => [
             'app_name' => 'FUXICO',
@@ -226,9 +229,12 @@ class I18n
             'modal_new_user_title' => 'Register New Snooper',
             'username_label' => 'Snooper Nickname:',
             'username_placeholder' => 'e.g. spicy_snooper',
+            'token_label' => 'Token / Password (optional):',
+            'token_placeholder' => 'Leave blank to generate randomly or type custom key',
             'role_label' => 'Role in Fuxico:',
             'btn_create_user' => 'Issue Token ⚡',
             'user_created_success' => 'Snooper registered successfully! Copy access token:',
+            'regen_prompt' => 'Enter new token/password for this snooper (or leave blank to generate randomly):',
         ],
     ];
 

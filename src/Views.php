@@ -2047,6 +2047,10 @@ HTML;
                 <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('username_label')}</label>
                 <input type="text" id="newUsernameInput" class="form-control" placeholder="{$t('username_placeholder')}">
             </div>
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('token_label')}</label>
+                <input type="text" id="newUserTokenInput" class="form-control" placeholder="{$t('token_placeholder')}">
+            </div>
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('role_label')}</label>
                 <select id="newUserRoleSelect" class="form-control">
@@ -2349,19 +2353,27 @@ HTML;
         }
 
         async function regenUserToken(userId) {
-            if (!confirm(t('regen_confirm'))) return;
+            const promptMsg = t('regen_prompt') || 'Digite a nova ficha/senha (ou deixe em branco para sortear aleatória):';
+            const input = prompt(promptMsg, '');
+            if (input === null) return;
+            const customToken = input.trim();
+
             const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
             try {
                 const res = await fetch('/api/users/' + userId + '/token', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token: customToken })
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message + '\\n\\nNova Ficha: ' + data.token);
+                    alert(data.message + '\\n\\nFicha: ' + data.token);
                     loadUsers();
                 } else {
-                    alert('Erro: ' + (data.message || 'Falha ao regenerar ficha.'));
+                    alert('Erro: ' + (data.message || 'Falha ao atualizar ficha.'));
                 }
             } catch (err) {
                 alert('Erro: ' + err.message);
@@ -2389,6 +2401,7 @@ HTML;
 
         function openNewUserModal() {
             document.getElementById('newUsernameInput').value = '';
+            document.getElementById('newUserTokenInput').value = '';
             document.getElementById('newUserRoleSelect').value = 'member';
             document.getElementById('newUserError').style.display = 'none';
             document.getElementById('newUserSuccess').style.display = 'none';
@@ -2404,6 +2417,7 @@ HTML;
         async function submitNewUser() {
             const username = document.getElementById('newUsernameInput').value.trim();
             const role = document.getElementById('newUserRoleSelect').value;
+            const customToken = document.getElementById('newUserTokenInput').value.trim();
             const errEl = document.getElementById('newUserError');
             const succEl = document.getElementById('newUserSuccess');
             const tokenDisplay = document.getElementById('createdTokenDisplay');
@@ -2417,6 +2431,11 @@ HTML;
                 return;
             }
 
+            const payload = { username, role };
+            if (customToken) {
+                payload.token = customToken;
+            }
+
             const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
             try {
                 const res = await fetch('/api/users', {
@@ -2425,7 +2444,7 @@ HTML;
                         'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ username, role })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (res.ok) {
