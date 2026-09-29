@@ -111,7 +111,11 @@ beforeAll(function () use ($gitEnv) {
 
 afterAll(function () use ($gitEnv) {
     if ($gitEnv->pid > 0) {
-        posix_kill($gitEnv->pid, SIGKILL);
+        if (function_exists('posix_kill')) {
+            @posix_kill($gitEnv->pid, 9);
+        } else {
+            exec("kill -9 {$gitEnv->pid} 2>/dev/null");
+        }
     }
     if (is_dir($gitEnv->tempDir)) {
         exec('rm -rf '.escapeshellarg($gitEnv->tempDir));

@@ -37,7 +37,8 @@ class GitBackend
             return false;
         }
 
-        // Configure bare repository for HTTP protocol and safe pushes
+        // Configure default branch to main and bare repository for HTTP protocol
+        exec('git -C '.escapeshellarg($repoPath).' symbolic-ref HEAD refs/heads/main 2>/dev/null');
         exec('git -C '.escapeshellarg($repoPath).' config http.receivepack true');
         exec('git -C '.escapeshellarg($repoPath).' config uploadpack.allowAnySHA1InWant true');
 
@@ -211,14 +212,26 @@ class GitBackend
         $readmeContent = null;
         $readmeFilename = null;
 
-        // Check if HEAD has commits
+        // Check if HEAD has commits or points to an unborn branch
+        $revCheck = @shell_exec('git -C '.escapeshellarg($repoPath).' rev-parse --verify HEAD 2>/dev/null');
+        if ($revCheck === null || trim((string) $revCheck) === '') {
+            $branchesOut = @shell_exec('git -C '.escapeshellarg($repoPath).' for-each-ref --format="%(refname:short)" refs/heads/ 2>/dev/null');
+            if ($branchesOut) {
+                $branches = array_values(array_filter(array_map('trim', explode("\n", (string) $branchesOut))));
+                if (! empty($branches)) {
+                    $chosen = in_array('main', $branches, true) ? 'main' : (in_array('master', $branches, true) ? 'master' : $branches[0]);
+                    @shell_exec('git -C '.escapeshellarg($repoPath).' symbolic-ref HEAD refs/heads/'.escapeshellarg($chosen).' 2>/dev/null');
+                    $revCheck = @shell_exec('git -C '.escapeshellarg($repoPath).' rev-parse --verify HEAD 2>/dev/null');
+                }
+            }
+        }
+
         $headRef = trim((string) @shell_exec('git -C '.escapeshellarg($repoPath).' rev-parse --abbrev-ref HEAD 2>/dev/null'));
         if ($headRef !== '' && $headRef !== 'HEAD') {
             $defaultBranch = $headRef;
         }
 
-        $revCheck = @shell_exec('git -C '.escapeshellarg($repoPath).' rev-parse --verify HEAD 2>/dev/null');
-        if ($revCheck !== null && trim($revCheck) !== '') {
+        if ($revCheck !== null && trim((string) $revCheck) !== '') {
             $hasCommits = true;
 
             // Commit count

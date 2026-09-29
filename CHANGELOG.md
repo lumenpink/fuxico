@@ -24,6 +24,7 @@
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
 ### Bug Fixes
+  - (git) garantir compatibilidade de branch HEAD em bare repos para smart HTTP push
   - (ci) corrigir schema de imagem de container no ci.yml
   - (site) enforce inline frame containment, add global image reset, and fix asset caching
   - (site) integrate zine hero banner into header frame and fix lightbox zoom
