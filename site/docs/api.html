@@ -7,6 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false});"></script>
     <script>
         (function() {
             try {
@@ -373,43 +376,161 @@
         .callout {
             border: 1px solid var(--border-color);
             border-left: 4px solid var(--callout-color, var(--acid-yellow));
-            background: var(--callout-bg);
+            background: color-mix(in srgb, var(--callout-color, #e2f835) 9%, var(--callout-bg));
             padding: 14px 18px;
             margin: 1.5em 0;
-            border-radius: 2px;
+            border-radius: 4px;
         }
 
         .callout-title {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-weight: 700;
             font-family: var(--font-sub);
             color: var(--callout-color, var(--acid-yellow));
             margin-bottom: 8px;
             font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.2px;
+        }
+
+        .callout-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--callout-color, inherit);
+        }
+
+        .callout-icon svg {
+            display: block;
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.2;
+        }
+
+        .callout-fold {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            color: var(--callout-color, inherit);
+            opacity: 0.7;
+            transition: transform 0.2s ease;
+            transform: rotate(-90deg);
+        }
+
+        details.callout[open] .callout-fold {
+            transform: rotate(0deg);
         }
 
         [data-theme="acad"] .callout {
-            border: 1px solid #d4d4d8;
-            border-left: 4px solid #18181b;
-            background: #fbfbfb;
+            border: 1px solid #e4e4e7;
+            border-left: 4px solid var(--callout-color, #18181b);
+            background: color-mix(in srgb, var(--callout-color, #18181b) 7%, #ffffff);
             box-shadow: none;
         }
+
         [data-theme="acad"] .callout-title {
-            color: #18181b;
+            color: var(--callout-color, #18181b);
             font-family: var(--font-heading);
-            font-size: 0.9rem;
+            font-size: 0.92rem;
         }
 
-        .callout-note { --callout-color: #38bdf8; }
-        .callout-tip { --callout-color: #4ade80; }
-        .callout-warning { --callout-color: #facc15; }
-        .callout-danger { --callout-color: #f87171; }
-        .callout-info { --callout-color: #a78bfa; }
-        .callout-quote { --callout-color: #9f97ad; }
+        /* Callout Types & Colors */
+        .callout-note { --callout-color: #0284c7; }
+        .callout-abstract, .callout-summary, .callout-tldr { --callout-color: #0d9488; }
+        .callout-info { --callout-color: #0284c7; }
+        .callout-todo { --callout-color: #7c3aed; }
+        .callout-tip, .callout-hint { --callout-color: #10b981; }
+        .callout-success, .callout-check, .callout-done { --callout-color: #16a34a; }
+        .callout-question, .callout-help, .callout-faq { --callout-color: #d97706; }
+        .callout-warning, .callout-caution, .callout-attention { --callout-color: #ea580c; }
+        .callout-failure, .callout-fail, .callout-missing { --callout-color: #dc2626; }
+        .callout-danger, .callout-error { --callout-color: #e11d48; }
+        .callout-bug { --callout-color: #f43f5e; }
+        .callout-example { --callout-color: #9333ea; }
+        .callout-quote, .callout-cite { --callout-color: #64748b; }
+        .callout-important { --callout-color: #ec4899; }
+
+        /* Dark mode palette adjustments */
+        [data-theme="zine"] .callout-note { --callout-color: #38bdf8; }
+        [data-theme="zine"] .callout-abstract, [data-theme="zine"] .callout-summary, [data-theme="zine"] .callout-tldr { --callout-color: #2dd4bf; }
+        [data-theme="zine"] .callout-info { --callout-color: #38bdf8; }
+        [data-theme="zine"] .callout-todo { --callout-color: #a855f7; }
+        [data-theme="zine"] .callout-tip, [data-theme="zine"] .callout-hint { --callout-color: #34d399; }
+        [data-theme="zine"] .callout-success, [data-theme="zine"] .callout-check, [data-theme="zine"] .callout-done { --callout-color: #22c55e; }
+        [data-theme="zine"] .callout-question, [data-theme="zine"] .callout-help, [data-theme="zine"] .callout-faq { --callout-color: #fbbf24; }
+        [data-theme="zine"] .callout-warning, [data-theme="zine"] .callout-caution, [data-theme="zine"] .callout-attention { --callout-color: #fb923c; }
+        [data-theme="zine"] .callout-failure, [data-theme="zine"] .callout-fail, [data-theme="zine"] .callout-missing { --callout-color: #f87171; }
+        [data-theme="zine"] .callout-danger, [data-theme="zine"] .callout-error { --callout-color: #fb7185; }
+        [data-theme="zine"] .callout-bug { --callout-color: #f43f5e; }
+        [data-theme="zine"] .callout-example { --callout-color: #c084fc; }
+        [data-theme="zine"] .callout-quote, [data-theme="zine"] .callout-cite { --callout-color: #94a3b8; }
+        [data-theme="zine"] .callout-important { --callout-color: #f472b6; }
+
+        .callout-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .callout-content p {
+            margin: 0.6em 0;
+        }
+        .callout-content p:first-child {
+            margin-top: 0;
+        }
+        .callout-content p:last-child {
+            margin-bottom: 0;
+        }
+        .callout-content ul, .callout-content ol {
+            margin: 0.5em 0 0.5em 1.5em;
+        }
+
+        details.callout summary.callout-title {
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+        }
+        details.callout[open] summary.callout-title {
+            margin-bottom: 8px;
+        }
+        details.callout summary.callout-title::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Footnotes */
+        .footnotes {
+            margin-top: 3em;
+            padding-top: 1.5em;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+        .footnotes ol {
+            padding-left: 1.5em;
+        }
+        .footnotes li {
+            margin-bottom: 0.6em;
+        }
+        .footnote-ref a, .footnote-backref {
+            color: var(--electric-pink);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footnote-ref a:hover, .footnote-backref:hover {
+            text-decoration: underline;
+        }
+
+        /* LaTeX & Math Rendering */
+        .math-block {
+            margin: 1.5em 0;
+            overflow-x: auto;
+            text-align: center;
+        }
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 0;
+        }
 
         /* Diagram Figures (Joaju Native Baking) */
         .diagram-figure {
@@ -534,6 +655,13 @@
         [data-theme="acad"] .code-block-wrapper {
             border: 1px solid #d4d4d8;
             box-shadow: none;
+            background: #fafafa;
+        }
+
+        [data-theme="acad"] .code-block-header {
+            background: #f4f4f5;
+            color: #71717a;
+            border-bottom: 1px solid #e4e4e7;
         }
 
         .code-block-header {
@@ -570,6 +698,7 @@
             font-size: 0.9rem;
             line-height: 1.5;
             color: var(--text-main);
+            background: transparent;
         }
 
         .fuxico-article code {
@@ -587,11 +716,15 @@
             border: 1px solid #e4e4e7;
         }
 
-        .fuxico-article pre code {
-            background: transparent;
-            border: none;
-            padding: 0;
-            color: inherit;
+        .fuxico-article pre code,
+        [data-theme="acad"] .fuxico-article pre code,
+        [data-theme="zine"] .fuxico-article pre code {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            color: inherit !important;
+            box-shadow: none !important;
+            display: block;
         }
 
         /* Lists */
@@ -811,7 +944,7 @@
 <h3 id="2-2-direct-deletion-delete-or-delete">2.2 Direct Deletion (<code>DELETE /&lt;slug&gt;.&lt;ext&gt;</code> or <code>DELETE /&lt;slug&gt;</code>)</h3>
 <p>Permanently removes the specified file.</p>
 <h4 id="authentication">Authentication:</h4>
-<p>Requires <code>Authorization: Bearer &lt;master<em>token&gt;</code> OR <code>Authorization: Bearer &lt;x</em>token&gt;</code>.</p>
+<p>Requires <code>Authorization: Bearer &lt;master_token&gt;</code> OR <code>Authorization: Bearer &lt;x_token&gt;</code>.</p>
 <hr>
 <h2 id="3-web-dashboard-multi-user-rest-api">3. Web Dashboard & Multi-User REST API</h2>
 <p>O Fuxico inclui uma API REST robusta para o painel de controle (<code>/painel</code>) e automações administrativas, com suporte a múltiplos usuários (fuxiqueiras) e controle de acesso baseado em papéis (<strong>RBAC</strong>).</p>
@@ -821,9 +954,17 @@
 <li><strong>Método:</strong> <code>GET</code></li>
 <li><strong>Cabeçalho:</strong> <code>Authorization: Bearer &lt;token&gt;</code> (ou parâmetro <code>?token=&lt;token&gt;</code>)</li>
 <li><strong>Resposta de Sucesso (<code>200 OK</code>):</strong></li>
-<p>  ``<code>json   {     &quot;authenticated&quot;: true,     &quot;role&quot;: &quot;admin&quot;,     &quot;user<em>id&quot;: &quot;a1b2c3d4e5f6&quot;,     &quot;username&quot;: &quot;mona</em>lisa&quot;,     &quot;is_master&quot;: false   }   </code>``</p>
+<p>  ```json   {</p>
+</ul>
+<div class="code-block-wrapper"><div class="code-block-header"><span>TEXT</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code>&quot;authenticated&quot;: true,
+&quot;role&quot;: &quot;admin&quot;,
+&quot;user_id&quot;: &quot;a1b2c3d4e5f6&quot;,
+&quot;username&quot;: &quot;mona_lisa&quot;,
+&quot;is_master&quot;: false</code></pre></div>
+<p>  }   ```</p>
+<ul>
 <li><strong>Resposta para Token Mestre de Configuração:</strong></li>
-<p>  Retorna <code>role: &quot;admin&quot;</code>, <code>username: &quot;mestre&quot;</code>, <code>user<em>id: null</code> e <code>is</em>master: true</code>.</p>
+<p>  Retorna <code>role: &quot;admin&quot;</code>, <code>username: &quot;mestre&quot;</code>, <code>user_id: null</code> e <code>is_master: true</code>.</p>
 <li><strong>Resposta de Falha (<code>401 Unauthorized</code>):</strong> Retornado quando o token é inválido ou ausente.</li>
 </ul>
 <hr>
@@ -833,8 +974,20 @@
 <ul>
 <li><strong>Método:</strong> <code>GET</code></li>
 <li><strong>Resposta (<code>200 OK</code>):</strong></li>
-<p>  ``<code>json   {     &quot;users&quot;: [       {         &quot;id&quot;: &quot;7f8b1a2c3d4e&quot;,         &quot;username&quot;: &quot;sylvia&quot;,         &quot;role&quot;: &quot;admin&quot;,         &quot;created<em>at&quot;: 1726839600,         &quot;item</em>count&quot;: 14,         &quot;total_bytes&quot;: 10485760       }     ],     &quot;total&quot;: 1   }   </code>``</p>
+<p>  ```json   {</p>
 </ul>
+<div class="code-block-wrapper"><div class="code-block-header"><span>TEXT</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code>&quot;users&quot;: [
+  {
+    &quot;id&quot;: &quot;7f8b1a2c3d4e&quot;,
+    &quot;username&quot;: &quot;sylvia&quot;,
+    &quot;role&quot;: &quot;admin&quot;,
+    &quot;created_at&quot;: 1726839600,
+    &quot;item_count&quot;: 14,
+    &quot;total_bytes&quot;: 10485760
+  }
+],
+&quot;total&quot;: 1</code></pre></div>
+<p>  }   ```</p>
 <h4 id="cadastrar-nova-fuxiqueira-post-api-users">Cadastrar Nova Fuxiqueira (<code>POST /api/users</code>)</h4>
 <p>Cria uma nova usuária no sistema. Permite opcionalmente definir uma <strong>ficha/senha arbitrária personalizada</strong>.</p>
 <ul>
@@ -854,7 +1007,11 @@
 <ul>
 <li><strong>Método:</strong> <code>POST /api/users/{id}/token</code></li>
 <li><strong>Payload (JSON opcional):</strong></li>
-<p>  ``<code>json   {     &quot;token&quot;: &quot;minha-nova-senha-arbitraria-2026&quot;   }   </code>`<code>   <em>(Se </code>{ "token": "" }<code> ou corpo vazio for enviado, uma nova ficha aleatória </code>fux_<hex>` é gerada).</em></p>
+<p>  ```json   {</p>
+</ul>
+<div class="code-block-wrapper"><div class="code-block-header"><span>TEXT</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code>&quot;token&quot;: &quot;minha-nova-senha-arbitraria-2026&quot;</code></pre></div>
+<p>  }   ``<code>   *(Se </code>{ "token": "" }<code> ou corpo vazio for enviado, uma nova ficha aleatória </code>fux_<hex>` é gerada).*</p>
+<ul>
 <li><strong>Respostas:</strong></li>
 <li><code>200 OK</code>: Ficha atualizada. O token antigo é imediatamente revogado.</li>
 <li><code>404 Not Found</code>: Usuária não encontrada.</li>
@@ -887,7 +1044,11 @@
 </ul>
 <ul>
 <li><strong>Edição de Parâmetros e Formato (<code>PATCH /api/items/{slug}</code>):</strong></li>
-<p>  Permite atualizar configurações, ciclo de vida e metadados de um fuxico existente.   - <strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code>   - <strong>Parâmetros do Payload (JSON):</strong>     | Campo | Tipo | Descrição |     | :--- | :--- | :--- |     | <code>expires</code> | String/Int/Null | Novo prazo de expiração (ex: <code>&quot;24h&quot;</code>, <code>&quot;7d&quot;</code>, timestamp unix ou <code>null</code>/<code>&quot;never&quot;</code> para remover retenção). |     | <code>max<em>downloads</code> | Int/Null | Quantidade máxima de downloads permitidos antes de evaporar/deletar o item (ou <code>null</code> para ilimitado). |     | <code>is</em>oneshot</code> | Boolean | Se <code>true</code>, o item evapora no 1º download. Se <code>false</code>, desativa modo queima. |     | <code>original<em>name</code> | String | Nome amigável de exibição e download do arquivo. |     | <code>target</em>url</code> | String | Nova URL de destino (válido para itens do tipo <code>url</code>). |     | <code>recalculate_hash</code>| Boolean | Se <code>true</code>, recalcula o checksum SHA-256 do arquivo físico em disco. |     | <code>type</code> | String | Alterna o modo entre arquivo puro (<code>&quot;file&quot;</code>) e documento renderizado (<code>&quot;doc&quot;</code>). |     | <code>content</code> | String | Atualiza o conteúdo textual do arquivo em disco e regera HTML se for documento. |   - Sujeito às regras de isolamento de propriedade (<code>403 Forbidden</code> caso um membro tente editar item de outra fuxiqueira). Retorna <code>200 OK</code> com o objeto atualizado.</p>
+<p>  Permite atualizar configurações, ciclo de vida e metadados de um fuxico existente.   - <strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code>   - <strong>Parâmetros do Payload (JSON):</strong></p>
+</ul>
+<div class="table-wrapper"><table><thead><tr><th style="text-align:left;">Campo</th><th style="text-align:left;">Tipo</th><th style="text-align:left;">Descrição</th></tr></thead><tbody><tr><td style="text-align:left;"><code>expires</code></td><td style="text-align:left;">String/Int/Null</td><td style="text-align:left;">Novo prazo de expiração (ex: <code>&quot;24h&quot;</code>, <code>&quot;7d&quot;</code>, timestamp unix ou <code>null</code>/<code>&quot;never&quot;</code> para remover retenção).</td></tr><tr><td style="text-align:left;"><code>max_downloads</code></td><td style="text-align:left;">Int/Null</td><td style="text-align:left;">Quantidade máxima de downloads permitidos antes de evaporar/deletar o item (ou <code>null</code> para ilimitado).</td></tr><tr><td style="text-align:left;"><code>is_oneshot</code></td><td style="text-align:left;">Boolean</td><td style="text-align:left;">Se <code>true</code>, o item evapora no 1º download. Se <code>false</code>, desativa modo queima.</td></tr><tr><td style="text-align:left;"><code>original_name</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Nome amigável de exibição e download do arquivo.</td></tr><tr><td style="text-align:left;"><code>target_url</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Nova URL de destino (válido para itens do tipo <code>url</code>).</td></tr><tr><td style="text-align:left;"><code>recalculate_hash</code></td><td style="text-align:left;">Boolean</td><td style="text-align:left;">Se <code>true</code>, recalcula o checksum SHA-256 do arquivo físico em disco.</td></tr><tr><td style="text-align:left;"><code>type</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Alterna o modo entre arquivo puro (<code>&quot;file&quot;</code>) e documento renderizado (<code>&quot;doc&quot;</code>).</td></tr><tr><td style="text-align:left;"><code>content</code></td><td style="text-align:left;">String</td><td style="text-align:left;">Atualiza o conteúdo textual do arquivo em disco e regera HTML se for documento.</td></tr></tbody></table></div>
+<ul>
+<li>Sujeito às regras de isolamento de propriedade (<code>403 Forbidden</code> caso um membro tente editar item de outra fuxiqueira). Retorna <code>200 OK</code> com o objeto atualizado.</li>
 </ul>
 <hr>
 <h3 id="3-4-interface-web-embutida-get-painel">3.4 Interface Web Embutida (<code>GET /painel</code>)</h3>

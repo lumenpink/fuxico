@@ -44,6 +44,9 @@ class MarkdownRenderer
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\\\(', right: '\\\\)', display: false}, {left: '\\\\[', right: '\\\\]', display: true}], throwOnError: false});"></script>
     <script>
         (function() {
             try {
@@ -410,43 +413,161 @@ class MarkdownRenderer
         .callout {
             border: 1px solid var(--border-color);
             border-left: 4px solid var(--callout-color, var(--acid-yellow));
-            background: var(--callout-bg);
+            background: color-mix(in srgb, var(--callout-color, #e2f835) 9%, var(--callout-bg));
             padding: 14px 18px;
             margin: 1.5em 0;
-            border-radius: 2px;
+            border-radius: 4px;
         }
 
         .callout-title {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-weight: 700;
             font-family: var(--font-sub);
             color: var(--callout-color, var(--acid-yellow));
             margin-bottom: 8px;
             font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.2px;
+        }
+
+        .callout-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--callout-color, inherit);
+        }
+
+        .callout-icon svg {
+            display: block;
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.2;
+        }
+
+        .callout-fold {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            color: var(--callout-color, inherit);
+            opacity: 0.7;
+            transition: transform 0.2s ease;
+            transform: rotate(-90deg);
+        }
+
+        details.callout[open] .callout-fold {
+            transform: rotate(0deg);
         }
 
         [data-theme="acad"] .callout {
-            border: 1px solid #d4d4d8;
-            border-left: 4px solid #18181b;
-            background: #fbfbfb;
+            border: 1px solid #e4e4e7;
+            border-left: 4px solid var(--callout-color, #18181b);
+            background: color-mix(in srgb, var(--callout-color, #18181b) 7%, #ffffff);
             box-shadow: none;
         }
+
         [data-theme="acad"] .callout-title {
-            color: #18181b;
+            color: var(--callout-color, #18181b);
             font-family: var(--font-heading);
-            font-size: 0.9rem;
+            font-size: 0.92rem;
         }
 
-        .callout-note { --callout-color: #38bdf8; }
-        .callout-tip { --callout-color: #4ade80; }
-        .callout-warning { --callout-color: #facc15; }
-        .callout-danger { --callout-color: #f87171; }
-        .callout-info { --callout-color: #a78bfa; }
-        .callout-quote { --callout-color: #9f97ad; }
+        /* Callout Types & Colors */
+        .callout-note { --callout-color: #0284c7; }
+        .callout-abstract, .callout-summary, .callout-tldr { --callout-color: #0d9488; }
+        .callout-info { --callout-color: #0284c7; }
+        .callout-todo { --callout-color: #7c3aed; }
+        .callout-tip, .callout-hint { --callout-color: #10b981; }
+        .callout-success, .callout-check, .callout-done { --callout-color: #16a34a; }
+        .callout-question, .callout-help, .callout-faq { --callout-color: #d97706; }
+        .callout-warning, .callout-caution, .callout-attention { --callout-color: #ea580c; }
+        .callout-failure, .callout-fail, .callout-missing { --callout-color: #dc2626; }
+        .callout-danger, .callout-error { --callout-color: #e11d48; }
+        .callout-bug { --callout-color: #f43f5e; }
+        .callout-example { --callout-color: #9333ea; }
+        .callout-quote, .callout-cite { --callout-color: #64748b; }
+        .callout-important { --callout-color: #ec4899; }
+
+        /* Dark mode palette adjustments */
+        [data-theme="zine"] .callout-note { --callout-color: #38bdf8; }
+        [data-theme="zine"] .callout-abstract, [data-theme="zine"] .callout-summary, [data-theme="zine"] .callout-tldr { --callout-color: #2dd4bf; }
+        [data-theme="zine"] .callout-info { --callout-color: #38bdf8; }
+        [data-theme="zine"] .callout-todo { --callout-color: #a855f7; }
+        [data-theme="zine"] .callout-tip, [data-theme="zine"] .callout-hint { --callout-color: #34d399; }
+        [data-theme="zine"] .callout-success, [data-theme="zine"] .callout-check, [data-theme="zine"] .callout-done { --callout-color: #22c55e; }
+        [data-theme="zine"] .callout-question, [data-theme="zine"] .callout-help, [data-theme="zine"] .callout-faq { --callout-color: #fbbf24; }
+        [data-theme="zine"] .callout-warning, [data-theme="zine"] .callout-caution, [data-theme="zine"] .callout-attention { --callout-color: #fb923c; }
+        [data-theme="zine"] .callout-failure, [data-theme="zine"] .callout-fail, [data-theme="zine"] .callout-missing { --callout-color: #f87171; }
+        [data-theme="zine"] .callout-danger, [data-theme="zine"] .callout-error { --callout-color: #fb7185; }
+        [data-theme="zine"] .callout-bug { --callout-color: #f43f5e; }
+        [data-theme="zine"] .callout-example { --callout-color: #c084fc; }
+        [data-theme="zine"] .callout-quote, [data-theme="zine"] .callout-cite { --callout-color: #94a3b8; }
+        [data-theme="zine"] .callout-important { --callout-color: #f472b6; }
+
+        .callout-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .callout-content p {
+            margin: 0.6em 0;
+        }
+        .callout-content p:first-child {
+            margin-top: 0;
+        }
+        .callout-content p:last-child {
+            margin-bottom: 0;
+        }
+        .callout-content ul, .callout-content ol {
+            margin: 0.5em 0 0.5em 1.5em;
+        }
+
+        details.callout summary.callout-title {
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+        }
+        details.callout[open] summary.callout-title {
+            margin-bottom: 8px;
+        }
+        details.callout summary.callout-title::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Footnotes */
+        .footnotes {
+            margin-top: 3em;
+            padding-top: 1.5em;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+        .footnotes ol {
+            padding-left: 1.5em;
+        }
+        .footnotes li {
+            margin-bottom: 0.6em;
+        }
+        .footnote-ref a, .footnote-backref {
+            color: var(--electric-pink);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footnote-ref a:hover, .footnote-backref:hover {
+            text-decoration: underline;
+        }
+
+        /* LaTeX & Math Rendering */
+        .math-block {
+            margin: 1.5em 0;
+            overflow-x: auto;
+            text-align: center;
+        }
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 0;
+        }
 
         /* Diagram Figures (Joaju Native Baking) */
         .diagram-figure {
@@ -571,6 +692,13 @@ class MarkdownRenderer
         [data-theme="acad"] .code-block-wrapper {
             border: 1px solid #d4d4d8;
             box-shadow: none;
+            background: #fafafa;
+        }
+
+        [data-theme="acad"] .code-block-header {
+            background: #f4f4f5;
+            color: #71717a;
+            border-bottom: 1px solid #e4e4e7;
         }
 
         .code-block-header {
@@ -607,6 +735,7 @@ class MarkdownRenderer
             font-size: 0.9rem;
             line-height: 1.5;
             color: var(--text-main);
+            background: transparent;
         }
 
         .fuxico-article code {
@@ -624,11 +753,15 @@ class MarkdownRenderer
             border: 1px solid #e4e4e7;
         }
 
-        .fuxico-article pre code {
-            background: transparent;
-            border: none;
-            padding: 0;
-            color: inherit;
+        .fuxico-article pre code,
+        [data-theme="acad"] .fuxico-article pre code,
+        [data-theme="zine"] .fuxico-article pre code {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            color: inherit !important;
+            box-shadow: none !important;
+            display: block;
         }
 
         /* Lists */
@@ -880,6 +1013,11 @@ HTML;
         $meta = [];
         $markdown = str_replace(["\r\n", "\r"], "\n", $markdown);
 
+        // 0. Strip Obsidian comments (%% ... %%)
+        $markdown = preg_replace('/%%.*?%%/s', '', $markdown) ?? $markdown;
+
+        $footnotes = [];
+
         // 1. Extract YAML Frontmatter
         if (str_starts_with($markdown, "---\n")) {
             $endPos = strpos($markdown, "\n---\n", 4);
@@ -969,15 +1107,45 @@ HTML;
                 continue;
             }
 
-            // 3. Obsidian Callout (> [!TYPE] Title)
-            if (preg_match('/^>\s*\[!(\w+)\]\s*(.*)$/', $line, $matches)) {
+            // 2.1 Display Math ($$ ... $$)
+            if (str_starts_with(trim($line), '$$')) {
+                if ($inList) {
+                    $htmlOutput[] = "</{$listType}>";
+                    $inList = false;
+                }
+
+                $trimmedLine = trim($line);
+                if (preg_match('/^\$\$(.+)\$\$$/', $trimmedLine, $singleMath)) {
+                    $mathContent = htmlspecialchars(trim($singleMath[1]), ENT_NOQUOTES, 'UTF-8');
+                    $htmlOutput[] = "<div class=\"math-block\">\$\${$mathContent}\$\$</div>";
+                    $i++;
+                    continue;
+                }
+
+                $mathLines = [];
+                $i++;
+                while ($i < $count && !str_starts_with(trim($lines[$i]), '$$')) {
+                    $mathLines[] = $lines[$i];
+                    $i++;
+                }
+                $mathContent = htmlspecialchars(implode("\n", $mathLines), ENT_NOQUOTES, 'UTF-8');
+                $htmlOutput[] = "<div class=\"math-block\">\$\$\n{$mathContent}\n\$\$</div>";
+                if ($i < $count) {
+                    $i++;
+                }
+                continue;
+            }
+
+            // 3. Obsidian Callout (> [!TYPE][+-]? Title)
+            if (preg_match('/^>\s*\[!(\w+)\]([+-]?)(?:[ \t]*(.*))?$/', $line, $matches)) {
                 if ($inList) {
                     $htmlOutput[] = "</{$listType}>";
                     $inList = false;
                 }
 
                 $type = strtolower($matches[1]);
-                $calloutTitle = trim($matches[2]) ?: ucfirst($type);
+                $collapseSign = $matches[2] ?? '';
+                $rawFirstLine = trim($matches[3] ?? '');
                 $calloutLines = [];
                 $i++;
                 while ($i < $count && str_starts_with($lines[$i], '>')) {
@@ -986,11 +1154,57 @@ HTML;
                     $i++;
                 }
 
-                $cContent = self::renderInline(implode("\n", $calloutLines));
-                $htmlOutput[] = "<div class=\"callout callout-{$type}\">"
-                    .'<div class="callout-title">'.htmlspecialchars($calloutTitle, ENT_QUOTES, 'UTF-8').'</div>'
-                    ."<div class=\"callout-content\">{$cContent}</div>"
-                    .'</div>';
+                $title = $rawFirstLine;
+                if (!empty($rawFirstLine) && strlen($rawFirstLine) > 40) {
+                    $splitBody = null;
+                    if (preg_match('/^(.*?\?)\s+(.+)$/us', $rawFirstLine, $splitM)) {
+                        $title = $splitM[1];
+                        $splitBody = $splitM[2];
+                    } elseif (preg_match('/^(.*?)\s+(\*\*.*)$/us', $rawFirstLine, $splitM)) {
+                        $title = $splitM[1];
+                        $splitBody = $splitM[2];
+                    } elseif (preg_match('/^(.*?[:])\s+(.+)$/us', $rawFirstLine, $splitM)) {
+                        $title = $splitM[1];
+                        $splitBody = $splitM[2];
+                    } elseif (preg_match('/^([A-ZÀ-Ú].{5,55}?)\s+((?:Em|No|Na|Nos|Nas|Restringiu-se|Adotou-se|Observou-se|Trata-se|Para|Com|Este|Esta|Esse|Essa|Conforme|Segundo)\s+.*)$/us', $rawFirstLine, $splitM)) {
+                        $title = $splitM[1];
+                        $splitBody = $splitM[2];
+                    }
+                    if ($splitBody !== null) {
+                        array_unshift($calloutLines, $splitBody);
+                    }
+                }
+                if ($title === '') {
+                    $title = ucfirst($type);
+                }
+
+                $titleHtml = self::renderInline($title);
+
+                $bodyHtml = '';
+                if (!empty($calloutLines)) {
+                    $subParsed = self::parse(implode("\n", $calloutLines), $options);
+                    $bodyHtml = $subParsed['html'];
+                }
+
+                $iconSvg = self::getCalloutIcon($type);
+                $foldIcon = '<span class="callout-fold"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>';
+
+                if ($collapseSign === '+') {
+                    $htmlOutput[] = "<details open class=\"callout callout-{$type}\">"
+                        ."<summary class=\"callout-title\"><span class=\"callout-icon\">{$iconSvg}</span><span class=\"callout-title-text\">{$titleHtml}</span>{$foldIcon}</summary>"
+                        .($bodyHtml !== '' ? "<div class=\"callout-content\">{$bodyHtml}</div>" : '')
+                        .'</details>';
+                } elseif ($collapseSign === '-') {
+                    $htmlOutput[] = "<details class=\"callout callout-{$type}\">"
+                        ."<summary class=\"callout-title\"><span class=\"callout-icon\">{$iconSvg}</span><span class=\"callout-title-text\">{$titleHtml}</span>{$foldIcon}</summary>"
+                        .($bodyHtml !== '' ? "<div class=\"callout-content\">{$bodyHtml}</div>" : '')
+                        .'</details>';
+                } else {
+                    $htmlOutput[] = "<div class=\"callout callout-{$type}\">"
+                        ."<div class=\"callout-title\"><span class=\"callout-icon\">{$iconSvg}</span><span class=\"callout-title-text\">{$titleHtml}</span></div>"
+                        .($bodyHtml !== '' ? "<div class=\"callout-content\">{$bodyHtml}</div>" : '')
+                        .'</div>';
+                }
 
                 continue;
             }
@@ -1101,6 +1315,86 @@ HTML;
                 continue;
             }
 
+            // 8.5. Indented Code Block (4 spaces or 1 tab - CommonMark)
+            if (preg_match('/^(?: {4}|\t)(.*)$/', $line, $indentMatch)) {
+                if ($inList) {
+                    $htmlOutput[] = "</{$listType}>";
+                    $inList = false;
+                }
+
+                $codeLines = [$indentMatch[1]];
+                $i++;
+                while ($i < $count) {
+                    if (preg_match('/^(?: {4}|\t)(.*)$/', $lines[$i], $subMatch)) {
+                        $codeLines[] = $subMatch[1];
+                        $i++;
+                    } elseif (trim($lines[$i]) === '') {
+                        $k = $i + 1;
+                        while ($k < $count && trim($lines[$k]) === '') {
+                            $k++;
+                        }
+                        if ($k < $count && preg_match('/^(?: {4}|\t)/', $lines[$k])) {
+                            while ($i < $k) {
+                                $codeLines[] = '';
+                                $i++;
+                            }
+                        } else {
+                            break;
+                        }
+                    } elseif (trim($lines[$i]) !== '') {
+                        // Check if an unindented line is part of a diagram or flanked by indented lines before an empty line
+                        $hasIndentLater = false;
+                        for ($k = $i + 1; $k < $count && trim($lines[$k]) !== ''; $k++) {
+                            if (preg_match('/^(?: {4}|\t)/', $lines[$k])) {
+                                $hasIndentLater = true;
+                                break;
+                            }
+                        }
+                        $isDiagramLine = (bool) preg_match('/(-->|->|--+|\x5c|\/|\||\[.*?\])/', $lines[$i]);
+                        if ($hasIndentLater || $isDiagramLine) {
+                            $codeLines[] = $lines[$i];
+                            $i++;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                $codeText = htmlspecialchars(implode("\n", $codeLines), ENT_QUOTES, 'UTF-8');
+                $isAsciiDiagram = (bool) preg_match('/(-->|->|--+|\x5c|\/|\|)/', $codeText);
+                $blockLabel = $isAsciiDiagram ? 'DIAGRAMA' : 'TEXT';
+
+                $htmlOutput[] = '<div class="code-block-wrapper">'
+                    .'<div class="code-block-header">'
+                    .'<span>'.$blockLabel.'</span>'
+                    .'<button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button>'
+                    .'</div>'
+                    ."<pre><code>{$codeText}</code></pre>"
+                    .'</div>';
+
+                continue;
+            }
+
+            // 8.8 Footnote Definition ([^id]: content)
+            if (preg_match('/^\[\^([^\]]+)\]:\s*(.*)$/', $line, $fnMatch)) {
+                if ($inList) {
+                    $htmlOutput[] = "</{$listType}>";
+                    $inList = false;
+                }
+                $fnKey = trim($fnMatch[1]);
+                $fnBody = [$fnMatch[2]];
+                $i++;
+                while ($i < $count && (preg_match('/^(?: {4}|\t)(.*)$/', $lines[$i], $fnSub) || (trim($lines[$i]) !== '' && !preg_match('/^(#{1,6}\s|>\s|```|\-{3,}|\*{3,}|\||[*+-]\s|\d+\.\s|\$\$|\[\^)/', $lines[$i])))) {
+                    $fnBody[] = isset($fnSub[1]) ? $fnSub[1] : $lines[$i];
+                    $i++;
+                }
+                $footnotes[$fnKey] = implode(' ', $fnBody);
+
+                continue;
+            }
+
             // 9. Standard Paragraphs
             $trimmed = trim($line);
             if ($trimmed === '') {
@@ -1111,7 +1405,7 @@ HTML;
 
             $paraLines = [];
             while ($i < $count && trim($lines[$i]) !== '' &&
-                   ! preg_match('/^(#{1,6}\s|>\s|```|\-{3,}|\*{3,}|\||[*+-]\s|\d+\.\s)/', $lines[$i])) {
+                   ! preg_match('/^(#{1,6}\s|>\s|```|\-{3,}|\*{3,}|\||[*+-]\s|\d+\.\s|\$\$| {4}|\t|\[\^)/', $lines[$i])) {
                 $paraLines[] = $lines[$i];
                 $i++;
             }
@@ -1126,6 +1420,17 @@ HTML;
             $htmlOutput[] = "</{$listType}>";
         }
 
+        if (!empty($footnotes)) {
+            $fnHtml = '<section class="footnotes"><hr><ol>';
+            foreach ($footnotes as $fnId => $fnText) {
+                $escapedId = htmlspecialchars($fnId, ENT_QUOTES, 'UTF-8');
+                $fnContent = self::renderInline($fnText);
+                $fnHtml .= "<li id=\"fn-{$escapedId}\">{$fnContent} <a href=\"#fnref-{$escapedId}\" class=\"footnote-backref\">↩</a></li>";
+            }
+            $fnHtml .= '</ol></section>';
+            $htmlOutput[] = $fnHtml;
+        }
+
         return [
             'html' => implode("\n", $htmlOutput),
             'meta' => $meta,
@@ -1137,6 +1442,24 @@ HTML;
      */
     public static function renderInline(string $text): string
     {
+        // 0. Protect Inline Code (`...`) from asterisks, underscores, and formatting
+        $codePlaceholders = [];
+        $text = preg_replace_callback('/`([^`]+)`/', function ($matches) use (&$codePlaceholders) {
+            $key = "\x1BCODE".count($codePlaceholders)."X\x1B";
+            $codePlaceholders[$key] = '<code>'.htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8').'</code>';
+
+            return $key;
+        }, $text) ?? $text;
+
+        // 0.1 Protect Inline Math ($...$) from markdown asterisks/underscores
+        $mathPlaceholders = [];
+        $text = preg_replace_callback('/(?<!\\\\)\$(?!\$)(.*?)(?<!\\\\)\$/s', function ($matches) use (&$mathPlaceholders) {
+            $key = "\x1BMATH".count($mathPlaceholders)."X\x1B";
+            $mathPlaceholders[$key] = '$'.htmlspecialchars($matches[1], ENT_NOQUOTES, 'UTF-8').'$';
+
+            return $key;
+        }, $text) ?? $text;
+
         // 1. Obsidian Wikilink Images: ![[imagem.png|alt]] or ![[imagem.png]]
         $text = preg_replace_callback('/!\[\[(.*?)\]\]/', function ($matches) {
             $parts = explode('|', $matches[1]);
@@ -1172,9 +1495,11 @@ HTML;
             return "<a href=\"{$href}\" target=\"_blank\" rel=\"noopener noreferrer\">{$label}</a>";
         }, $text) ?? $text;
 
-        // 5. Inline Code `code`
-        $text = preg_replace_callback('/`([^`]+)`/', function ($matches) {
-            return '<code>'.htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8').'</code>';
+        // 5. Footnote references: [^id]
+        $text = preg_replace_callback('/\[\^([^\]]+)\]/', function ($matches) {
+            $id = htmlspecialchars(trim($matches[1]), ENT_QUOTES, 'UTF-8');
+
+            return '<sup class="footnote-ref"><a href="#fn-'.$id.'" id="fnref-'.$id.'">['.$id.']</a></sup>';
         }, $text) ?? $text;
 
         // 6. Obsidian Mark / Highlight ==text==
@@ -1190,6 +1515,14 @@ HTML;
 
         // 9. Strikethrough ~~text~~
         $text = preg_replace('/~~(.*?)~~/', '<del>$1</del>', $text) ?? $text;
+
+        // Restore protected Inline Code and Inline Math
+        if (! empty($codePlaceholders)) {
+            $text = strtr($text, $codePlaceholders);
+        }
+        if (! empty($mathPlaceholders)) {
+            $text = strtr($text, $mathPlaceholders);
+        }
 
         return $text;
     }
@@ -1368,5 +1701,43 @@ HTML;
         $svg = preg_replace('/<!DOCTYPE[^>]*>/i', '', $svg) ?? $svg;
 
         return trim($svg);
+    }
+
+    /**
+     * Returns an inline SVG icon for Obsidian callout types.
+     */
+    public static function getCalloutIcon(string $type): string
+    {
+        $icons = [
+            'note' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>',
+            'abstract' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>',
+            'summary' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>',
+            'tldr' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>',
+            'info' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+            'todo' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>',
+            'tip' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+            'hint' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+            'important' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+            'success' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+            'check' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+            'done' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+            'question' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+            'help' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+            'faq' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+            'warning' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+            'caution' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+            'attention' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+            'failure' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>',
+            'fail' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>',
+            'missing' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>',
+            'danger' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+            'error' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+            'bug' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>',
+            'example' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>',
+            'quote' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/></svg>',
+            'cite' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/></svg>',
+        ];
+
+        return $icons[$type] ?? $icons['note'];
     }
 }
