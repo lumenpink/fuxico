@@ -675,6 +675,92 @@ class MarkdownRenderer
             overflow-x: auto;
         }
 
+        .joaju-academic-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin: 8px 0;
+            border-top: 2px solid var(--text-main, #000) !important;
+            border-bottom: 2px solid var(--text-main, #000) !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+
+        .fuxico-article .joaju-academic-table th,
+        .fuxico-article .joaju-academic-table td,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table th,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table td {
+            border-left: none !important;
+            border-right: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .fuxico-article .joaju-academic-table thead th,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table thead th {
+            border-top: none !important;
+            border-bottom: 1px solid var(--text-main, #000) !important;
+            padding: 6px 8px;
+            font-weight: 700;
+            vertical-align: bottom;
+            white-space: normal;
+        }
+
+        .fuxico-article .joaju-academic-table tbody td,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table tbody td {
+            border-top: none !important;
+            border-bottom: none !important;
+            padding: 5px 8px;
+            vertical-align: middle;
+            white-space: normal;
+        }
+
+        .joaju-academic-table tbody tr:hover {
+            background: rgba(0, 0, 0, 0.03) !important;
+        }
+
+        .joaju-table-title {
+            font-weight: 700;
+            font-size: 0.92rem;
+            margin-bottom: 6px;
+            text-align: left;
+            color: var(--text-main, #000);
+        }
+
+        .joaju-table-note {
+            font-size: 0.78rem;
+            font-style: italic;
+            margin-top: 6px;
+            text-align: left;
+            color: var(--text-muted, #555);
+            line-height: 1.35;
+        }
+
+        [data-theme="acad"] .joaju-academic-table {
+            border-top: 2px solid #000 !important;
+            border-bottom: 2px solid #000 !important;
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        [data-theme="acad"] .joaju-academic-table thead th {
+            border-bottom: 1px solid #000 !important;
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        [data-theme="acad"] .joaju-academic-table tbody td {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        [data-theme="acad"] .joaju-table-title {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+            font-weight: bold;
+        }
+
+        [data-theme="acad"] .joaju-table-note {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
         .diagram-source {
             border-top: 1px dashed var(--border-color);
             background: var(--code-bg);
@@ -897,6 +983,90 @@ class MarkdownRenderer
             color: #18181b;
             text-decoration: underline;
         }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 20mm 15mm 20mm 15mm;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 11pt !important;
+                line-height: 1.4 !important;
+            }
+
+            .doc-toolbar,
+            .trans-stripe,
+            .duct-tape,
+            .doc-footer,
+            .diagram-actions,
+            .btn-diagram-action,
+            .btn-copy-code,
+            .diagram-source {
+                display: none !important;
+            }
+
+            .fuxico-container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+
+            .fuxico-article {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            .diagram-figure {
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin: 1.5em 0 !important;
+            }
+
+            .diagram-header {
+                display: none !important;
+            }
+
+            .diagram-viewport {
+                padding: 0 !important;
+            }
+
+            .joaju-academic-table {
+                font-size: 8.5pt !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .joaju-academic-table thead {
+                display: table-header-group;
+            }
+
+            .joaju-academic-table tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .fuxico-article img {
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            a {
+                text-decoration: underline !important;
+                color: #000000 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -923,6 +1093,9 @@ class MarkdownRenderer
                 <a href="?raw=1" class="btn-tool" title="Ver ou baixar markdown puro">
                     ⬇ Raw
                 </a>
+                <button type="button" class="btn-tool" onclick="window.print()" title="Imprimir ou salvar em PDF">
+                    📄 PDF
+                </button>
                 <button type="button" class="btn-tool" onclick="copyDocUrl()" title="Copiar link do documento">
                     🔗 Copiar
                 </button>
@@ -1013,8 +1186,20 @@ HTML;
         $meta = [];
         $markdown = str_replace(["\r\n", "\r"], "\n", $markdown);
 
-        // 0. Strip Obsidian comments (%% ... %%)
+        // 0. Strip Obsidian comments (%% ... %%) while protecting fenced code blocks
+        $codeBlockPlaceholders = [];
+        $markdown = preg_replace_callback('/```[\s\S]*?```/', function ($m) use (&$codeBlockPlaceholders) {
+            $key = '___FUXICO_CB_'.count($codeBlockPlaceholders).'___';
+            $codeBlockPlaceholders[$key] = $m[0];
+
+            return $key;
+        }, $markdown) ?? $markdown;
+
         $markdown = preg_replace('/%%.*?%%/s', '', $markdown) ?? $markdown;
+
+        if (! empty($codeBlockPlaceholders)) {
+            $markdown = strtr($markdown, $codeBlockPlaceholders);
+        }
 
         $footnotes = [];
 
@@ -1413,6 +1598,8 @@ HTML;
             if (! empty($paraLines)) {
                 $paraText = self::renderInline(implode(' ', $paraLines));
                 $htmlOutput[] = "<p>{$paraText}</p>";
+            } else {
+                $i++;
             }
         }
 

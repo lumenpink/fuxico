@@ -363,15 +363,17 @@ class App
             if ($itemType === 'doc') {
                 $rawMd = file_get_contents($this->storage->getFilePath($targetFilename));
                 if ($rawMd !== false) {
-                    $defaultTheme = (isset($_POST['theme']) && strtolower((string) $_POST['theme']) === 'acad') ? 'acad' : 'zine';
-                    $bakedHtml = MarkdownRenderer::render($rawMd, [
+                    $renderOptions = [
                         'title' => pathinfo($file['name'], PATHINFO_FILENAME),
                         'slug' => $slug,
                         'original_name' => $file['name'],
-                        'default_theme' => $defaultTheme,
                         'created_at' => time(),
                         'base_url' => $this->getBaseUrl(),
-                    ]);
+                    ];
+                    if (isset($_POST['theme'])) {
+                        $renderOptions['default_theme'] = strtolower((string) $_POST['theme']) === 'acad' ? 'acad' : 'zine';
+                    }
+                    $bakedHtml = MarkdownRenderer::render($rawMd, $renderOptions);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
                 }
 
