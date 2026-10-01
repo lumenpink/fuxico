@@ -34,6 +34,9 @@ class MarkdownRenderer
         $defaultTheme = ($options['default_theme'] ?? ($meta['theme'] ?? 'zine')) === 'acad' ? 'acad' : 'zine';
         $dateFormatted = date('Y-m-d H:i:s', $options['created_at'] ?? time());
         $baseTag = $slug !== '' ? "<base href=\"/{$slug}/\">\n    " : '';
+        $pdfButton = $slug !== ''
+            ? "<a href=\"/{$slug}/pdf\" class=\"btn-tool\" target=\"_blank\" title=\"Baixar PDF compilado com Joaju e Typst\">📄 PDF</a>"
+            : '<button type="button" class="btn-tool" onclick="window.print()" title="Imprimir ou salvar em PDF">📄 PDF</button>';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -1094,9 +1097,7 @@ class MarkdownRenderer
                 <a href="?raw=1" class="btn-tool" title="Ver ou baixar markdown puro">
                     ⬇ Raw
                 </a>
-                <button type="button" class="btn-tool" onclick="window.print()" title="Imprimir ou salvar em PDF">
-                    📄 PDF
-                </button>
+                {$pdfButton}
                 <button type="button" class="btn-tool" onclick="copyDocUrl()" title="Copiar link do documento">
                     🔗 Copiar
                 </button>

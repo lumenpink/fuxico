@@ -144,6 +144,9 @@ class App
         $this->purgeExpired();
 
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method === 'HEAD') {
+            $method = 'GET';
+        }
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         if (($uri === '/' || $uri === '/index.php') && ! empty($_GET['q'])) {
             $uri = '/'.ltrim((string) $_GET['q'], '/');
@@ -386,6 +389,11 @@ class App
                     }
                     $bakedHtml = MarkdownRenderer::render($rawMd, $renderOptions);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
+
+                    $cachedPdf = $this->storage->getFilesDir()."/{$slug}.pdf";
+                    if (file_exists($cachedPdf)) {
+                        @unlink($cachedPdf);
+                    }
                 }
 
                 // Save attached assets if provided (e.g. assets[] multipart upload)
@@ -766,6 +774,27 @@ class App
 
                 return;
             }
+
+            // 4. Download PDF compiled via Joaju: /<slug>/pdf
+            if ($subAction === 'pdf') {
+                $pdfPath = $this->compileDocToPdf($slug);
+                if ($pdfPath !== null && file_exists($pdfPath)) {
+                    $downloadFilename = ($item['original_name'] ? pathinfo($item['original_name'], PATHINFO_FILENAME) : $slug).'.pdf';
+                    header('Content-Type: application/pdf');
+                    header('Content-Disposition: inline; filename="'.$downloadFilename.'"');
+                    header('Content-Length: '.(string) filesize($pdfPath));
+                    header('Cache-Control: public, max-age=86400');
+                    readfile($pdfPath);
+
+                    return;
+                }
+
+                http_response_code(502);
+                header('Content-Type: text/plain; charset=UTF-8');
+                echo "Erro ao compilar PDF via Joaju.\n";
+
+                return;
+            }
         }
 
         // 1. Rustypaste DELETE /<slug>
@@ -861,6 +890,21 @@ class App
 
             // Rendered Markdown Document
             if ($item['type'] === 'doc') {
+                // Suporte a requisição direta de PDF: /<slug>.pdf
+                if (str_ends_with($firstPart, '.pdf')) {
+                    $pdfPath = $this->compileDocToPdf($slug);
+                    if ($pdfPath !== null && file_exists($pdfPath)) {
+                        $downloadFilename = ($item['original_name'] ? pathinfo($item['original_name'], PATHINFO_FILENAME) : $slug).'.pdf';
+                        header('Content-Type: application/pdf');
+                        header('Content-Disposition: inline; filename="'.$downloadFilename.'"');
+                        header('Content-Length: '.(string) filesize($pdfPath));
+                        header('Cache-Control: public, max-age=86400');
+                        readfile($pdfPath);
+
+                        return;
+                    }
+                }
+
                 $this->db->incrementViews($slug);
                 $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
                 $viewsAfter = (int) $item['views'] + 1;
@@ -1526,6 +1570,11 @@ class App
                         'base_url' => $this->getBaseUrl(),
                     ]);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
+
+                    $cachedPdf = $this->storage->getFilesDir()."/{$slug}.pdf";
+                    if (file_exists($cachedPdf)) {
+                        @unlink($cachedPdf);
+                    }
                 }
             }
 
@@ -1545,6 +1594,11 @@ class App
                         'base_url' => $this->getBaseUrl(),
                     ]);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
+
+                    $cachedPdf = $this->storage->getFilesDir()."/{$slug}.pdf";
+                    if (file_exists($cachedPdf)) {
+                        @unlink($cachedPdf);
+                    }
                 }
             }
 
@@ -2024,5 +2078,99 @@ CLI tool available:
     cat dump.sql | ./bin/fux -q
 
 TEXT;
+    }
+
+    public function getJoajuUrl(): string
+    {
+        return rtrim($this->config->joajuUrl ?? (getenv('FUXICO_JOAJU_URL') ?: 'http://joaju:3000'), '/');
+    }
+
+    public function compileDocToPdf(string $slug): ?string
+    {
+        $item = $this->db->findBySlug($slug);
+        if (! $item || empty($item['file_path'])) {
+            return null;
+        }
+
+        $mdPath = $this->storage->getFilePath($item['file_path']);
+        if (! file_exists($mdPath)) {
+            return null;
+        }
+
+        $pdfPath = $this->storage->getFilesDir()."/{$slug}.pdf";
+        $mdMtime = filemtime($mdPath);
+
+        // 1. Validar integridade e atualidade do cache em disco
+        $isCacheValid = file_exists($pdfPath) && filesize($pdfPath) > 0 && filemtime($pdfPath) >= $mdMtime;
+        $assetsDir = $this->storage->getFilesDir()."/{$slug}_assets";
+        if ($isCacheValid && is_dir($assetsDir)) {
+            $assetFiles = glob("{$assetsDir}/*");
+            if ($assetFiles) {
+                foreach ($assetFiles as $af) {
+                    if (is_file($af) && filemtime($af) > filemtime($pdfPath)) {
+                        $isCacheValid = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($isCacheValid) {
+            return $pdfPath;
+        }
+
+        // 2. Compilar via Joaju (/compile)
+        $rawMd = file_get_contents($mdPath);
+        if ($rawMd === false) {
+            return null;
+        }
+
+        $joajuUrl = $this->getJoajuUrl();
+        $hasAssets = is_dir($assetsDir) && ! empty(glob("{$assetsDir}/*"));
+
+        $ch = curl_init("{$joajuUrl}/compile");
+        if (! $ch) {
+            return null;
+        }
+
+        if ($hasAssets) {
+            $zip = new SimpleZip;
+            $zip->addFile('main.md', $rawMd);
+            foreach (glob("{$assetsDir}/*") as $assetFile) {
+                if (is_file($assetFile)) {
+                    $baseName = basename($assetFile);
+                    $assetContent = (string) file_get_contents($assetFile);
+                    $zip->addFile("attachments/{$baseName}", $assetContent);
+                    $zip->addFile($baseName, $assetContent);
+                }
+            }
+            $payload = $zip->build();
+            $contentType = 'application/zip';
+        } else {
+            $payload = json_encode(['markdown' => $rawMd]);
+            $contentType = 'application/json';
+        }
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: {$contentType}",
+                'Accept: application/pdf',
+            ],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60,
+        ]);
+
+        $result = curl_exec($ch);
+        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($statusCode === 200 && is_string($result) && strlen($result) > 100 && str_starts_with($result, '%PDF-')) {
+            file_put_contents($pdfPath, $result);
+
+            return $pdfPath;
+        }
+
+        return null;
     }
 }

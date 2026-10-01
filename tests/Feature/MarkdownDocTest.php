@@ -342,3 +342,106 @@ test('republishing markdown with same custom_name as owner overwrites content an
     $savedMd = file_get_contents($testEnv->storage()->getFilePath("{$slug}.md"));
     expect($savedMd)->toBe($mdV2);
 });
+
+test('serves cached pdf for doc and invalidates on update or deletion', function () use ($testEnv) {
+    $slug = 'pdf-cache-test';
+    $md = "# Documento PDF\n\nConteúdo para teste de PDF.";
+    $mdPath = $testEnv->storage()->getFilePath("{$slug}.md");
+    file_put_contents($mdPath, $md);
+
+    $testEnv->db()->createItem([
+        'id' => 'pdf-1',
+        'slug' => $slug,
+        'original_name' => 'pdf-test.md',
+        'type' => 'doc',
+        'file_path' => "{$slug}.md",
+        'mime_type' => 'text/markdown',
+        'size' => strlen($md),
+        'x_token' => 'tok-pdf',
+        'created_at' => time(),
+    ]);
+
+    // Criar um PDF simulando cache gerado pelo Joaju
+    $pdfPath = $testEnv->storage()->getFilesDir()."/{$slug}.pdf";
+    $fakePdfContent = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF";
+    file_put_contents($pdfPath, $fakePdfContent);
+    // Garantir que a data do PDF é igual ou maior que a do MD
+    touch($pdfPath, filemtime($mdPath) + 10);
+
+    // 1. compileDocToPdf deve usar o cache sem tentar conectar ao Joaju
+    $compiled = $testEnv->app()->compileDocToPdf($slug);
+    expect($compiled)->toBe($pdfPath);
+    expect(file_get_contents($compiled))->toBe($fakePdfContent);
+
+    // 2. Requisição GET /slug/pdf serve o PDF do cache
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = "/{$slug}/pdf";
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $output = (string) ob_get_clean();
+    expect($output)->toBe($fakePdfContent);
+
+    // 3. Requisição GET /slug.pdf serve o PDF do cache
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = "/{$slug}.pdf";
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $outputExt = (string) ob_get_clean();
+    expect($outputExt)->toBe($fakePdfContent);
+
+    // 4. Invalidação de cache ao deletar item
+    $testEnv->storage()->deleteItemFiles($slug, "{$slug}.md");
+    expect(file_exists($pdfPath))->toBeFalse();
+});
+
+test('compiles pdf via mock joaju server when cache is missing or stale', function () use ($testEnv) {
+    $mockServerPort = 23145;
+    $mockScript = tempnam(sys_get_temp_dir(), 'joaju_mock_');
+    file_put_contents($mockScript, "<?php
+header('Content-Type: application/pdf');
+echo \"%PDF-1.4\\n\" . str_repeat(\"% Mock Joaju Generated PDF Payload Line\\n\", 5) . \"%%EOF\";
+exit;
+");
+
+    $proc = proc_open(
+        sprintf('php -S 127.0.0.1:%d %s', $mockServerPort, escapeshellarg($mockScript)),
+        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes
+    );
+
+    usleep(250000); // 250ms
+
+    try {
+        $testEnv->config->joajuUrl = "http://127.0.0.1:{$mockServerPort}";
+
+        $slug = 'pdf-live-test';
+        $md = "# Documento Ao Vivo\n\nConteúdo para teste de compilação Joaju.";
+        file_put_contents($testEnv->storage()->getFilePath("{$slug}.md"), $md);
+
+        $testEnv->db()->createItem([
+            'id' => 'pdf-live-1',
+            'slug' => $slug,
+            'original_name' => 'pdf-live.md',
+            'type' => 'doc',
+            'file_path' => "{$slug}.md",
+            'mime_type' => 'text/markdown',
+            'size' => strlen($md),
+            'x_token' => 'tok-live',
+            'created_at' => time(),
+        ]);
+
+        $pdfPath = $testEnv->storage()->getFilesDir()."/{$slug}.pdf";
+        expect(file_exists($pdfPath))->toBeFalse();
+
+        // Dispara compilação
+        $compiled = $testEnv->app()->compileDocToPdf($slug);
+        expect($compiled)->toBe($pdfPath);
+        expect(file_exists($pdfPath))->toBeTrue();
+        expect(file_get_contents($pdfPath))->toContain('Mock Joaju Generated PDF');
+    } finally {
+        proc_terminate($proc);
+        if (file_exists($mockScript)) {
+            unlink($mockScript);
+        }
+    }
+});

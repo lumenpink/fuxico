@@ -157,6 +157,11 @@ class Storage
             @unlink($htmlFile);
         }
 
+        $pdfFile = $this->getFilePath("{$slug}.pdf");
+        if (file_exists($pdfFile)) {
+            @unlink($pdfFile);
+        }
+
         $assetsDir = $this->filesDir."/{$slug}_assets";
         if (is_dir($assetsDir)) {
             $this->deleteDirectory($assetsDir);
