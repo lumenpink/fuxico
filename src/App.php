@@ -1406,6 +1406,56 @@ class App
             return;
         }
 
+        if ($endpoint === 'items/bulk-delete' && $method === 'POST') {
+            if (! $isAuthorized) {
+                http_response_code(401);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Unauthorized',
+                    'message' => 'Ficha ou token de acesso inválido ou ausente para exclusão.',
+                ]);
+
+                return;
+            }
+
+            if (! $auth || $auth['role'] !== 'admin') {
+                http_response_code(403);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Forbidden',
+                    'message' => '403 Proibido: Apenas a fuxiqueira-mor (administradora) pode realizar exclusão em massa.',
+                ]);
+
+                return;
+            }
+
+            $body = json_decode((string) file_get_contents('php://input'), true) ?? $_POST;
+            $search = isset($body['search']) && trim((string) $body['search']) !== '' ? (string) $body['search'] : null;
+            $type = isset($body['type']) && trim((string) $body['type']) !== '' ? (string) $body['type'] : null;
+            $userId = isset($body['user_id']) && trim((string) $body['user_id']) !== '' ? (string) $body['user_id'] : null;
+            $dateFrom = isset($body['date_from']) && trim((string) $body['date_from']) !== '' ? (string) $body['date_from'] : (isset($body['from']) ? (string) $body['from'] : null);
+            $dateTo = isset($body['date_to']) && trim((string) $body['date_to']) !== '' ? (string) $body['date_to'] : (isset($body['to']) ? (string) $body['to'] : null);
+
+            $itemsToDelete = $this->db->getItemsForBulkDelete($search, $type, $userId, $dateFrom, $dateTo);
+            $ids = [];
+            foreach ($itemsToDelete as $it) {
+                $ids[] = $it['id'];
+                $this->storage->deleteItemFiles($it['slug'], $it['file_path'] ?? null);
+            }
+
+            $count = $this->db->deleteItemsByIds($ids);
+
+            http_response_code(200);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => true,
+                'count' => $count,
+                'message' => "{$count} fofocas excluídas com sucesso.",
+            ]);
+
+            return;
+        }
+
         if (str_starts_with($endpoint, 'items/') && $method === 'DELETE') {
             if (! $isAuthorized) {
                 http_response_code(401);

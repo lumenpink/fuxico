@@ -201,11 +201,127 @@ test('GET /api/items filters by type, user and date range', function () use ($fi
     expect($resTo['items'][0]['slug'])->toBe('slug-a');
 });
 
-test('renderDashboardUI renders user and date filter controls', function () use ($filterEnv) {
+test('renderDashboardUI renders user, date and bulk delete controls', function () use ($filterEnv) {
     $html = Views::renderDashboardUI($filterEnv->config);
 
     expect($html)->toContain('id="dashUser"');
     expect($html)->toContain('id="dashDateFrom"');
     expect($html)->toContain('id="dashDateTo"');
     expect($html)->toContain('clearDashboardFilters()');
+    expect($html)->toContain('id="btnBulkDelete"');
+    expect($html)->toContain('confirmBulkDelete()');
+});
+
+test('POST /api/items/bulk-delete RBAC security: requires admin', function () use ($filterEnv) {
+    // 1. Unauthenticated request -> 401
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_SERVER['REQUEST_URI'] = '/api/items/bulk-delete';
+    $_SERVER['HTTP_AUTHORIZATION'] = '';
+
+    ob_start();
+    $filterEnv->app()->handleRequest();
+    $res401 = json_decode(ob_get_clean(), true);
+    expect($res401['error'])->toBe('Unauthorized');
+
+    // 2. Member request -> 403
+    $memberToken = 'tok_member_test';
+    $filterEnv->db()->createUser([
+        'id' => 'u_test_mem',
+        'username' => 'fuxiqueira_comum',
+        'token' => $memberToken,
+        'role' => 'member',
+        'created_at' => time(),
+    ]);
+
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer '.$memberToken;
+    ob_start();
+    $filterEnv->app()->handleRequest();
+    $res403 = json_decode(ob_get_clean(), true);
+    expect($res403['error'])->toBe('Forbidden');
+});
+
+test('POST /api/items/bulk-delete deletes physical files and database records for matched filter', function () use ($filterEnv) {
+    // Setup physical files in filesDir
+    $file1Path = 'bulk1.txt';
+    $file2Path = 'bulk2.txt';
+    $file3Path = 'bulk3.txt';
+
+    file_put_contents($filterEnv->filesDir.'/'.$file1Path, 'Conteudo arquivo 1');
+    file_put_contents($filterEnv->filesDir.'/'.$file2Path, 'Conteudo arquivo 2');
+    file_put_contents($filterEnv->filesDir.'/'.$file3Path, 'Conteudo arquivo 3');
+
+    // Create 3 items in database
+    $filterEnv->db()->createItem([
+        'id' => 'item_1',
+        'slug' => 'bulk-1',
+        'original_name' => 'bulk1.txt',
+        'type' => 'file',
+        'target_url' => null,
+        'file_path' => $file1Path,
+        'mime_type' => 'text/plain',
+        'size' => 18,
+        'is_oneshot' => 0,
+        'x_token' => 'tok-bulk-1',
+        'expires_at' => null,
+        'created_at' => strtotime('2026-05-01 10:00:00'),
+        'user_id' => null,
+    ]);
+
+    $filterEnv->db()->createItem([
+        'id' => 'item_2',
+        'slug' => 'bulk-2',
+        'original_name' => 'bulk2.txt',
+        'type' => 'file',
+        'target_url' => null,
+        'file_path' => $file2Path,
+        'mime_type' => 'text/plain',
+        'size' => 18,
+        'is_oneshot' => 0,
+        'x_token' => 'tok-bulk-2',
+        'expires_at' => null,
+        'created_at' => strtotime('2026-05-02 10:00:00'),
+        'user_id' => null,
+    ]);
+
+    $filterEnv->db()->createItem([
+        'id' => 'item_3',
+        'slug' => 'bulk-3',
+        'original_name' => 'bulk3.txt',
+        'type' => 'url',
+        'target_url' => 'https://fuxico.org',
+        'file_path' => null,
+        'mime_type' => null,
+        'size' => 0,
+        'is_oneshot' => 0,
+        'x_token' => 'tok-bulk-3',
+        'expires_at' => null,
+        'created_at' => strtotime('2026-05-03 10:00:00'),
+        'user_id' => null,
+    ]);
+
+    expect(file_exists($filterEnv->filesDir.'/'.$file1Path))->toBeTrue();
+    expect(file_exists($filterEnv->filesDir.'/'.$file2Path))->toBeTrue();
+
+    // Perform bulk delete filtering strictly by type='file'
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_SERVER['REQUEST_URI'] = '/api/items/bulk-delete';
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer master-secret-token';
+    $_POST = ['type' => 'file'];
+
+    ob_start();
+    $filterEnv->app()->handleRequest();
+    $output = ob_get_clean();
+    $res = json_decode($output, true);
+
+    expect($res['success'])->toBeTrue();
+    expect($res['count'])->toBe(2);
+
+    // Verify physical files 1 and 2 were removed
+    expect(file_exists($filterEnv->filesDir.'/'.$file1Path))->toBeFalse();
+    expect(file_exists($filterEnv->filesDir.'/'.$file2Path))->toBeFalse();
+
+    // Verify item 3 (type='url') is untouched
+    expect($filterEnv->db()->findBySlug('bulk-1'))->toBeNull();
+    expect($filterEnv->db()->findBySlug('bulk-2'))->toBeNull();
+    expect($filterEnv->db()->findBySlug('bulk-3'))->not()->toBeNull();
 });

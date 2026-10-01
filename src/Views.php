@@ -1979,6 +1979,7 @@ HTML;
                         <input type="date" id="dashDateTo" class="form-control" style="flex:1;" title="{$t('dash_date_to')}" onchange="loadDashboard()">
                     </div>
                     <button type="button" class="btn-action-icon" style="padding:6px 12px; font-size:0.8rem;" title="{$t('dash_clear_filters')}" onclick="clearDashboardFilters()">✕ {$t('dash_clear_filters')}</button>
+                    <button type="button" id="btnBulkDelete" class="btn-action-icon btn-delete" style="display:none; padding:6px 12px; font-size:0.8rem; border-color:var(--electric-pink); color:var(--electric-pink);" title="{$t('dash_btn_bulk_delete')}" onclick="confirmBulkDelete()">🗑️ {$t('dash_btn_bulk_delete')} (<span id="bulkDeleteCount">0</span>)</button>
                 </div>
 
                 <div style="overflow-x:auto;">
@@ -2395,12 +2396,25 @@ HTML;
 
                 const res = await fetch(itemsUrl, { headers });
 
+                const btnBulkDelete = document.getElementById('btnBulkDelete');
+                const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+
                 if (!res.ok) {
+                    if (btnBulkDelete) btnBulkDelete.style.display = 'none';
                     tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';
                     return;
                 }
 
                 const data = await res.json();
+                if (btnBulkDelete && bulkDeleteCount) {
+                    if (isAdmin && data.total > 0) {
+                        btnBulkDelete.style.display = 'inline-block';
+                        bulkDeleteCount.innerText = data.total;
+                    } else {
+                        btnBulkDelete.style.display = 'none';
+                    }
+                }
+
                 if (!data.items || data.items.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--text-muted);">' + escapeHtml(t('dash_empty')) + '</td></tr>';
                     return;
@@ -2621,6 +2635,55 @@ HTML;
                     loadDashboard();
                 } else {
                     alert('Falha ao apagar item.');
+                }
+            } catch (err) {
+                alert('Erro: ' + err.message);
+            }
+        }
+
+        async function confirmBulkDelete() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            if (!token) return;
+
+            const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+            const count = bulkDeleteCount ? bulkDeleteCount.innerText : '0';
+
+            const confirmMsg = t('dash_bulk_confirm').replace('{count}', count);
+            if (!confirm(confirmMsg)) return;
+
+            const search = document.getElementById('dashSearch').value.trim();
+            const type = document.getElementById('dashType').value;
+            const userEl = document.getElementById('dashUser');
+            const userId = userEl ? userEl.value : '';
+            const dateFromEl = document.getElementById('dashDateFrom');
+            const dateFrom = dateFromEl ? dateFromEl.value : '';
+            const dateToEl = document.getElementById('dashDateTo');
+            const dateTo = dateToEl ? dateToEl.value : '';
+
+            try {
+                const res = await fetch('/api/items/bulk-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        search: search || null,
+                        type: type || null,
+                        user_id: userId || null,
+                        date_from: dateFrom || null,
+                        date_to: dateTo || null
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert(t('dash_bulk_success').replace('{count}', data.count));
+                    loadDashboard();
+                } else {
+                    alert(data.message || data.error || 'Falha ao realizar exclusão em massa.');
                 }
             } catch (err) {
                 alert('Erro: ' + err.message);
