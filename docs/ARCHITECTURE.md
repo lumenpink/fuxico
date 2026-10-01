@@ -100,3 +100,13 @@ Todos os visualizadores HTML embutidos compartilham o motor de dupla identidade 
 - **Tema Acadêmico Depressivo:** Estética brutalista, papel envelhecido, preto e branco com tipografia serifada solene (`Noto Serif`), minimalismo austero inspirado em teses acadêmicas e relatórios datilografados.
 
 O tema pode ser alternado dinamicamente no cabeçalho do documento, via parâmetro de query string (`?theme=acad` ou `?acad=1`) ou persistido no `localStorage` do navegador.
+
+---
+
+## 7. Responsividade e Suporte a Dispositivos Móveis (#46)
+
+Para assegurar leitura confortável e ergonomia completa em smartphones e tablets:
+- **Toolbar Suspensa no Rodapé (Mobile App Bar):** Em telas `< 768px`, as ações do documento (`.toolbar-actions`) são fixadas na parte inferior da viewport com fundo translúcido em *backdrop-filter: blur(12px)* e respeito às áreas seguras (`safe-area-inset-bottom`), garantindo touch targets confortáveis ($\ge 44\text{ px}$) para navegação com o polegar.
+- **Envelopamento de Tabelas Acadêmicas:** Tabelas ABNT/IBGE (`.joaju-academic-table`) e tabelas Markdown nativas são encapsuladas em containers com rolagem horizontal independente (`overflow-x: auto; -webkit-overflow-scrolling: touch;`), impedindo estouro de margens da página.
+- **Gestos Táteis nos Diagramas (Pinch-to-zoom & Pan):** Viewports de diagramas interativos (D2, Mermaid, Pedtools, Kinship2, OpenChemLib) contam com ouvintes de toque multitoque para ampliação/redução fluida (0.8x a 4.0x), deslocamento com um dedo e duplo toque para restaurar a escala original.
+- **Adaptação Tipográfica Fluida:** Títulos e equações matemáticas KaTeX em bloco adaptam suas proporções automaticamente em viewports compactas (< 480px) sem quebras indesejadas de palavras.

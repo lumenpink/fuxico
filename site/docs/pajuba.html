@@ -948,6 +948,174 @@
             text-decoration: underline;
         }
 
+        /* ─── RESPONSIVIDADE E DISPOSITIVOS MÓVEIS (TICKET #46) ─── */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px 8px 90px 8px;
+            }
+
+            .fuxico-container {
+                padding: 20px 14px 24px 14px;
+                border-width: 1px;
+            }
+
+            [data-theme="zine"] .fuxico-container {
+                box-shadow: 4px 6px 0px #0a080d, 4px 6px 0px 1px var(--electric-pink);
+            }
+
+            [data-theme="acad"] .fuxico-container {
+                padding: 24px 16px 28px 16px;
+                border-width: 1px;
+                box-shadow: none;
+            }
+
+            /* Toolbar fixa na parte inferior da tela (Mobile App Bar) */
+            .doc-toolbar {
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+            }
+
+            .toolbar-actions {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                background: rgba(26, 22, 34, 0.94);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-top: 1px solid var(--border-color);
+                padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+            }
+
+            [data-theme="acad"] .toolbar-actions {
+                background: rgba(255, 255, 255, 0.95);
+                border-top: 1px solid #d4d4d8;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+            }
+
+            .toolbar-actions .btn-tool {
+                flex: 1;
+                min-height: 44px;
+                padding: 8px 10px;
+                font-size: 0.8rem;
+                justify-content: center;
+                text-align: center;
+            }
+
+            /* Tipografia fluida */
+            .fuxico-article h1,
+            [data-theme="zine"] .fuxico-article h1,
+            [data-theme="acad"] .fuxico-article h1 {
+                font-size: 1.85rem;
+                line-height: 1.15;
+                word-break: break-word;
+            }
+
+            .fuxico-article h2,
+            [data-theme="zine"] .fuxico-article h2,
+            [data-theme="acad"] .fuxico-article h2 {
+                font-size: 1.45rem;
+                word-break: break-word;
+            }
+
+            .fuxico-article h3,
+            [data-theme="zine"] .fuxico-article h3,
+            [data-theme="acad"] .fuxico-article h3 {
+                font-size: 1.2rem;
+                word-break: break-word;
+            }
+
+            /* Tabelas e Wrappers com Rolagem Segura */
+            .table-wrapper,
+            .diagram-table .joaju-academic-table-wrapper,
+            .joaju-academic-table-wrapper {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 1.2em 0;
+            }
+
+            .fuxico-article .joaju-academic-table th,
+            .fuxico-article .joaju-academic-table td,
+            [data-theme="acad"] .fuxico-article .joaju-academic-table th,
+            [data-theme="acad"] .fuxico-article .joaju-academic-table td {
+                padding: 6px 8px;
+                font-size: 0.8rem;
+            }
+
+            .joaju-table-title {
+                font-size: 0.88rem;
+            }
+
+            .joaju-table-note {
+                font-size: 0.74rem;
+            }
+
+            /* Fórmulas matemáticas e código */
+            .katex-display {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                padding: 6px 0;
+            }
+
+            .code-block-wrapper pre,
+            .diagram-source pre,
+            .fuxico-article pre {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                font-size: 0.8rem;
+            }
+
+            /* Diagramas interativos em telas móveis */
+            .diagram-viewport {
+                padding: 12px;
+                overflow: hidden;
+                touch-action: pan-y pinch-zoom;
+            }
+
+            .diagram-header {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 8px 12px;
+            }
+
+            .btn-diagram-action,
+            .btn-copy-code {
+                min-height: 36px;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px 4px 90px 4px;
+            }
+
+            .fuxico-container {
+                padding: 16px 10px 24px 10px;
+            }
+
+            .toolbar-actions .btn-tool {
+                font-size: 0.75rem;
+                padding: 8px 6px;
+            }
+
+            .fuxico-article h1,
+            [data-theme="zine"] .fuxico-article h1,
+            [data-theme="acad"] .fuxico-article h1 {
+                font-size: 1.6rem;
+            }
+        }
+
         @media print {
             @page {
                 size: A4 portrait;
@@ -1154,10 +1322,97 @@
             }
         }
 
-        // Initialize button label on load
+        // Gestos táteis nos diagramas (Pinch-to-zoom & Pan para mobile)
+        function initDiagramTouchInteractions() {
+            document.querySelectorAll('.diagram-viewport').forEach(viewport => {
+                const svg = viewport.querySelector('svg');
+                if (!svg) return;
+
+                let scale = 1;
+                let pointX = 0;
+                let pointY = 0;
+                let startX = 0;
+                let startY = 0;
+                let initialDistance = 0;
+                let isDragging = false;
+                let lastTap = 0;
+
+                function setTransform() {
+                    svg.style.transform = 'translate(' + pointX + 'px, ' + pointY + 'px) scale(' + scale + ')';
+                }
+
+                viewport.addEventListener('touchstart', e => {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        initialDistance = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                    } else if (e.touches.length === 1) {
+                        const now = Date.now();
+                        if (now - lastTap < 300) {
+                            e.preventDefault();
+                            if (scale > 1) {
+                                scale = 1;
+                                pointX = 0;
+                                pointY = 0;
+                            } else {
+                                scale = 2;
+                            }
+                            setTransform();
+                            lastTap = 0;
+                            return;
+                        }
+                        lastTap = now;
+
+                        if (scale > 1) {
+                            isDragging = true;
+                            startX = e.touches[0].clientX - pointX;
+                            startY = e.touches[0].clientY - pointY;
+                        }
+                    }
+                }, { passive: false });
+
+                viewport.addEventListener('touchmove', e => {
+                    if (e.touches.length === 2 && initialDistance > 0) {
+                        e.preventDefault();
+                        const currentDistance = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        const diff = currentDistance / initialDistance;
+                        scale = Math.min(Math.max(0.8, scale * (1 + (diff - 1) * 0.5)), 4);
+                        initialDistance = currentDistance;
+                        setTransform();
+                    } else if (e.touches.length === 1 && isDragging) {
+                        e.preventDefault();
+                        pointX = e.touches[0].clientX - startX;
+                        pointY = e.touches[0].clientY - startY;
+                        setTransform();
+                    }
+                }, { passive: false });
+
+                viewport.addEventListener('touchend', e => {
+                    if (e.touches.length < 2) {
+                        initialDistance = 0;
+                    }
+                    if (e.touches.length === 0) {
+                        isDragging = false;
+                        if (scale <= 1) {
+                            pointX = 0;
+                            pointY = 0;
+                            setTransform();
+                        }
+                    }
+                });
+            });
+        }
+
+        // Initialize button label and touch gestures on load
         document.addEventListener('DOMContentLoaded', () => {
             const current = document.documentElement.getAttribute('data-theme') || 'zine';
             updateThemeLabel(current);
+            initDiagramTouchInteractions();
         });
     </script>
 </body>
