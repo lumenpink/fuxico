@@ -255,6 +255,37 @@ Uploads with `doc=true` or `doc=1` are pre-baked into standalone dual-skin HTML 
 - **Web UI:** `GET /<slug>` renders tabbed file browser with line numbers and dual-skin themes.
 - **Zip Download:** `GET /<slug>/zip` generates dynamic zip archive with all gist files.
 - **Raw File Access:** `GET /<slug>/raw/<filename>` delivers individual raw file content.
+- **Embed Widget:** `GET /<slug>/embed.js` serves a self-contained JavaScript widget for embedding the gist in external pages.
+
+### Embed Widget
+
+Generates a JavaScript snippet that can be pasted into any HTML page:
+
+```html
+<script src="https://2lp.in/<slug>/embed.js"></script>
+```
+
+The widget uses `document.currentScript` to locate its injection point and inserts a styled container with all gist files, scoped under `.fuxico-gist-embed`.
+
+**Query Parameters:**
+
+| Parâmetro | Tipo   | Descrição                                                        |
+|-----------|--------|------------------------------------------------------------------|
+| `file`    | string | Nome do arquivo a exibir (exibe todos se omitido)               |
+| `theme`   | string | `zine` (escuro, padrão) ou `acad` (claro)                        |
+
+**Exemplos:**
+
+```bash
+# Todos os arquivos, tema padrão (zine)
+<script src="https://2lp.in/abc123/embed.js"></script>
+
+# Arquivo específico com tema claro
+<script src="https://2lp.in/abc123/embed.js?file=main.py&theme=acad"></script>
+```
+
+**Notas de segurança:** O conteúdo dos arquivos é serializado via `json_encode` com `JSON_HEX_TAG` — tags HTML são escapadas para `\u003C` / `\u003E`, prevenindo XSS.
+The gist-level buttons "🏷️ Embed" in the web UI generate and copy the correct `<script>` snippet automatically.
 
 ---
 

@@ -1422,7 +1422,21 @@
 <li><strong>Web UI:</strong> <code>GET /&lt;slug&gt;</code> renders tabbed file browser with line numbers and dual-skin themes.</li>
 <li><strong>Zip Download:</strong> <code>GET /&lt;slug&gt;/zip</code> generates dynamic zip archive with all gist files.</li>
 <li><strong>Raw File Access:</strong> <code>GET /&lt;slug&gt;/raw/&lt;filename&gt;</code> delivers individual raw file content.</li>
+<li><strong>Embed Widget:</strong> <code>GET /&lt;slug&gt;/embed.js</code> serves a self-contained JavaScript widget for embedding the gist in external pages.</li>
 </ul>
+<h3 id="embed-widget">Embed Widget</h3>
+<p>Generates a JavaScript snippet that can be pasted into any HTML page:</p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>HTML</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-html">&lt;script src=&quot;https://2lp.in/&lt;slug&gt;/embed.js&quot;&gt;&lt;/script&gt;</code></pre></div>
+<p>The widget uses <code>document.currentScript</code> to locate its injection point and inserts a styled container with all gist files, scoped under <code>.fuxico-gist-embed</code>.</p>
+<p><strong>Query Parameters:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align:left;">Parâmetro</th><th style="text-align:left;">Tipo</th><th style="text-align:left;">Descrição</th></tr></thead><tbody><tr><td style="text-align:left;"><code>file</code></td><td style="text-align:left;">string</td><td style="text-align:left;">Nome do arquivo a exibir (exibe todos se omitido)</td></tr><tr><td style="text-align:left;"><code>theme</code></td><td style="text-align:left;">string</td><td style="text-align:left;"><code>zine</code> (escuro, padrão) ou <code>acad</code> (claro)</td></tr></tbody></table></div>
+<p><strong>Exemplos:</strong></p>
+<div class="code-block-wrapper"><div class="code-block-header"><span>BASH</span><button type="button" class="btn-copy-code" onclick="copyCode(this)">Copiar</button></div><pre><code class="language-bash"># Todos os arquivos, tema padrão (zine)
+&lt;script src=&quot;https://2lp.in/abc123/embed.js&quot;&gt;&lt;/script&gt;
+
+# Arquivo específico com tema claro
+&lt;script src=&quot;https://2lp.in/abc123/embed.js?file=main.py&amp;theme=acad&quot;&gt;&lt;/script&gt;</code></pre></div>
+<p><strong>Notas de segurança:</strong> O conteúdo dos arquivos é serializado via <code>json_encode</code> com <code>JSON_HEX_TAG</code> — tags HTML são escapadas para <code>\u003C</code> / <code>\u003E</code>, prevenindo XSS. The gist-level buttons "🏷️ Embed" in the web UI generate and copy the correct <code>&lt;script&gt;</code> snippet automatically.</p>
 <hr>
 <h2 id="7-git-http-smart-protocol">7. Git HTTP Smart Protocol</h2>
 <p>Fuxico embeds a native bare Git server compatible with the Git HTTP Smart Transfer Protocol:</p>
@@ -1444,7 +1458,7 @@
     </div>
 
     <footer class="doc-footer">
-        <p>Postado em 2026-10-01 12:33:51 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+        <p>Postado em 2026-10-01 16:13:02 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
     </footer>
 
     <script>
