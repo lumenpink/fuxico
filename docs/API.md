@@ -239,6 +239,7 @@ Uploads with `doc=true` or `doc=1` are pre-baked into standalone dual-skin HTML 
 - **Browsing:** Browsers receive static HTML with responsive layout, Obsidian callouts and Zine/Acad switcher.
 - **Raw Access:** `curl https://fuxico.2lp.in/<slug>` or `?raw=1` streams original Markdown text.
 - **Associated Assets:** Assets uploaded under the document's namespace are served at `/<slug>/assets/<filename>`.
+- **PDF Compilation via Joaju:** `GET /<slug>/pdf` ou `GET /<slug>.pdf` compila o documento para PDF vetorial via Joaju e Typst, com cache em disco em `data/files/<slug>.pdf` e invalidação automática em caso de atualizações de conteúdo ou exclusão.
 
 ---
 

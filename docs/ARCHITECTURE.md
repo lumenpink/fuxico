@@ -87,6 +87,7 @@ Cada arquivo, URL encurtada, documento Markdown, gist ou repositório Git é arm
 
 Para maximizar o desempenho e permitir respostas instantâneas sem overhead de processamento:
 - **Markdown Docs (`type='doc'`):** No momento do upload, o documento é processado pelo [`MarkdownRenderer`](file:///home/lumen/src/fuxico/src/MarkdownRenderer.php) e um arquivo estático `.html` correspondente é gravado em disco ao lado do `.md` original. Requisições de navegadores web recebem o HTML assado diretamente com zero re-processamento. Requisições via `curl` recebem o texto puro em Markdown.
+- **Compilação e Cache de PDF via Joaju:** Ao acessar a rota `/<slug>/pdf` ou `/<slug>.pdf`, o Fuxico orquestra a compilação tipográfica via backend Joaju/Typst (enviando um pacote `.zip` com `main.md` e anexos caso existam assets). O resultado é armazenado em cache como `data/files/<slug>.pdf`. Requisições subsequentes são entregues diretamente do disco com latência mínima, e o cache é invalidado automaticamente quando o documento original é alterado ou excluído.
 - **Gists Multi-Arquivo (`type='gist'`):** O payload JSON multi-arquivo é transformado em um visualizador estático com abas interativas, syntax highlighting e botões de cópia.
 - **Repositórios Git (`type='git'`):** Quando um repositório Git efêmero recebe commits via `git push`, o Fuxico inspeciona o repositório bare, extrai a árvore de arquivos, histórico de commits e renderiza o `README.md` estaticamente.
 
