@@ -65,6 +65,18 @@ MD;
     expect($parsed['html'])->not->toContain('<em>sc</em>');
 });
 
+test('renders absolute asset paths and base tag when slug option is passed', function () {
+    $md = <<<'MD'
+![[forest_plot_iniquidades_sc_2024.png]]
+![Foto](minha_foto.png)
+MD;
+
+    $rendered = MarkdownRenderer::render($md, ['slug' => 'fvwls']);
+    expect($rendered)->toContain('<base href="/fvwls/">');
+    expect($rendered)->toContain('<img src="/fvwls/assets/forest_plot_iniquidades_sc_2024.png" alt="forest_plot_iniquidades_sc_2024.png" loading="lazy">');
+    expect($rendered)->toContain('<img src="/fvwls/assets/minha_foto.png" alt="Foto" loading="lazy">');
+});
+
 test('parses obsidian highlights, task lists and code blocks', function () {
     $md = <<<'MD'
 Aqui está um texto com ==marcação amarela== e código inline `echo 'fuxico';`.

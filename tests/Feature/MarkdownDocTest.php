@@ -216,6 +216,52 @@ test('serves uploaded assets under /<slug>/assets/<filename>', function () use (
     expect($imgOutput)->toBe($dummyPng);
 });
 
+test('serves uploaded assets via fallback /assets/<filename> with referer or global search', function () use ($testEnv) {
+    $slug = 'doc-com-imagem';
+    $md = "# Com Imagem\n\n![[foto.png]]";
+    file_put_contents($testEnv->storage()->getFilePath("{$slug}.md"), $md);
+
+    $assetsDir = $testEnv->storage()->getFilesDir()."/{$slug}_assets";
+    if (! is_dir($assetsDir)) {
+        mkdir($assetsDir, 0755, true);
+    }
+    $dummyPng = "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4";
+    file_put_contents("{$assetsDir}/foto.png", $dummyPng);
+
+    $testEnv->db()->createItem([
+        'id' => 'doc-img-fallback',
+        'slug' => $slug,
+        'original_name' => 'doc.md',
+        'type' => 'doc',
+        'file_path' => "{$slug}.md",
+        'mime_type' => 'text/markdown',
+        'size' => strlen($md),
+        'x_token' => 'tok',
+        'created_at' => time(),
+    ]);
+
+    // 1. With Referer
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = '/assets/foto.png';
+    $_SERVER['HTTP_REFERER'] = "https://fuxico.test/{$slug}";
+    $_SERVER['HTTP_ACCEPT'] = 'image/png,*/*';
+    $_GET = [];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $imgOutput = (string) ob_get_clean();
+
+    expect($imgOutput)->toBe($dummyPng);
+
+    // 2. Without Referer (global assets fallback)
+    unset($_SERVER['HTTP_REFERER']);
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $imgOutputGlobal = (string) ob_get_clean();
+
+    expect($imgOutputGlobal)->toBe($dummyPng);
+});
+
 test('api can toggle item type between file and doc, and edit content', function () use ($testEnv) {
     $slug = 'editavel';
     $md = "# Versão 1\n\nTexto inicial.";

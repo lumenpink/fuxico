@@ -33,13 +33,14 @@ class MarkdownRenderer
         $rawFilename = htmlspecialchars((string) ($options['original_name'] ?? ($slug !== '' ? "{$slug}.md" : 'document.md')), ENT_QUOTES, 'UTF-8');
         $defaultTheme = ($options['default_theme'] ?? ($meta['theme'] ?? 'zine')) === 'acad' ? 'acad' : 'zine';
         $dateFormatted = date('Y-m-d H:i:s', $options['created_at'] ?? time());
+        $baseTag = $slug !== '' ? "<base href=\"/{$slug}/\">\n    " : '';
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="{$defaultTheme}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {$baseTag}<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1365,7 +1366,7 @@ HTML;
                     $title = ucfirst($type);
                 }
 
-                $titleHtml = self::renderInline($title);
+                $titleHtml = self::renderInline($title, $options);
 
                 $bodyHtml = '';
                 if (! empty($calloutLines)) {
@@ -1408,7 +1409,7 @@ HTML;
                     $quoteLines[] = preg_replace('/^>\s?/', '', $lines[$i]);
                     $i++;
                 }
-                $quoteContent = self::renderInline(implode('<br>', $quoteLines));
+                $quoteContent = self::renderInline(implode('<br>', $quoteLines), $options);
                 $htmlOutput[] = "<blockquote>{$quoteContent}</blockquote>";
 
                 continue;
@@ -1424,7 +1425,7 @@ HTML;
                 $level = strlen($matches[1]);
                 $titleRaw = trim($matches[2]);
                 $headingId = self::slugify($titleRaw);
-                $headingHtml = self::renderInline($titleRaw);
+                $headingHtml = self::renderInline($titleRaw, $options);
                 $htmlOutput[] = "<h{$level} id=\"{$headingId}\">{$headingHtml}</h{$level}>";
                 $i++;
 
@@ -1457,7 +1458,7 @@ HTML;
                     $i++;
                 }
 
-                $htmlOutput[] = self::renderTable($tableRows);
+                $htmlOutput[] = self::renderTable($tableRows, $options);
 
                 continue;
             }
@@ -1482,10 +1483,10 @@ HTML;
                 // Check Task list item (- [ ] or - [x])
                 if (preg_match('/^\[([ xX])\]\s+(.*)$/', $content, $taskMatch)) {
                     $checked = strtolower($taskMatch[1]) === 'x' ? 'checked' : '';
-                    $itemText = self::renderInline($taskMatch[2]);
+                    $itemText = self::renderInline($taskMatch[2], $options);
                     $htmlOutput[] = "<li class=\"task-list-item\"><input type=\"checkbox\" {$checked} disabled> {$itemText}</li>";
                 } else {
-                    $itemText = self::renderInline($content);
+                    $itemText = self::renderInline($content, $options);
                     $htmlOutput[] = "<li>{$itemText}</li>";
                 }
                 $i++;
@@ -1598,7 +1599,7 @@ HTML;
             }
 
             if (! empty($paraLines)) {
-                $paraText = self::renderInline(implode(' ', $paraLines));
+                $paraText = self::renderInline(implode(' ', $paraLines), $options);
                 $htmlOutput[] = "<p>{$paraText}</p>";
             } else {
                 $i++;
@@ -1613,7 +1614,7 @@ HTML;
             $fnHtml = '<section class="footnotes"><hr><ol>';
             foreach ($footnotes as $fnId => $fnText) {
                 $escapedId = htmlspecialchars($fnId, ENT_QUOTES, 'UTF-8');
-                $fnContent = self::renderInline($fnText);
+                $fnContent = self::renderInline($fnText, $options);
                 $fnHtml .= "<li id=\"fn-{$escapedId}\">{$fnContent} <a href=\"#fnref-{$escapedId}\" class=\"footnote-backref\">↩</a></li>";
             }
             $fnHtml .= '</ol></section>';
@@ -1629,8 +1630,11 @@ HTML;
     /**
      * Renders inline markdown formatting.
      */
-    public static function renderInline(string $text): string
+    public static function renderInline(string $text, array $options = []): string
     {
+        $slug = trim((string) ($options['slug'] ?? ''));
+        $assetPrefix = $slug !== '' ? "/{$slug}/assets/" : 'assets/';
+
         // 0. Protect Inline Code (`...`) from asterisks, underscores, and formatting
         $codePlaceholders = [];
         $text = preg_replace_callback('/`([^`]+)`/', function ($matches) use (&$codePlaceholders) {
@@ -1650,21 +1654,21 @@ HTML;
         }, $text) ?? $text;
 
         // 1. Obsidian Wikilink Images: ![[imagem.png|alt]] or ![[imagem.png]]
-        $text = preg_replace_callback('/!\[\[(.*?)\]\]/', function ($matches) {
+        $text = preg_replace_callback('/!\[\[(.*?)\]\]/', function ($matches) use ($assetPrefix) {
             $parts = explode('|', $matches[1]);
             $src = trim($parts[0]);
             $alt = isset($parts[1]) ? trim($parts[1]) : basename($src);
-            $cleanSrc = 'assets/'.basename($src);
+            $cleanSrc = $assetPrefix.basename($src);
 
             return '<img src="'.htmlspecialchars($cleanSrc, ENT_QUOTES, 'UTF-8').'" alt="'.htmlspecialchars($alt, ENT_QUOTES, 'UTF-8').'" loading="lazy">';
         }, $text) ?? $text;
 
         // 2. Standard Images: ![alt](url)
-        $text = preg_replace_callback('/!\[(.*?)\]\((.*?)\)/', function ($matches) {
+        $text = preg_replace_callback('/!\[(.*?)\]\((.*?)\)/', function ($matches) use ($assetPrefix) {
             $alt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
             $rawSrc = trim($matches[2]);
-            if (! preg_match('/^(https?:\/\/|data:|\/)/', $rawSrc) && ! str_starts_with($rawSrc, 'assets/')) {
-                $src = 'assets/'.basename($rawSrc);
+            if (! preg_match('/^(https?:\/\/|data:|\/)/', $rawSrc)) {
+                $src = $assetPrefix.basename($rawSrc);
             } else {
                 $src = $rawSrc;
             }
@@ -1742,7 +1746,7 @@ HTML;
      *
      * @param  string[]  $rows
      */
-    private static function renderTable(array $rows): string
+    private static function renderTable(array $rows, array $options = []): string
     {
         if (count($rows) < 2) {
             return '';
@@ -1766,7 +1770,7 @@ HTML;
         $html = '<div class="table-wrapper"><table><thead><tr>';
         foreach ($headers as $idx => $h) {
             $alignStyle = isset($alignments[$idx]) ? ' style="text-align:'.$alignments[$idx].';"' : '';
-            $html .= "<th{$alignStyle}>".self::renderInline($h).'</th>';
+            $html .= "<th{$alignStyle}>".self::renderInline($h, $options).'</th>';
         }
         $html .= '</tr></thead><tbody>';
 
@@ -1775,7 +1779,7 @@ HTML;
             $html .= '<tr>';
             foreach ($cells as $idx => $c) {
                 $alignStyle = isset($alignments[$idx]) ? ' style="text-align:'.$alignments[$idx].';"' : '';
-                $html .= "<td{$alignStyle}>".self::renderInline($c).'</td>';
+                $html .= "<td{$alignStyle}>".self::renderInline($c, $options).'</td>';
             }
             $html .= '</tr>';
         }

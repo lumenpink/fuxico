@@ -647,6 +647,43 @@ class App
 
         $item = $this->db->findBySlug($slug);
         if (! $item) {
+            // Fallback para assets de documentos requisitados como /assets/<filename> (resolução relativa em navegadores)
+            if ($firstPart === 'assets' && count($parts) > 1) {
+                $assetFilename = basename(end($parts));
+                $targetAssetPath = null;
+                $referer = $_SERVER['HTTP_REFERER'] ?? '';
+                if ($referer !== '') {
+                    $refPath = trim((string) parse_url($referer, PHP_URL_PATH), '/');
+                    $refSlug = explode('/', $refPath)[0];
+                    $candidate = $this->storage->getFilesDir()."/{$refSlug}_assets/{$assetFilename}";
+                    if (file_exists($candidate)) {
+                        $targetAssetPath = $candidate;
+                    }
+                }
+                if ($targetAssetPath === null) {
+                    $matches = glob($this->storage->getFilesDir()."/*_assets/{$assetFilename}");
+                    if (! empty($matches)) {
+                        $targetAssetPath = $matches[0];
+                    }
+                }
+                if ($targetAssetPath && file_exists($targetAssetPath)) {
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $assetMime = $finfo ? finfo_file($finfo, $targetAssetPath) : false;
+                    if ($finfo && PHP_VERSION_ID < 80500) {
+                        finfo_close($finfo);
+                    }
+                    if (! $assetMime) {
+                        $assetMime = mime_content_type($targetAssetPath) ?: 'application/octet-stream';
+                    }
+                    header('Content-Type: '.$assetMime);
+                    header('Content-Length: '.(string) filesize($targetAssetPath));
+                    header('Cache-Control: public, max-age=86400');
+                    readfile($targetAssetPath);
+
+                    return;
+                }
+            }
+
             http_response_code(404);
             $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
             if (str_contains($accept, 'text/html')) {
