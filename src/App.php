@@ -709,6 +709,51 @@ class App
         if (count($parts) > 1) {
             $subAction = $parts[1];
 
+            // 0. Widget de embed JavaScript: /<slug>/embed.js
+            if ($subAction === 'embed.js') {
+                if (! in_array($item['type'], ['gist', 'file'], true)) {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    echo "404 Not Found: embed.js só disponível para gists e arquivos.\n";
+
+                    return;
+                }
+
+                $embedFile  = trim((string) ($_GET['file']  ?? ''));
+                $embedTheme = trim((string) ($_GET['theme'] ?? ''));
+
+                if ($item['type'] === 'gist') {
+                    $files = $this->storage->getGistFiles($slug);
+                } else {
+                    $singleContent = $this->storage->getFileContent($slug);
+                    $originalName  = $item['original_name'] ?: $slug;
+                    $files = $singleContent !== null ? [$originalName => $singleContent] : [];
+                }
+
+                if (empty($files)) {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    echo "404 Not Found: Nenhum arquivo encontrado.\n";
+
+                    return;
+                }
+
+                $baseUrl = rtrim((string) ($_SERVER['REQUEST_SCHEME'] ?? 'https').'://'.$_SERVER['HTTP_HOST'], '/');
+                $js = GistRenderer::renderEmbedJs($files, [
+                    'slug'     => $slug,
+                    'base_url' => $baseUrl,
+                    'theme'    => $embedTheme,
+                    'file'     => $embedFile,
+                    'gist_url' => "{$baseUrl}/{$slug}",
+                ]);
+
+                header('Content-Type: application/javascript; charset=UTF-8');
+                header('Cache-Control: public, max-age=300');
+                echo $js;
+
+                return;
+            }
+
             // 1. Raw file inside Gist or Git Repo: /<slug>/raw or /<slug>/raw/<filename>
             if ($subAction === 'raw') {
                 $requestedFile = implode('/', array_slice($parts, 2));

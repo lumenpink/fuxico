@@ -60,6 +60,16 @@ class GistRenderer
         $panesHtml = '';
         $fileIndex = 0;
 
+        $fileOptionsHtml = '';
+        foreach (array_keys($files) as $fname) {
+            $safeFname = htmlspecialchars($fname, ENT_QUOTES, 'UTF-8');
+            $fileOptionsHtml .= "<option value=\"{$safeFname}\">{$safeFname}</option>";
+        }
+
+        // Variáveis JS para o modal de embed
+        $baseUrlJs = json_encode($baseUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $slugJs    = json_encode($slug,    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
         foreach ($files as $filename => $content) {
             $fileId = 'file-'.preg_replace('/[^a-zA-Z0-9_\-]+/', '-', $filename).'-'.$fileIndex;
             $safeName = htmlspecialchars($filename, ENT_QUOTES, 'UTF-8');
@@ -121,6 +131,7 @@ HTML;
                     </div>
                     <div class="gist-pane-actions">
                         {$previewToggleHtml}
+                        <button class="btn-gist-action" onclick="openFileEmbedModal('{$safeName}')">🏷️ Embed</button>
                         <button class="btn-gist-action" onclick="copyFileContent('{$fileId}')">📋 Copiar</button>
                         <a class="btn-gist-action" href="{$rawUrl}" target="_blank" rel="noopener noreferrer">📄 Raw</a>
                     </div>
@@ -566,6 +577,93 @@ HTML;
             margin-bottom: 1em;
         }
 
+        /* Embed Modal */
+        .gist-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .gist-modal-overlay.active {
+            display: flex;
+        }
+        .gist-modal-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 580px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .gist-modal-close {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .gist-modal-close:hover {
+            color: var(--acid-yellow);
+        }
+        .gist-modal-title {
+            font-family: var(--font-heading);
+            font-size: 1.3rem;
+            color: var(--acid-yellow);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .gist-modal-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+        .gist-modal-field {
+            margin-bottom: 14px;
+        }
+        .gist-modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .gist-modal-select, .gist-modal-input {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            outline: none;
+        }
+        .gist-modal-input {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            background: var(--code-bg);
+            border-color: var(--acid-yellow);
+        }
+        .gist-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
         /* Footer */
         .gist-footer {
             margin-top: 32px;
@@ -596,6 +694,7 @@ HTML;
                     <h1 class="gist-title">{$title}</h1>
                 </div>
                 <div class="gist-header-actions">
+                    <button class="btn-header" onclick="openEmbedModal()">🏷️ Embed</button>
                     <button class="btn-header" onclick="copyGistUrl()">🔗 Copiar Link</button>
                     <a class="btn-header btn-zip" href="{$zipUrl}">📦 Baixar ZIP</a>
                     <button class="btn-header" onclick="toggleTheme()" id="themeBtn">🎨 Alternar Tema</button>
@@ -623,6 +722,41 @@ HTML;
         <footer class="gist-footer">
             <p><strong>FUXICO</strong> // Ingestão efêmera &amp; gists multi-arquivo // Orgulhosamente travesti latina</p>
         </footer>
+    </div>
+
+    <div id="gistEmbedModal" class="gist-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="embedModalTitle" onclick="if(event.target===this)closeEmbedModal()">
+        <div class="gist-modal-card">
+            <button class="gist-modal-close" onclick="closeEmbedModal()" aria-label="Fechar modal">✕</button>
+            <div class="gist-modal-title">🏷️ <span id="embedModalTitle">Embed do Gist</span></div>
+            <p class="gist-modal-desc">Cole o snippet abaixo em qualquer página HTML para incorporar este gist.</p>
+
+            <div class="gist-modal-field">
+                <label for="embedFileSelect">Arquivo</label>
+                <select id="embedFileSelect" class="gist-modal-select" onchange="updateEmbedSnippet()">
+                    <option value="">Todos os arquivos</option>
+                    {$fileOptionsHtml}
+                </select>
+            </div>
+
+            <div class="gist-modal-field">
+                <label for="embedThemeSelect">Tema</label>
+                <select id="embedThemeSelect" class="gist-modal-select" onchange="updateEmbedSnippet()">
+                    <option value="">Padrão</option>
+                    <option value="zine">Zine (escuro)</option>
+                    <option value="acad">Acad (claro)</option>
+                </select>
+            </div>
+
+            <div class="gist-modal-field">
+                <label for="embedSnippetInput">Snippet</label>
+                <input id="embedSnippetInput" class="gist-modal-input" type="text" readonly onclick="this.select()" aria-label="Snippet de embed" />
+            </div>
+
+            <div class="gist-modal-actions">
+                <button class="btn-header" onclick="closeEmbedModal()">Fechar</button>
+                <button class="btn-header" onclick="copyEmbedSnippet()">📋 Copiar</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -686,7 +820,52 @@ HTML;
             localStorage.setItem('fuxico_theme', next);
         }
 
-        // Activate hash file on load
+        // Funções do modal de embed
+        const _embedBaseUrl = {$baseUrlJs};
+        const _embedSlug    = {$slugJs};
+
+        function openEmbedModal() {
+            document.getElementById('gistEmbedModal').classList.add('active');
+            updateEmbedSnippet();
+        }
+
+        function openFileEmbedModal(filename) {
+            const sel = document.getElementById('embedFileSelect');
+            for (let i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === filename) { sel.selectedIndex = i; break; }
+            }
+            openEmbedModal();
+        }
+
+        function updateEmbedSnippet() {
+            const file  = document.getElementById('embedFileSelect').value;
+            const theme = document.getElementById('embedThemeSelect').value;
+            let url = _embedBaseUrl + '/' + _embedSlug + '/embed.js';
+            const params = [];
+            if (file)  params.push('file='  + encodeURIComponent(file));
+            if (theme) params.push('theme=' + encodeURIComponent(theme));
+            if (params.length) url += '?' + params.join('&');
+            document.getElementById('embedSnippetInput').value = '<script src="' + url + '"><\/script>';
+        }
+
+        function copyEmbedSnippet() {
+            const input = document.getElementById('embedSnippetInput');
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = event.target;
+                const old = btn.innerText;
+                btn.innerText = '✔ Copiado!';
+                setTimeout(() => { btn.innerText = old; }, 2000);
+            }).catch(err => alert('Erro ao copiar: ' + err));
+        }
+
+        function closeEmbedModal() {
+            document.getElementById('gistEmbedModal').classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeEmbedModal();
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             if (window.location.hash) {
                 const targetName = decodeURIComponent(window.location.hash.substring(1));
@@ -702,6 +881,176 @@ HTML;
 </body>
 </html>
 HTML;
+    }
+
+    /**
+     * Gera o conteúdo JavaScript do widget de embed para ser servido em /{slug}/embed.js.
+     *
+     * O script usa document.currentScript para se auto-localizar no DOM e injeta
+     * um container com os arquivos do gist, com estilos escopados em .fuxico-gist-embed.
+     *
+     * @param  array<string, string>  $files    Mapa filename => conteúdo
+     * @param array{
+     *   slug?: string,
+     *   base_url?: string,
+     *   theme?: string,
+     *   file?: string,
+     *   gist_url?: string
+     * } $options
+     */
+    public static function renderEmbedJs(array $files, array $options = []): string
+    {
+        $slug     = (string) ($options['slug'] ?? '');
+        $baseUrl  = rtrim((string) ($options['base_url'] ?? ''), '/');
+        $theme    = (($options['theme'] ?? '') === 'acad') ? 'acad' : 'zine';
+        $gistUrl  = $options['gist_url'] ?? ($baseUrl !== '' && $slug !== '' ? "{$baseUrl}/{$slug}" : '');
+
+        // Filtragem de arquivo único
+        $filterFile = (string) ($options['file'] ?? '');
+        if ($filterFile !== '' && isset($files[$filterFile])) {
+            $files = [$filterFile => $files[$filterFile]];
+        }
+
+        // Monta lista de arquivos como dados JSON
+        $fileList = [];
+        foreach ($files as $filename => $content) {
+            $ext   = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $lines = substr_count($content, "\n") + (strlen($content) > 0 && ! str_ends_with($content, "\n") ? 1 : 0);
+            $fileList[] = [
+                'name'    => $filename,
+                'content' => $content,
+                'ext'     => $ext,
+                'lines'   => $lines,
+                'size'    => strlen($content),
+            ];
+        }
+
+        $filesJson   = json_encode($fileList,  JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $gistUrlJson = json_encode($gistUrl,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $slugJson    = json_encode($slug,      JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $themeJson   = json_encode($theme,     JSON_UNESCAPED_UNICODE);
+
+        return <<<JS
+(function() {
+  'use strict';
+
+  var THEME    = {$themeJson};
+  var GIST_URL = {$gistUrlJson};
+  var SLUG     = {$slugJson};
+  var FILES    = {$filesJson};
+
+  var COLORS = {
+    zine: {
+      bg:      '#121212',
+      card:    '#1a1a1a',
+      border:  '#2e2e2e',
+      text:    '#e0e0e0',
+      muted:   '#888',
+      yellow:  '#f5e642',
+      codeBg:  '#0d0d0d',
+      tabBg:   '#1e1e1e',
+      tabAct:  '#2a2a2a',
+      fontMono: 'monospace',
+    },
+    acad: {
+      bg:      '#f6f6f0',
+      card:    '#ffffff',
+      border:  '#d4d0c8',
+      text:    '#222',
+      muted:   '#666',
+      yellow:  '#8b6914',
+      codeBg:  '#f0f0ea',
+      tabBg:   '#e8e8e0',
+      tabAct:  '#ffffff',
+      fontMono: 'monospace',
+    }
+  };
+
+  var C = COLORS[THEME] || COLORS.zine;
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function buildStyles() {
+    return [
+      '.fuxico-gist-embed{font-family:system-ui,sans-serif;background:' + C.bg + ';color:' + C.text + ';border:1px solid ' + C.border + ';border-radius:8px;overflow:hidden;margin:1em 0;font-size:14px;}',
+      '.fuxico-gist-embed .fg-header{background:' + C.card + ';border-bottom:1px solid ' + C.border + ';padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}',
+      '.fuxico-gist-embed .fg-title{font-weight:700;color:' + C.yellow + ';}',
+      '.fuxico-gist-embed .fg-link{font-size:0.8em;color:' + C.muted + ';text-decoration:none;}',
+      '.fuxico-gist-embed .fg-link:hover{color:' + C.yellow + ';}',
+      '.fuxico-gist-embed .fg-tabs{display:flex;overflow-x:auto;background:' + C.tabBg + ';border-bottom:1px solid ' + C.border + ';}',
+      '.fuxico-gist-embed .fg-tab{padding:7px 14px;cursor:pointer;border:none;background:transparent;color:' + C.muted + ';font-size:0.85em;white-space:nowrap;border-bottom:2px solid transparent;}',
+      '.fuxico-gist-embed .fg-tab.active{background:' + C.tabAct + ';color:' + C.yellow + ';border-bottom-color:' + C.yellow + ';}',
+      '.fuxico-gist-embed .fg-pane{display:none;}',
+      '.fuxico-gist-embed .fg-pane.active{display:block;}',
+      '.fuxico-gist-embed .fg-meta{padding:6px 14px;font-size:0.78em;color:' + C.muted + ';background:' + C.card + ';border-bottom:1px solid ' + C.border + ';}',
+      '.fuxico-gist-embed pre{margin:0;padding:14px;overflow-x:auto;background:' + C.codeBg + ';}',
+      '.fuxico-gist-embed code{font-family:' + C.fontMono + ';font-size:0.85em;line-height:1.6;color:' + C.text + ';}',
+      '.fuxico-gist-embed .fg-footer{padding:8px 14px;font-size:0.75em;color:' + C.muted + ';background:' + C.card + ';border-top:1px solid ' + C.border + ';text-align:center;}',
+      '.fuxico-gist-embed .fg-footer a{color:' + C.yellow + ';text-decoration:none;}',
+    ].join('');
+  }
+
+  function buildTabs() {
+    if (FILES.length <= 1) return '';
+    return FILES.map(function(f, i) {
+      var active = i === 0 ? ' active' : '';
+      return '<button class="fg-tab' + active + '" onclick="(function(btn,id){' +
+        'var w=btn.closest(\'.fuxico-gist-embed\');' +
+        'w.querySelectorAll(\'.fg-tab\').forEach(function(t){t.classList.remove(\'active\')});' +
+        'w.querySelectorAll(\'.fg-pane\').forEach(function(p){p.classList.remove(\'active\')});' +
+        'btn.classList.add(\'active\');var p=w.querySelector(\'#\'+id);if(p)p.classList.add(\'active\');' +
+        '})(this,\'fg-pane-' + i + '\')">' + esc(f.name) + '</button>';
+    }).join('');
+  }
+
+  function buildPanes() {
+    return FILES.map(function(f, i) {
+      var active = i === 0 ? ' active' : '';
+      var meta   = f.lines + ' linhas · ' + (f.size / 1024).toFixed(1) + ' KB';
+      return '<div class="fg-pane' + active + '" id="fg-pane-' + i + '">' +
+        '<div class="fg-meta">' + esc(f.name) + ' — ' + meta + '</div>' +
+        '<pre><code>' + esc(f.content) + '</code></pre>' +
+        '</div>';
+    }).join('');
+  }
+
+  function buildHTML(uid) {
+    var title  = FILES.length === 1 ? FILES[0].name : SLUG;
+    var tabsHtml = FILES.length > 1 ? '<div class="fg-tabs">' + buildTabs() + '</div>' : '';
+    return '<style>' + buildStyles() + '</style>' +
+      '<div class="fuxico-gist-embed" id="' + uid + '">' +
+        '<div class="fg-header">' +
+          '<span class="fg-title">⚡ ' + esc(title) + '</span>' +
+          (GIST_URL ? '<a class="fg-link" href="' + esc(GIST_URL) + '" target="_blank" rel="noopener">Ver no Fuxico ↗</a>' : '') +
+        '</div>' +
+        tabsHtml +
+        buildPanes() +
+        '<div class="fg-footer">Embed via <a href="https://2lp.in" target="_blank" rel="noopener">Fuxico</a></div>' +
+      '</div>';
+  }
+
+  function inject() {
+    var script = document.currentScript;
+    if (!script) return;
+    var uid = 'fuxico-embed-' + Math.random().toString(36).slice(2, 9);
+    var container = document.createElement('div');
+    container.innerHTML = buildHTML(uid);
+    script.parentNode.insertBefore(container, script.nextSibling);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inject);
+  } else {
+    inject();
+  }
+})();
+JS;
     }
 
     private static function getFileIcon(string $ext): string
