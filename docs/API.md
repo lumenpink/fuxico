@@ -184,9 +184,9 @@ O Fuxico implementa isolamento estrito de dados entre usuárias:
   - Para `member`: Retorna estritamente os contadores e bytes pertencentes à usuária conectada.
 
 - **Listagem de Itens (`GET /api/items`):**
-  - Parâmetros: `search` (termo de busca), `type` (`file`, `url`, `gist`, `git`, `doc`), `limit` (padrão 50, máx 200), `offset`.
+  - Parâmetros: `search` (termo de busca), `type` (`file`, `url`, `gist`, `git`, `doc`), `limit` (padrão 50, máx 200), `offset`, `date_from` / `from` (data inicial `YYYY-MM-DD` ou timestamp), `date_to` / `to` (data final `YYYY-MM-DD` ou timestamp).
   - **Filtro de Membro:** Para usuárias com perfil `member`, a busca é forçada estritamente ao seu próprio `user_id`. Itens de outras usuárias não são retornados.
-  - **Filtro de Admin:** Administradoras podem visualizar itens globais ou passar `?user_id=<id>` para inspecionar o acervo de uma fuxiqueira específica.
+  - **Filtro de Admin:** Administradoras podem visualizar itens globais, filtrar por `user_id` (`?user_id=<id>` para uma fuxiqueira específica ou `?user_id=none` para itens anônimos sem dona), além de filtrar por tipo e intervalo de datas de criação.
 
 - **Exclusão de Itens (`DELETE /api/items/{slug}`):**
   - Administradoras podem apagar qualquer item da instância.
