@@ -1373,14 +1373,21 @@
 </ul>
 <ul>
 <li><strong>Listagem de Itens (<code>GET /api/items</code>):</strong></li>
-<li>Parâmetros: <code>search</code> (termo de busca), <code>type</code> (<code>file</code>, <code>url</code>, <code>gist</code>, <code>git</code>, <code>doc</code>), <code>limit</code> (padrão 50, máx 200), <code>offset</code>.</li>
+<li>Parâmetros: <code>search</code> (termo de busca), <code>type</code> (<code>file</code>, <code>url</code>, <code>gist</code>, <code>git</code>, <code>doc</code>), <code>limit</code> (padrão 50, máx 200), <code>offset</code>, <code>date_from</code> / <code>from</code> (data inicial <code>YYYY-MM-DD</code> ou timestamp), <code>date_to</code> / <code>to</code> (data final <code>YYYY-MM-DD</code> ou timestamp).</li>
 <li><strong>Filtro de Membro:</strong> Para usuárias com perfil <code>member</code>, a busca é forçada estritamente ao seu próprio <code>user_id</code>. Itens de outras usuárias não são retornados.</li>
-<li><strong>Filtro de Admin:</strong> Administradoras podem visualizar itens globais ou passar <code>?user_id=&lt;id&gt;</code> para inspecionar o acervo de uma fuxiqueira específica.</li>
+<li><strong>Filtro de Admin:</strong> Administradoras podem visualizar itens globais, filtrar por <code>user_id</code> (<code>?user_id=&lt;id&gt;</code> para uma fuxiqueira específica ou <code>?user_id=none</code> para itens anônimos sem dona), além de filtrar por tipo e intervalo de datas de criação.</li>
 </ul>
 <ul>
 <li><strong>Exclusão de Itens (<code>DELETE /api/items/{slug}</code>):</strong></li>
 <li>Administradoras podem apagar qualquer item da instância.</li>
 <li>Membros só podem excluir itens criados sob a sua própria ficha. Tentativas de apagar itens alheios retornam <code>403 Forbidden: Você só tem permissão para excluir as suas próprias fofocas.</code></li>
+</ul>
+<ul>
+<li><strong>Exclusão em Massa de Itens (<code>POST /api/items/bulk-delete</code>):</strong></li>
+<li>Restrito exclusivamente à fuxiqueira-mor (<code>admin</code>). Retorna <code>403 Forbidden</code> para fuxiqueiras comuns.</li>
+<li>Recebe critérios de filtro no corpo JSON (<code>search</code>, <code>type</code>, <code>user_id</code>, <code>date_from</code>, <code>date_to</code>).</li>
+<li>Remove fisicamente todos os arquivos associados em disco (arquivos simples, gists, repositórios git, pastas de assets e caches estáticos HTML/PDF) e expurga os registros do banco de dados.</li>
+<li>Retorna <code>200 OK</code> com <code>{ &quot;success&quot;: true, &quot;count&quot;: &lt;int&gt;, &quot;message&quot;: &quot;N fofocas excluídas com sucesso.&quot; }</code>.</li>
 </ul>
 <ul>
 <li><strong>Edição de Parâmetros e Formato (<code>PATCH /api/items/{slug}</code>):</strong></li>
@@ -1392,7 +1399,7 @@
 </ul>
 <hr>
 <h3 id="3-4-interface-web-embutida-get-painel">3.4 Interface Web Embutida (<code>GET /painel</code>)</h3>
-<p>O painel administrativo do Fuxico é servido no endpoint <code>/painel</code>. Possui estética zine/pajubá responsiva, suporte a temas (Zine e Acadêmico), armazenamento de token em <code>localStorage</code>, visualizador de arquivos em modal, terminal de upload e gaveta de gestão de fuxiqueiras com cadastro e regeneração de fichas.</p>
+<p>O painel administrativo do Fuxico é servido no endpoint <code>/painel</code>. Possui estética zine/pajubá responsiva, suporte a temas (Zine e Acadêmico), armazenamento de token em <code>localStorage</code>, visualizador de arquivos em modal, filtros avançados (por termo, tipo de mídia, fuxiqueira e intervalo de datas), exclusão em massa com confirmação modal para administradoras e gaveta de gestão de fuxiqueiras com cadastro e regeneração de fichas.</p>
 <hr>
 <h2 id="4-client-cli-dialect-specifications-fux">4. Client CLI & Dialect Specifications (<code>fux</code>)</h2>
 <p>Both Bash (<code>bin/fux</code>) and Native Rust (<code>cli/target/release/fux</code>) clients support dual dialect selection via <code>-D, --dialect, --dialeto &lt;nullpointer|rustypaste&gt;</code> and configuration files (<code>~/.config/fux/config.toml</code>):</p>
@@ -1437,7 +1444,7 @@
     </div>
 
     <footer class="doc-footer">
-        <p>Postado em 2026-10-01 07:54:31 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+        <p>Postado em 2026-10-01 12:33:51 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
     </footer>
 
     <script>

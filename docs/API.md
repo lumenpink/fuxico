@@ -192,6 +192,12 @@ O Fuxico implementa isolamento estrito de dados entre usuárias:
   - Administradoras podem apagar qualquer item da instância.
   - Membros só podem excluir itens criados sob a sua própria ficha. Tentativas de apagar itens alheios retornam `403 Forbidden: Você só tem permissão para excluir as suas próprias fofocas.`
 
+- **Exclusão em Massa de Itens (`POST /api/items/bulk-delete`):**
+  - Restrito exclusivamente à fuxiqueira-mor (`admin`). Retorna `403 Forbidden` para fuxiqueiras comuns.
+  - Recebe critérios de filtro no corpo JSON (`search`, `type`, `user_id`, `date_from`, `date_to`).
+  - Remove fisicamente todos os arquivos associados em disco (arquivos simples, gists, repositórios git, pastas de assets e caches estáticos HTML/PDF) e expurga os registros do banco de dados.
+  - Retorna `200 OK` com `{ "success": true, "count": <int>, "message": "N fofocas excluídas com sucesso." }`.
+
 - **Edição de Parâmetros e Formato (`PATCH /api/items/{slug}`):**
   Permite atualizar configurações, ciclo de vida e metadados de um fuxico existente.
   - **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`
@@ -212,7 +218,7 @@ O Fuxico implementa isolamento estrito de dados entre usuárias:
 
 ### 3.4 Interface Web Embutida (`GET /painel`)
 
-O painel administrativo do Fuxico é servido no endpoint `/painel`. Possui estética zine/pajubá responsiva, suporte a temas (Zine e Acadêmico), armazenamento de token em `localStorage`, visualizador de arquivos em modal, terminal de upload e gaveta de gestão de fuxiqueiras com cadastro e regeneração de fichas.
+O painel administrativo do Fuxico é servido no endpoint `/painel`. Possui estética zine/pajubá responsiva, suporte a temas (Zine e Acadêmico), armazenamento de token em `localStorage`, visualizador de arquivos em modal, filtros avançados (por termo, tipo de mídia, fuxiqueira e intervalo de datas), exclusão em massa com confirmação modal para administradoras e gaveta de gestão de fuxiqueiras com cadastro e regeneração de fichas.
 
 ---
 
