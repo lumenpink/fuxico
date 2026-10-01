@@ -140,7 +140,7 @@ class Database
         ');
 
         return $stmt->execute([
-            ':id' => $data['id'],
+            ':id' => $data['id'] ?? bin2hex(random_bytes(8)),
             ':slug' => $data['slug'],
             ':original_name' => $data['original_name'] ?? null,
             ':type' => $data['type'],
@@ -209,8 +209,15 @@ class Database
     /**
      * @return array<array<string, mixed>>
      */
-    public function listItems(int $limit = 100, int $offset = 0, ?string $search = null, ?string $type = null, ?string $userId = null): array
-    {
+    public function listItems(
+        int $limit = 100,
+        int $offset = 0,
+        ?string $search = null,
+        ?string $type = null,
+        ?string $userId = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ): array {
         $sql = '
             SELECT items.id, items.slug, items.original_name, items.type, items.target_url, items.file_path,
                    items.mime_type, items.size, items.is_oneshot, items.expires_at, items.created_at, items.views,
@@ -231,9 +238,27 @@ class Database
             $params[':type'] = $type;
         }
 
-        if ($userId !== null && trim($userId) !== '') {
+        if ($userId === 'none' || $userId === 'anonymous') {
+            $sql .= ' AND items.user_id IS NULL';
+        } elseif ($userId !== null && trim($userId) !== '') {
             $sql .= ' AND items.user_id = :user_id';
             $params[':user_id'] = $userId;
+        }
+
+        if ($dateFrom !== null && trim($dateFrom) !== '') {
+            $tsFrom = is_numeric($dateFrom) ? (int) $dateFrom : strtotime(trim($dateFrom).' 00:00:00');
+            if ($tsFrom !== false) {
+                $sql .= ' AND items.created_at >= :date_from';
+                $params[':date_from'] = $tsFrom;
+            }
+        }
+
+        if ($dateTo !== null && trim($dateTo) !== '') {
+            $tsTo = is_numeric($dateTo) ? (int) $dateTo : strtotime(trim($dateTo).' 23:59:59');
+            if ($tsTo !== false) {
+                $sql .= ' AND items.created_at <= :date_to';
+                $params[':date_to'] = $tsTo;
+            }
         }
 
         $sql .= ' ORDER BY items.created_at DESC LIMIT :limit OFFSET :offset';
@@ -250,8 +275,13 @@ class Database
         return $stmt->fetchAll();
     }
 
-    public function countItems(?string $search = null, ?string $type = null, ?string $userId = null): int
-    {
+    public function countItems(
+        ?string $search = null,
+        ?string $type = null,
+        ?string $userId = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ): int {
         $sql = 'SELECT COUNT(*) FROM items WHERE 1=1';
         $params = [];
 
@@ -265,15 +295,101 @@ class Database
             $params[':type'] = $type;
         }
 
-        if ($userId !== null && trim($userId) !== '') {
+        if ($userId === 'none' || $userId === 'anonymous') {
+            $sql .= ' AND user_id IS NULL';
+        } elseif ($userId !== null && trim($userId) !== '') {
             $sql .= ' AND user_id = :user_id';
             $params[':user_id'] = $userId;
+        }
+
+        if ($dateFrom !== null && trim($dateFrom) !== '') {
+            $tsFrom = is_numeric($dateFrom) ? (int) $dateFrom : strtotime(trim($dateFrom).' 00:00:00');
+            if ($tsFrom !== false) {
+                $sql .= ' AND created_at >= :date_from';
+                $params[':date_from'] = $tsFrom;
+            }
+        }
+
+        if ($dateTo !== null && trim($dateTo) !== '') {
+            $tsTo = is_numeric($dateTo) ? (int) $dateTo : strtotime(trim($dateTo).' 23:59:59');
+            if ($tsTo !== false) {
+                $sql .= ' AND created_at <= :date_to';
+                $params[':date_to'] = $tsTo;
+            }
         }
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return array<array{id: int|string, slug: string, file_path: ?string, type: string}>
+     */
+    public function getItemsForBulkDelete(
+        ?string $search = null,
+        ?string $type = null,
+        ?string $userId = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ): array {
+        $sql = 'SELECT id, slug, file_path, type FROM items WHERE 1=1';
+        $params = [];
+
+        if ($search !== null && trim($search) !== '') {
+            $sql .= ' AND (slug LIKE :search OR original_name LIKE :search OR target_url LIKE :search)';
+            $params[':search'] = '%'.trim($search).'%';
+        }
+
+        if ($type !== null && in_array($type, ['file', 'url', 'doc', 'gist', 'git'], true)) {
+            $sql .= ' AND type = :type';
+            $params[':type'] = $type;
+        }
+
+        if ($userId === 'none' || $userId === 'anonymous') {
+            $sql .= ' AND user_id IS NULL';
+        } elseif ($userId !== null && trim($userId) !== '') {
+            $sql .= ' AND user_id = :user_id';
+            $params[':user_id'] = $userId;
+        }
+
+        if ($dateFrom !== null && trim($dateFrom) !== '') {
+            $tsFrom = is_numeric($dateFrom) ? (int) $dateFrom : strtotime(trim($dateFrom).' 00:00:00');
+            if ($tsFrom !== false) {
+                $sql .= ' AND created_at >= :date_from';
+                $params[':date_from'] = $tsFrom;
+            }
+        }
+
+        if ($dateTo !== null && trim($dateTo) !== '') {
+            $tsTo = is_numeric($dateTo) ? (int) $dateTo : strtotime(trim($dateTo).' 23:59:59');
+            if ($tsTo !== false) {
+                $sql .= ' AND created_at <= :date_to';
+                $params[':date_to'] = $tsTo;
+            }
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * @param array<int|string> $ids
+     */
+    public function deleteItemsByIds(array $ids): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("DELETE FROM items WHERE id IN ({$placeholders})");
+        $stmt->execute(array_values($ids));
+
+        return $stmt->rowCount();
     }
 
     public function updateType(string $slug, string $type): bool

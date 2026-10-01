@@ -1960,8 +1960,8 @@ HTML;
                 </div>
 
                 <div class="filter-row">
-                    <input type="text" id="dashSearch" class="form-control" style="flex:2;" placeholder="{$t('dash_search')}" oninput="debounce(loadDashboard, 300)()">
-                    <select id="dashType" class="form-control" style="flex:1;" onchange="loadDashboard()">
+                    <input type="text" id="dashSearch" class="form-control" style="flex:2; min-width:180px;" placeholder="{$t('dash_search')}" oninput="debounce(loadDashboard, 300)()">
+                    <select id="dashType" class="form-control" style="flex:1; min-width:130px;" onchange="loadDashboard()">
                         <option value="">{$t('dash_filter_all')}</option>
                         <option value="file">{$t('dash_filter_files')}</option>
                         <option value="doc">{$t('dash_filter_docs')}</option>
@@ -1969,6 +1969,16 @@ HTML;
                         <option value="git">{$t('dash_filter_gits')}</option>
                         <option value="url">{$t('dash_filter_urls')}</option>
                     </select>
+                    <select id="dashUser" class="form-control" style="flex:1; min-width:140px; display:none;" onchange="loadDashboard()">
+                        <option value="">{$t('dash_filter_all_users')}</option>
+                        <option value="none">{$t('dash_filter_anon_user')}</option>
+                    </select>
+                    <div style="display:flex; gap:6px; align-items:center; flex:1; min-width:220px;">
+                        <input type="date" id="dashDateFrom" class="form-control" style="flex:1;" title="{$t('dash_date_from')}" onchange="loadDashboard()">
+                        <span style="color:var(--text-muted); font-size:0.85rem;">→</span>
+                        <input type="date" id="dashDateTo" class="form-control" style="flex:1;" title="{$t('dash_date_to')}" onchange="loadDashboard()">
+                    </div>
+                    <button type="button" class="btn-action-icon" style="padding:6px 12px; font-size:0.8rem;" title="{$t('dash_clear_filters')}" onclick="clearDashboardFilters()">✕ {$t('dash_clear_filters')}</button>
                 </div>
 
                 <div style="overflow-x:auto;">
@@ -2216,6 +2226,7 @@ HTML;
             const userBadge = document.getElementById('userBadge');
             const tabBtnUsers = document.getElementById('tabBtnUsers');
             const thAuthor = document.getElementById('thAuthor');
+            const dashUser = document.getElementById('dashUser');
 
             if (currentUser && currentUser.authenticated) {
                 userBadge.style.display = 'inline-flex';
@@ -2225,15 +2236,58 @@ HTML;
                 if (currentUser.role === 'admin') {
                     tabBtnUsers.style.display = 'inline-block';
                     thAuthor.style.display = '';
+                    if (dashUser) {
+                        dashUser.style.display = 'inline-block';
+                        populateUserFilter();
+                    }
                 } else {
                     tabBtnUsers.style.display = 'none';
                     thAuthor.style.display = 'none';
+                    if (dashUser) dashUser.style.display = 'none';
                 }
             } else {
                 userBadge.style.display = 'none';
                 tabBtnUsers.style.display = 'none';
                 thAuthor.style.display = 'none';
+                if (dashUser) dashUser.style.display = 'none';
             }
+        }
+
+        async function populateUserFilter() {
+            const dashUser = document.getElementById('dashUser');
+            if (!dashUser || dashUser.dataset.loaded === 'true') return;
+            const token = localStorage.getItem('fuxico_token') || tokenInput.value.trim();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.users && data.users.length > 0) {
+                        const currentVal = dashUser.value;
+                        let opts = '<option value="">' + escapeHtml(t('dash_filter_all_users')) + '</option>';
+                        opts += '<option value="none">' + escapeHtml(t('dash_filter_anon_user')) + '</option>';
+                        data.users.forEach(u => {
+                            opts += '<option value="' + escapeHtml(u.id) + '">' + escapeHtml(u.username) + '</option>';
+                        });
+                        dashUser.innerHTML = opts;
+                        dashUser.value = currentVal;
+                        dashUser.dataset.loaded = 'true';
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function clearDashboardFilters() {
+            document.getElementById('dashSearch').value = '';
+            document.getElementById('dashType').value = '';
+            const dashUser = document.getElementById('dashUser');
+            if (dashUser) dashUser.value = '';
+            const dashDateFrom = document.getElementById('dashDateFrom');
+            if (dashDateFrom) dashDateFrom.value = '';
+            const dashDateTo = document.getElementById('dashDateTo');
+            if (dashDateTo) dashDateTo.value = '';
+            loadDashboard();
         }
 
         function switchDashTab(tab) {
@@ -2314,6 +2368,12 @@ HTML;
 
             const search = encodeURIComponent(document.getElementById('dashSearch').value.trim());
             const type = encodeURIComponent(document.getElementById('dashType').value);
+            const userEl = document.getElementById('dashUser');
+            const userVal = userEl && userEl.value ? encodeURIComponent(userEl.value) : '';
+            const dateFromEl = document.getElementById('dashDateFrom');
+            const dateFrom = dateFromEl && dateFromEl.value ? encodeURIComponent(dateFromEl.value) : '';
+            const dateToEl = document.getElementById('dashDateTo');
+            const dateTo = dateToEl && dateToEl.value ? encodeURIComponent(dateToEl.value) : '';
             const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
 
             try {
@@ -2328,7 +2388,12 @@ HTML;
                 }
 
                 // Items
-                const res = await fetch('/api/items?search=' + search + '&type=' + type, { headers });
+                let itemsUrl = '/api/items?search=' + search + '&type=' + type;
+                if (userVal) itemsUrl += '&user_id=' + userVal;
+                if (dateFrom) itemsUrl += '&date_from=' + dateFrom;
+                if (dateTo) itemsUrl += '&date_to=' + dateTo;
+
+                const res = await fetch(itemsUrl, { headers });
 
                 if (!res.ok) {
                     tbody.innerHTML = '<tr><td colspan="' + colCount + '" style="text-align:center; color:var(--electric-pink);">Acesso não autorizado ao cofre.</td></tr>';

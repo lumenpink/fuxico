@@ -1377,6 +1377,8 @@ class App
             $offset = max(0, (int) ($_GET['offset'] ?? 0));
             $search = isset($_GET['search']) ? (string) $_GET['search'] : null;
             $type = isset($_GET['type']) ? (string) $_GET['type'] : null;
+            $dateFrom = isset($_GET['date_from']) ? (string) $_GET['date_from'] : (isset($_GET['from']) ? (string) $_GET['from'] : null);
+            $dateTo = isset($_GET['date_to']) ? (string) $_GET['date_to'] : (isset($_GET['to']) ? (string) $_GET['to'] : null);
 
             $userIdFilter = null;
             if ($auth && $auth['role'] === 'member') {
@@ -1385,8 +1387,8 @@ class App
                 $userIdFilter = trim((string) $_GET['user_id']);
             }
 
-            $items = $this->db->listItems($limit, $offset, $search, $type, $userIdFilter);
-            $total = $this->db->countItems($search, $type, $userIdFilter);
+            $items = $this->db->listItems($limit, $offset, $search, $type, $userIdFilter, $dateFrom, $dateTo);
+            $total = $this->db->countItems($search, $type, $userIdFilter, $dateFrom, $dateTo);
 
             http_response_code(200);
             header('Content-Type: application/json');
