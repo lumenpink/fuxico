@@ -143,3 +143,27 @@ MD;
     expect($html)->toContain('<h1 id="manifesto-travesti">Manifesto Travesti</h1>');
     expect($html)->toContain('href="?raw=1"');
 });
+
+test('render includes mobile responsive stylesheet and touch interactions for diagrams (#46)', function () {
+    $md = <<<'MD'
+# Teste Responsivo
+
+Texto com diagrama e tabela.
+
+```d2
+direction: down
+a -> b
+```
+MD;
+
+    $html = MarkdownRenderer::render($md, [
+        'title' => 'Teste Mobile',
+        'slug' => 'test-mobile',
+    ]);
+
+    expect($html)->toContain('@media (max-width: 768px)');
+    expect($html)->toContain('@media (max-width: 480px)');
+    expect($html)->toContain('position: fixed');
+    expect($html)->toContain('initDiagramTouchInteractions()');
+    expect($html)->toContain('touch-action: pan-y pinch-zoom');
+});
