@@ -1304,12 +1304,13 @@ HTML;
                     $mathContent = htmlspecialchars(trim($singleMath[1]), ENT_NOQUOTES, 'UTF-8');
                     $htmlOutput[] = "<div class=\"math-block\">\$\${$mathContent}\$\$</div>";
                     $i++;
+
                     continue;
                 }
 
                 $mathLines = [];
                 $i++;
-                while ($i < $count && !str_starts_with(trim($lines[$i]), '$$')) {
+                while ($i < $count && ! str_starts_with(trim($lines[$i]), '$$')) {
                     $mathLines[] = $lines[$i];
                     $i++;
                 }
@@ -1318,6 +1319,7 @@ HTML;
                 if ($i < $count) {
                     $i++;
                 }
+
                 continue;
             }
 
@@ -1340,7 +1342,7 @@ HTML;
                 }
 
                 $title = $rawFirstLine;
-                if (!empty($rawFirstLine) && strlen($rawFirstLine) > 40) {
+                if (! empty($rawFirstLine) && strlen($rawFirstLine) > 40) {
                     $splitBody = null;
                     if (preg_match('/^(.*?\?)\s+(.+)$/us', $rawFirstLine, $splitM)) {
                         $title = $splitM[1];
@@ -1366,7 +1368,7 @@ HTML;
                 $titleHtml = self::renderInline($title);
 
                 $bodyHtml = '';
-                if (!empty($calloutLines)) {
+                if (! empty($calloutLines)) {
                     $subParsed = self::parse(implode("\n", $calloutLines), $options);
                     $bodyHtml = $subParsed['html'];
                 }
@@ -1571,7 +1573,7 @@ HTML;
                 $fnKey = trim($fnMatch[1]);
                 $fnBody = [$fnMatch[2]];
                 $i++;
-                while ($i < $count && (preg_match('/^(?: {4}|\t)(.*)$/', $lines[$i], $fnSub) || (trim($lines[$i]) !== '' && !preg_match('/^(#{1,6}\s|>\s|```|\-{3,}|\*{3,}|\||[*+-]\s|\d+\.\s|\$\$|\[\^)/', $lines[$i])))) {
+                while ($i < $count && (preg_match('/^(?: {4}|\t)(.*)$/', $lines[$i], $fnSub) || (trim($lines[$i]) !== '' && ! preg_match('/^(#{1,6}\s|>\s|```|\-{3,}|\*{3,}|\||[*+-]\s|\d+\.\s|\$\$|\[\^)/', $lines[$i])))) {
                     $fnBody[] = isset($fnSub[1]) ? $fnSub[1] : $lines[$i];
                     $i++;
                 }
@@ -1607,7 +1609,7 @@ HTML;
             $htmlOutput[] = "</{$listType}>";
         }
 
-        if (!empty($footnotes)) {
+        if (! empty($footnotes)) {
             $fnHtml = '<section class="footnotes"><hr><ol>';
             foreach ($footnotes as $fnId => $fnText) {
                 $escapedId = htmlspecialchars($fnId, ENT_QUOTES, 'UTF-8');
@@ -1652,7 +1654,7 @@ HTML;
             $parts = explode('|', $matches[1]);
             $src = trim($parts[0]);
             $alt = isset($parts[1]) ? trim($parts[1]) : basename($src);
-            $cleanSrc = 'assets/'.ltrim($src, '/');
+            $cleanSrc = 'assets/'.basename($src);
 
             return '<img src="'.htmlspecialchars($cleanSrc, ENT_QUOTES, 'UTF-8').'" alt="'.htmlspecialchars($alt, ENT_QUOTES, 'UTF-8').'" loading="lazy">';
         }, $text) ?? $text;
@@ -1660,9 +1662,15 @@ HTML;
         // 2. Standard Images: ![alt](url)
         $text = preg_replace_callback('/!\[(.*?)\]\((.*?)\)/', function ($matches) {
             $alt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
-            $src = htmlspecialchars(trim($matches[2]), ENT_QUOTES, 'UTF-8');
+            $rawSrc = trim($matches[2]);
+            if (! preg_match('/^(https?:\/\/|data:|\/)/', $rawSrc) && ! str_starts_with($rawSrc, 'assets/')) {
+                $src = 'assets/'.basename($rawSrc);
+            } else {
+                $src = $rawSrc;
+            }
+            $cleanSrc = htmlspecialchars($src, ENT_QUOTES, 'UTF-8');
 
-            return "<img src=\"{$src}\" alt=\"{$alt}\" loading=\"lazy\">";
+            return "<img src=\"{$cleanSrc}\" alt=\"{$alt}\" loading=\"lazy\">";
         }, $text) ?? $text;
 
         // 3. Obsidian Wikilink internal: [[link|label]] or [[link]]
@@ -1694,14 +1702,29 @@ HTML;
             return '<mark>'.htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8').'</mark>';
         }, $text) ?? $text;
 
+        // Protect generated HTML tags from markdown asterisks and underscores
+        $htmlPlaceholders = [];
+        $text = preg_replace_callback('/<[^>]+>/s', function ($matches) use (&$htmlPlaceholders) {
+            $key = "\x1BHTML".count($htmlPlaceholders)."X\x1B";
+            $htmlPlaceholders[$key] = $matches[0];
+
+            return $key;
+        }, $text) ?? $text;
+
         // 7. Bold **text** or __text__
         $text = preg_replace('/(\*\*|__)(.*?)\1/', '<strong>$2</strong>', $text) ?? $text;
 
-        // 8. Italic *text* or _text_
-        $text = preg_replace('/(\*|_)(.*?)\1/', '<em>$2</em>', $text) ?? $text;
+        // 8. Italic *text* or _text_ (com proteção para underscores intra-palavra)
+        $text = preg_replace('/(?<!\w)\*([^\*\s]+.*?)\*(?!\w)/', '<em>$1</em>', $text) ?? $text;
+        $text = preg_replace('/(?<!\w)_([^_\s]+.*?)_(?!\w)/', '<em>$1</em>', $text) ?? $text;
 
         // 9. Strikethrough ~~text~~
         $text = preg_replace('/~~(.*?)~~/', '<del>$1</del>', $text) ?? $text;
+
+        // Restore protected HTML tags
+        if (! empty($htmlPlaceholders)) {
+            $text = strtr($text, $htmlPlaceholders);
+        }
 
         // Restore protected Inline Code and Inline Math
         if (! empty($codePlaceholders)) {

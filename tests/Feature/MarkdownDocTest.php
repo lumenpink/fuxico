@@ -248,3 +248,51 @@ test('api can toggle item type between file and doc, and edit content', function
     $itemAfter = $testEnv->db()->findBySlug($slug);
     expect($itemAfter['type'])->toBe('doc');
 });
+
+test('republishing markdown with same custom_name as owner overwrites content and keeps same slug', function () use ($testEnv) {
+    $slug = 'nota-persistente';
+    $mdV1 = "# Versão 1\n\nPrimeiro conteúdo.";
+    $tmpV1 = tempnam(sys_get_temp_dir(), 'md_v1_');
+    file_put_contents($tmpV1, $mdV1);
+
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_SERVER['REQUEST_URI'] = '/';
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer test-token';
+    $_POST = [
+        'doc' => 'true',
+        'custom_name' => $slug,
+    ];
+    $_FILES = [
+        'file' => [
+            'name' => 'nota.md',
+            'type' => 'text/markdown',
+            'tmp_name' => $tmpV1,
+            'error' => UPLOAD_ERR_OK,
+            'size' => strlen($mdV1),
+        ],
+    ];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $urlV1 = trim((string) ob_get_clean());
+    expect($urlV1)->toBe("https://fuxico.test/{$slug}");
+
+    // Republica o mesmo slug com conteúdo atualizado (Versão 2)
+    $mdV2 = "# Versão 2\n\nConteúdo atualizado pelo autor.";
+    $tmpV2 = tempnam(sys_get_temp_dir(), 'md_v2_');
+    file_put_contents($tmpV2, $mdV2);
+
+    $_FILES['file']['tmp_name'] = $tmpV2;
+    $_FILES['file']['size'] = strlen($mdV2);
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $urlV2 = trim((string) ob_get_clean());
+
+    expect($urlV2)->toBe("https://fuxico.test/{$slug}");
+
+    $item = $testEnv->db()->findBySlug($slug);
+    expect($item)->not->toBeNull();
+    $savedMd = file_get_contents($testEnv->storage()->getFilePath("{$slug}.md"));
+    expect($savedMd)->toBe($mdV2);
+});

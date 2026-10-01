@@ -48,6 +48,23 @@ MD;
     expect($parsed['html'])->toContain('<img src="assets/grafico1.png" alt="Gráfico de Parentesco" loading="lazy">');
 });
 
+test('preserves images and links with multiple underscores without corrupting src to italic', function () {
+    $md = <<<'MD'
+![[forest_plot_iniquidades_sc_2024.png]]
+![[grafico_com_multiplos_underscores.png|Legenda do Gráfico]]
+![Imagem Padrão](subpasta/minha_foto_com_underscore.png)
+[meu_link_com_underscore](https://example.com/api_v1_path)
+MD;
+
+    $parsed = MarkdownRenderer::parse($md);
+    expect($parsed['html'])->toContain('<img src="assets/forest_plot_iniquidades_sc_2024.png" alt="forest_plot_iniquidades_sc_2024.png" loading="lazy">');
+    expect($parsed['html'])->toContain('<img src="assets/grafico_com_multiplos_underscores.png" alt="Legenda do Gráfico" loading="lazy">');
+    expect($parsed['html'])->toContain('<img src="assets/minha_foto_com_underscore.png" alt="Imagem Padrão" loading="lazy">');
+    expect($parsed['html'])->toContain('<a href="https://example.com/api_v1_path" target="_blank" rel="noopener noreferrer">meu_link_com_underscore</a>');
+    expect($parsed['html'])->not->toContain('<em>plot</em>');
+    expect($parsed['html'])->not->toContain('<em>sc</em>');
+});
+
 test('parses obsidian highlights, task lists and code blocks', function () {
     $md = <<<'MD'
 Aqui está um texto com ==marcação amarela== e código inline `echo 'fuxico';`.

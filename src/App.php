@@ -291,11 +291,22 @@ class App
                 $customExt = strtolower($nameExt);
             }
             if ($this->db->isSlugTaken($slug)) {
-                http_response_code(409);
-                header('Content-Type: text/plain');
-                echo "Error: Name '{$customName}' is already taken or invalid.\n";
+                $existing = $this->db->findBySlug($slug);
+                $isOwner = $existing && $auth && (
+                    $auth['is_master'] ||
+                    (! empty($existing['user_id']) && $auth['user_id'] === $existing['user_id'])
+                );
 
-                return;
+                if ($isOwner) {
+                    $this->storage->deleteItemFiles($slug, $existing['file_path'] ?? null);
+                    $this->db->deleteBySlug($slug);
+                } else {
+                    http_response_code(409);
+                    header('Content-Type: text/plain');
+                    echo "Error: Name '{$customName}' is already taken or invalid.\n";
+
+                    return;
+                }
             }
         } else {
             $slug = $this->generateSlug($isSecret);
