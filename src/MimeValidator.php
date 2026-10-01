@@ -59,6 +59,8 @@ class MimeValidator
         'html' => ['text/html', 'text/plain'],
         'css' => ['text/css', 'text/plain'],
         'js' => ['application/javascript', 'text/javascript', 'text/plain'],
+        'r' => ['text/plain', 'text/x-r', 'text/x-rsrc', 'application/octet-stream'],
+        'rmd' => ['text/plain', 'text/markdown', 'text/x-markdown'],
 
         // Archives
         'zip' => ['application/zip', 'application/x-zip-compressed'],
