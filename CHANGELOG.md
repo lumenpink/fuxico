@@ -28,6 +28,7 @@
   - (ui) clarify ephemeral file sharing and URL shortening purpose closes #11
 
 ### Bug Fixes
+  - (markdown) normalizar FUXICO_JOAJU_URL base para o endpoint /render (closes #47)
   - (views) escapar quebras de linha em strings javascript no painel
   - (git) garantir compatibilidade de branch HEAD em bare repos para smart HTTP push
   - (ci) corrigir schema de imagem de container no ci.yml
