@@ -2105,6 +2105,25 @@ HTML;
     }
 
     /**
+     * Builds and normalizes the Joaju diagram rendering endpoint URL.
+     */
+    public static function buildJoajuRenderUrl(string $rawUrl = ''): string
+    {
+        $url = trim($rawUrl);
+        if ($url === '') {
+            $envUrl = getenv('FUXICO_JOAJU_URL');
+            $url = is_string($envUrl) && trim($envUrl) !== '' ? trim($envUrl) : 'https://joaju.lumen.pink';
+        }
+
+        $url = rtrim($url, '/');
+        if (str_ends_with($url, '/render')) {
+            return $url;
+        }
+
+        return "{$url}/render";
+    }
+
+    /**
      * Renders a diagram code block via Joaju API (/render) into clean inline SVG.
      *
      * @param  array<string, mixed>  $options
@@ -2115,7 +2134,8 @@ HTML;
             return null;
         }
 
-        $joajuUrl = (string) ($options['joaju_url'] ?? getenv('FUXICO_JOAJU_URL') ?: 'https://joaju.lumen.pink/render');
+        $rawJoajuUrl = (string) ($options['joaju_url'] ?? getenv('FUXICO_JOAJU_URL') ?: '');
+        $joajuUrl = self::buildJoajuRenderUrl($rawJoajuUrl);
 
         $trimmed = trim($rawCode);
         if ($trimmed === '') {
