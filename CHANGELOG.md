@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (share) página de pré-download, pastas compartilhadas em .zip e integração segura com o Mocambo (closes #48)
   - canonical joaju diagram engines, academic tables, and legacy tag cleanup
   - (markdown) embutir diagramas (kinship, d2, plantuml) via Joaju no baking HTML (closes #44, closes #43)
   - (fuxico) permitir edição de parâmetros e metadados (closes #42)
