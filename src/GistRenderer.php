@@ -68,7 +68,7 @@ class GistRenderer
 
         // Variáveis JS para o modal de embed
         $baseUrlJs = json_encode($baseUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $slugJs    = json_encode($slug,    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $slugJs = json_encode($slug, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         foreach ($files as $filename => $content) {
             $fileId = 'file-'.preg_replace('/[^a-zA-Z0-9_\-]+/', '-', $filename).'-'.$fileIndex;
@@ -889,7 +889,7 @@ HTML;
      * O script usa document.currentScript para se auto-localizar no DOM e injeta
      * um container com os arquivos do gist, com estilos escopados em .fuxico-gist-embed.
      *
-     * @param  array<string, string>  $files    Mapa filename => conteúdo
+     * @param  array<string, string>  $files  Mapa filename => conteúdo
      * @param array{
      *   slug?: string,
      *   base_url?: string,
@@ -900,10 +900,10 @@ HTML;
      */
     public static function renderEmbedJs(array $files, array $options = []): string
     {
-        $slug     = (string) ($options['slug'] ?? '');
-        $baseUrl  = rtrim((string) ($options['base_url'] ?? ''), '/');
-        $theme    = (($options['theme'] ?? '') === 'acad') ? 'acad' : 'zine';
-        $gistUrl  = $options['gist_url'] ?? ($baseUrl !== '' && $slug !== '' ? "{$baseUrl}/{$slug}" : '');
+        $slug = (string) ($options['slug'] ?? '');
+        $baseUrl = rtrim((string) ($options['base_url'] ?? ''), '/');
+        $theme = (($options['theme'] ?? '') === 'acad') ? 'acad' : 'zine';
+        $gistUrl = $options['gist_url'] ?? ($baseUrl !== '' && $slug !== '' ? "{$baseUrl}/{$slug}" : '');
 
         // Filtragem de arquivo único
         $filterFile = (string) ($options['file'] ?? '');
@@ -914,21 +914,21 @@ HTML;
         // Monta lista de arquivos como dados JSON
         $fileList = [];
         foreach ($files as $filename => $content) {
-            $ext   = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
             $lines = substr_count($content, "\n") + (strlen($content) > 0 && ! str_ends_with($content, "\n") ? 1 : 0);
             $fileList[] = [
-                'name'    => $filename,
+                'name' => $filename,
                 'content' => $content,
-                'ext'     => $ext,
-                'lines'   => $lines,
-                'size'    => strlen($content),
+                'ext' => $ext,
+                'lines' => $lines,
+                'size' => strlen($content),
             ];
         }
 
-        $filesJson   = json_encode($fileList,  JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $gistUrlJson = json_encode($gistUrl,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $slugJson    = json_encode($slug,      JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $themeJson   = json_encode($theme,     JSON_UNESCAPED_UNICODE);
+        $filesJson = json_encode($fileList, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $gistUrlJson = json_encode($gistUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $slugJson = json_encode($slug, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $themeJson = json_encode($theme, JSON_UNESCAPED_UNICODE);
 
         return <<<JS
 (function() {

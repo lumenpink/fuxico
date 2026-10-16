@@ -12,11 +12,27 @@ class App
 
     private Storage $storage;
 
+    private ?string $mockRawInput = null;
+
     public function __construct(?Config $config = null, ?Database $db = null, ?Storage $storage = null)
     {
         $this->config = $config ?? new Config;
         $this->db = $db ?? new Database($this->config->dbPath);
         $this->storage = $storage ?? new Storage($this->config->dataDir, $this->config->filesDir);
+    }
+
+    public function setMockRawInput(?string $input): void
+    {
+        $this->mockRawInput = $input;
+    }
+
+    public function getRawInput(): string
+    {
+        if ($this->mockRawInput !== null) {
+            return $this->mockRawInput;
+        }
+
+        return (string) file_get_contents('php://input');
     }
 
     public function getConfig(): Config
@@ -719,14 +735,14 @@ class App
                     return;
                 }
 
-                $embedFile  = trim((string) ($_GET['file']  ?? ''));
+                $embedFile = trim((string) ($_GET['file'] ?? ''));
                 $embedTheme = trim((string) ($_GET['theme'] ?? ''));
 
                 if ($item['type'] === 'gist') {
                     $files = $this->storage->getGistFiles($slug);
                 } else {
                     $singleContent = $this->storage->getFileContent($slug);
-                    $originalName  = $item['original_name'] ?: $slug;
+                    $originalName = $item['original_name'] ?: $slug;
                     $files = $singleContent !== null ? [$originalName => $singleContent] : [];
                 }
 
@@ -740,10 +756,10 @@ class App
 
                 $baseUrl = rtrim((string) ($_SERVER['REQUEST_SCHEME'] ?? 'https').'://'.$_SERVER['HTTP_HOST'], '/');
                 $js = GistRenderer::renderEmbedJs($files, [
-                    'slug'     => $slug,
+                    'slug' => $slug,
                     'base_url' => $baseUrl,
-                    'theme'    => $embedTheme,
-                    'file'     => $embedFile,
+                    'theme' => $embedTheme,
+                    'file' => $embedFile,
                     'gist_url' => "{$baseUrl}/{$slug}",
                 ]);
 
@@ -786,6 +802,11 @@ class App
 
             // 2. Download ZIP: /<slug>/zip
             if ($subAction === 'zip') {
+                if ($item['type'] === 'folder') {
+                    $this->handleFolderZipDownload($item);
+
+                    return;
+                }
                 $zipData = $item['type'] === 'git'
                     ? GitBackend::getArchiveZip($this->storage->getRepoPath($slug))
                     : $this->storage->getGistZip($slug);
@@ -929,6 +950,17 @@ class App
                     $this->db->deleteBySlug($slug);
                 }
                 header('Location: '.$item['target_url'], true, 302);
+
+                return;
+            }
+
+            // Pasta Compartilhada (Nativa ou Mocambo)
+            if ($item['type'] === 'folder') {
+                $this->db->incrementViews($slug);
+                $filesData = ! empty($item['data']) ? (json_decode((string) $item['data'], true)['files'] ?? []) : [];
+                $i18n = (new I18n)->getAll();
+                header('Content-Type: text/html; charset=UTF-8');
+                echo Views::renderFolderView($item, $filesData, $i18n);
 
                 return;
             }
@@ -1091,7 +1123,7 @@ class App
                       str_starts_with($mime, 'text/') ||
                       $mime === 'application/pdf';
 
-            $displayName = count($parts) > 1 ? end($parts) : ($item['original_name'] ?: $item['file_path']);
+            $displayName = count($parts) > 1 ? end($parts) : ($item['original_name'] ?: ($item['file_path'] ?? $slug));
             $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
             $viewsAfter = (int) $item['views'] + 1;
             $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
@@ -1100,7 +1132,49 @@ class App
                 $this->db->deleteBySlug($slug);
             }
 
-            $this->storage->streamFile($item['file_path'], $mime, $displayName, $inline, $shouldBurn);
+            // Página de Pré-Download para navegadores web (estilo Google Drive/Dropbox)
+            $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+            $isRaw = isset($_GET['raw']) || isset($_GET['download']);
+            $isTerminal = (bool) preg_match('/^(curl|wget|httpie|aria2|fetch)/i', $userAgent);
+            $isBrowserHtml = str_contains($accept, 'text/html') && ! $isTerminal;
+
+            if ($isBrowserHtml && ! $isRaw) {
+                $i18n = (new I18n)->getAll();
+                header('Content-Type: text/html; charset=UTF-8');
+                echo Views::renderPreDownload($item, $i18n);
+
+                return;
+            }
+
+            // Stream reverso do Mocambo se source === 'mocambo'
+            if (($item['source'] ?? 'native') === 'mocambo') {
+                $meta = ! empty($item['mocambo_meta']) ? json_decode((string) $item['mocambo_meta'], true) : [];
+                $streamUrl = $meta['stream_url'] ?? null;
+                if ($streamUrl) {
+                    header('Content-Type: '.$mime);
+                    if (! empty($item['size'])) {
+                        header('Content-Length: '.(string) $item['size']);
+                    }
+                    header('Content-Disposition: '.($inline ? 'inline' : 'attachment').'; filename="'.$displayName.'"');
+                    $fp = @fopen($streamUrl, 'rb');
+                    if ($fp) {
+                        fpassthru($fp);
+                        fclose($fp);
+                    } else {
+                        $ch = curl_init($streamUrl);
+                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+                        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                        curl_exec($ch);
+                        curl_close($ch);
+                    }
+
+                    return;
+                }
+            }
+
+            $storageFile = ! empty($item['file_path']) ? (string) $item['file_path'] : $slug;
+            $this->storage->streamFile($storageFile, $mime, $displayName, $inline, $shouldBurn);
 
             return;
         }
@@ -1108,6 +1182,26 @@ class App
         http_response_code(405);
         header('Content-Type: text/plain');
         echo "Method Not Allowed\n";
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function handleFolderZipDownload(array $item): void
+    {
+        $filesData = ! empty($item['data']) ? (json_decode((string) $item['data'], true)['files'] ?? []) : [];
+        $zip = new SimpleZip;
+        foreach ($filesData as $f) {
+            $path = (string) ($f['path'] ?? 'file');
+            $content = (string) ($f['content'] ?? '');
+            $zip->addFile($path, $content);
+        }
+        $zipData = $zip->build();
+        $safeZipName = ($item['original_name'] ? preg_replace('/[^\w\-]/', '_', (string) $item['original_name']) : (string) $item['slug']).'.zip';
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="'.$safeZipName.'"');
+        header('Content-Length: '.(string) strlen($zipData));
+        echo $zipData;
     }
 
     private function handleList(?string $authHeader): void
@@ -1148,6 +1242,79 @@ class App
     {
         $auth = $this->resolveAuth($authHeader);
         $isAuthorized = $auth !== null;
+
+        // Endpoints de Integração com Mocambo: /api/mocambo/share e /api/mocambo/share/{slug}
+        if (str_starts_with($endpoint, 'mocambo/')) {
+            if (! $isAuthorized) {
+                http_response_code(401);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'error' => 'Unauthorized',
+                    'message' => 'Ficha ou token de acesso inválido ou ausente. Esta rota requer autenticação.',
+                ]);
+
+                return;
+            }
+
+            if ($endpoint === 'mocambo/share' && $method === 'POST') {
+                $rawInput = $this->getRawInput();
+                $body = json_decode($rawInput, true) ?? [];
+
+                $slug = ! empty($body['slug']) ? (string) $body['slug'] : $this->generateSlug();
+                $expiresAt = $this->parseExpiration(isset($body['ttl']) ? (string) $body['ttl'] : null);
+                $xToken = bin2hex(random_bytes(16));
+
+                $isFolder = ($body['type'] ?? '') === 'folder';
+
+                $this->db->createItem([
+                    'slug' => $slug,
+                    'original_name' => (string) ($body['file_name'] ?? $body['name'] ?? ($isFolder ? 'Pasta Mocambo' : 'arquivo_mocambo')),
+                    'mime_type' => (string) ($body['mime_type'] ?? ($isFolder ? 'application/x-directory' : 'application/octet-stream')),
+                    'size_bytes' => (int) ($body['file_size'] ?? $body['size'] ?? 0),
+                    'x_token' => $xToken,
+                    'user_id' => $auth['user_id'] ?? $auth['username'] ?? 'admin',
+                    'created_at' => time(),
+                    'expires_at' => $expiresAt,
+                    'type' => $isFolder ? 'folder' : 'file',
+                    'source' => 'mocambo',
+                    'mocambo_meta' => json_encode([
+                        'mocambo_token' => $body['mocambo_token'] ?? null,
+                        'stream_url' => $body['mocambo_stream_url'] ?? null,
+                    ]),
+                    'data' => ! empty($body['files']) ? json_encode(['files' => $body['files']]) : null,
+                ]);
+
+                http_response_code(201);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'slug' => $slug,
+                    'url' => $this->getBaseUrl().'/'.$slug,
+                    'x_token' => $xToken,
+                ]);
+
+                return;
+            }
+
+            if (preg_match('#^mocambo/share/([^/]+)$#', $endpoint, $m) && $method === 'DELETE') {
+                $targetSlug = $m[1];
+                $deleted = $this->db->deleteBySlug($targetSlug);
+
+                http_response_code(200);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'success' => $deleted,
+                    'slug' => $targetSlug,
+                ]);
+
+                return;
+            }
+
+            http_response_code(404);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode(['error' => 'Not Found']);
+
+            return;
+        }
 
         // In private mode, all API endpoints require authorization
         // In public mode, GET stats and items are publicly readable

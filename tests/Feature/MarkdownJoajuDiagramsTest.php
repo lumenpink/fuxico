@@ -211,4 +211,3 @@ test('normalizes joaju base url to /render endpoint correctly', function () {
         ->toBe('http://custom-joaju:8080/render');
     putenv('FUXICO_JOAJU_URL');
 });
-

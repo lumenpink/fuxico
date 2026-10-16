@@ -10,41 +10,50 @@ use Fuxico\Storage;
 $testEnv = new class
 {
     public string $tempDir = '';
+
     public string $dbPath = '';
+
     public string $filesDir = '';
+
     public ?Config $config = null;
+
     public ?Database $db = null;
+
     public ?Storage $storage = null;
+
     public ?App $app = null;
 
     public function app(): App
     {
         assert($this->app !== null);
+
         return $this->app;
     }
 
     public function db(): Database
     {
         assert($this->db !== null);
+
         return $this->db;
     }
 
     public function storage(): Storage
     {
         assert($this->storage !== null);
+
         return $this->storage;
     }
 };
 
 beforeEach(function () use ($testEnv) {
-    $testEnv->tempDir = sys_get_temp_dir() . '/fuxico_moca_test_' . uniqid();
+    $testEnv->tempDir = sys_get_temp_dir().'/fuxico_moca_test_'.uniqid();
     mkdir($testEnv->tempDir, 0755, true);
 
-    $testEnv->dbPath = $testEnv->tempDir . '/fuxico.sqlite';
-    $testEnv->filesDir = $testEnv->tempDir . '/files';
+    $testEnv->dbPath = $testEnv->tempDir.'/fuxico.sqlite';
+    $testEnv->filesDir = $testEnv->tempDir.'/files';
     mkdir($testEnv->filesDir, 0755, true);
 
-    $testEnv->config = new Config();
+    $testEnv->config = new Config;
     $testEnv->config->publicMode = true;
     $testEnv->config->baseUrl = 'https://2lp.in';
     $testEnv->config->authTokens = ['mestre-secret-token'];
@@ -98,7 +107,7 @@ test('browser request to file renders pre-download page while curl receives raw 
     $html = (string) ob_get_clean();
 
     expect($html)->toContain('relatorio-secreto.pdf');
-    expect($html)->toContain('href="/' . $slug . '?raw=1"');
+    expect($html)->toContain('href="/'.$slug.'?raw=1"');
     expect($html)->toContain('class="pre-download');
 
     // 2. CLI curl request (Accept: */* and User-Agent: curl/...)
@@ -211,5 +220,5 @@ test('folder item renders directory listing and zip streaming endpoint', functio
     expect($html)->toContain('Minha Pasta Compartilhada');
     expect($html)->toContain('arq2.txt');
     expect($html)->toContain('sub/arq1.txt');
-    expect($html)->toContain('href="/' . $slug . '/zip"');
+    expect($html)->toContain('href="/'.$slug.'/zip"');
 });

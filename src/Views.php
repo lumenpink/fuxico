@@ -2888,4 +2888,510 @@ HTML;
 </html>
 HTML;
     }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @param  array<string, string>|I18n  $i18n
+     */
+    public static function renderPreDownload(array $item, array|I18n $i18n = []): string
+    {
+        $slug = htmlspecialchars((string) ($item['slug'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $filename = htmlspecialchars((string) ($item['original_name'] ?: $item['slug']), ENT_QUOTES, 'UTF-8');
+        $mime = (string) ($item['mime_type'] ?: 'application/octet-stream');
+        $safeMime = htmlspecialchars($mime, ENT_QUOTES, 'UTF-8');
+        $source = (string) ($item['source'] ?? 'native');
+        $size = (int) ($item['size_bytes'] ?? $item['size'] ?? 0);
+
+        $formattedSize = match (true) {
+            $size >= 1073741824 => number_format($size / 1073741824, 2).' GB',
+            $size >= 1048576 => number_format($size / 1048576, 2).' MB',
+            $size >= 1024 => number_format($size / 1024, 2).' KB',
+            default => $size.' B',
+        };
+
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $isMarkdown = in_array($ext, ['md', 'markdown'], true) || $mime === 'text/markdown';
+        $isImage = str_starts_with($mime, 'image/');
+        $isAudio = str_starts_with($mime, 'audio/');
+        $isVideo = str_starts_with($mime, 'video/');
+        $isPdf = $mime === 'application/pdf' || $ext === 'pdf';
+
+        $sourceBadge = $source === 'mocambo'
+            ? '<span class="badge badge-mocambo">🏰 Mocambo Storage (Stream Seguro)</span>'
+            : '<span class="badge badge-native">✨ Fuxico Nativo</span>';
+
+        $previewHtml = '';
+        if ($isImage) {
+            $previewHtml = <<<HTML
+            <div class="preview-box">
+                <img src="/{$slug}?raw=1" alt="{$filename}" class="preview-img">
+            </div>
+HTML;
+        } elseif ($isAudio) {
+            $previewHtml = <<<HTML
+            <div class="preview-box">
+                <audio controls src="/{$slug}?raw=1" style="width: 100%; margin-top: 10px;"></audio>
+            </div>
+HTML;
+        } elseif ($isVideo) {
+            $previewHtml = <<<HTML
+            <div class="preview-box">
+                <video controls src="/{$slug}?raw=1" style="max-width: 100%; max-height: 400px; border-radius: 4px;"></video>
+            </div>
+HTML;
+        } elseif ($isPdf) {
+            $previewHtml = <<<'HTML'
+            <div class="preview-box pdf-box">
+                <div class="pdf-icon">📄</div>
+                <div class="pdf-hint">Documento PDF pronto para download ou visualização direta.</div>
+            </div>
+HTML;
+        }
+
+        $zineBtnHtml = '';
+        if ($isMarkdown) {
+            $zineBtnHtml = <<<HTML
+            <a href="/{$slug}?raw=1" class="btn btn-zine">📖 Ler como Zine / Doc</a>
+HTML;
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$filename} - Fuxico Pré-Download</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121016;
+            --card-bg: #1a1622;
+            --text-main: #f5f4ef;
+            --text-muted: #9f97ad;
+            --acid-yellow: #e2f835;
+            --acid-yellow-hover: #ccee22;
+            --electric-pink: #ff2a85;
+            --shadow-hard: 6px 6px 0px #0a080d;
+            --font-display: 'Anton', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --font-heading: 'Space Grotesk', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle, rgba(226, 248, 53, 0.05) 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+        .container.pre-download {
+            background: var(--card-bg);
+            border: 2px solid var(--electric-pink);
+            box-shadow: var(--shadow-hard);
+            max-width: 640px;
+            width: 100%;
+            padding: 32px 24px;
+            text-align: center;
+            position: relative;
+        }
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+        }
+        .trans-stripe-line { flex: 1; width: 100%; }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+        .title {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            color: var(--acid-yellow);
+            word-break: break-all;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 0px #000;
+        }
+        .meta-list {
+            margin: 20px 0;
+            padding: 16px;
+            background: #121016;
+            border: 1px dashed #383047;
+            text-align: left;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .meta-row { display: flex; justify-content: space-between; word-break: break-all; }
+        .meta-label { color: var(--text-muted); }
+        .meta-value { color: var(--text-main); font-weight: bold; }
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 2px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-mocambo {
+            background: #2a1538;
+            color: #d175ff;
+            border: 1px solid #ff2a85;
+        }
+        .badge-native {
+            background: #1c2e1f;
+            color: #55f385;
+            border: 1px solid #55f385;
+        }
+        .preview-box {
+            margin: 20px 0;
+            padding: 12px;
+            background: #0e0c12;
+            border: 1px solid #2a2436;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            border: 1px solid #383047;
+        }
+        .pdf-box { padding: 30px 20px; }
+        .pdf-icon { font-size: 3rem; margin-bottom: 8px; }
+        .pdf-hint { color: var(--text-muted); font-size: 0.85rem; }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: bold;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            box-shadow: 3px 3px 0px #0a080d;
+        }
+        .btn-download {
+            background: var(--acid-yellow);
+            color: #000;
+            border: 2px solid #000;
+        }
+        .btn-download:hover {
+            background: var(--acid-yellow-hover);
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #0a080d;
+        }
+        .btn-zine {
+            background: var(--electric-pink);
+            color: #fff;
+            border: 2px solid #000;
+        }
+        .btn-zine:hover {
+            opacity: 0.95;
+            transform: translate(-1px, -1px);
+        }
+        .footer-brand {
+            margin-top: 28px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .footer-brand a { color: var(--electric-pink); text-decoration: none; }
+    </style>
+</head>
+<body class="pre-download">
+    <div class="pre-download container">
+        <div class="trans-stripe">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+
+        <h1 class="title">{$filename}</h1>
+        <div>{$sourceBadge}</div>
+
+        {$previewHtml}
+
+        <div class="meta-list">
+            <div class="meta-row">
+                <span class="meta-label">Tamanho:</span>
+                <span class="meta-value">{$formattedSize}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Formato:</span>
+                <span class="meta-value">{$safeMime}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Link Direto / Raw:</span>
+                <span class="meta-value">/{$slug}?raw=1</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            {$zineBtnHtml}
+            <a href="/{$slug}?raw=1" class="btn btn-download">⚡ Baixar Arquivo Cru ({$formattedSize})</a>
+        </div>
+
+        <div class="footer-brand">
+            Distribuído com amor e subversão via <a href="/">Fuxico</a>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @param  array<int, array<string, mixed>>  $files
+     * @param  array<string, string>|I18n  $i18n
+     */
+    public static function renderFolderView(array $item, array $files, array|I18n $i18n = []): string
+    {
+        $slug = htmlspecialchars((string) ($item['slug'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $folderName = htmlspecialchars((string) ($item['original_name'] ?: $item['slug']), ENT_QUOTES, 'UTF-8');
+        $source = (string) ($item['source'] ?? 'native');
+        $fileCount = count($files);
+
+        $totalSize = 0;
+        foreach ($files as $f) {
+            $totalSize += (int) ($f['size'] ?? 0);
+        }
+        $formattedTotal = match (true) {
+            $totalSize >= 1073741824 => number_format($totalSize / 1073741824, 2).' GB',
+            $totalSize >= 1048576 => number_format($totalSize / 1048576, 2).' MB',
+            $totalSize >= 1024 => number_format($totalSize / 1024, 2).' KB',
+            default => $totalSize.' B',
+        };
+
+        $rowsHtml = '';
+        foreach ($files as $f) {
+            $path = htmlspecialchars((string) ($f['path'] ?? 'arquivo'), ENT_QUOTES, 'UTF-8');
+            $fSize = (int) ($f['size'] ?? 0);
+            $fSizeStr = match (true) {
+                $fSize >= 1048576 => number_format($fSize / 1048576, 2).' MB',
+                $fSize >= 1024 => number_format($fSize / 1024, 2).' KB',
+                default => $fSize.' B',
+            };
+            $rowsHtml .= <<<HTML
+            <tr>
+                <td class="file-icon">📄</td>
+                <td class="file-name">{$path}</td>
+                <td class="file-size">{$fSizeStr}</td>
+            </tr>
+HTML;
+        }
+
+        $sourceBadge = $source === 'mocambo'
+            ? '<span class="badge badge-mocambo">🏰 Pasta do Mocambo</span>'
+            : '<span class="badge badge-native">📁 Pasta Compartilhada</span>';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$folderName} - Fuxico Pasta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121016;
+            --card-bg: #1a1622;
+            --text-main: #f5f4ef;
+            --text-muted: #9f97ad;
+            --acid-yellow: #e2f835;
+            --acid-yellow-hover: #ccee22;
+            --electric-pink: #ff2a85;
+            --shadow-hard: 6px 6px 0px #0a080d;
+            --font-display: 'Anton', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --font-heading: 'Space Grotesk', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle, rgba(226, 248, 53, 0.05) 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+        .container.folder-view {
+            background: var(--card-bg);
+            border: 2px solid var(--acid-yellow);
+            box-shadow: var(--shadow-hard);
+            max-width: 720px;
+            width: 100%;
+            padding: 32px 24px;
+            position: relative;
+        }
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+        }
+        .trans-stripe-line { flex: 1; width: 100%; }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--acid-yellow);
+            text-shadow: 2px 2px 0px #000;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 2px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-mocambo {
+            background: #2a1538;
+            color: #d175ff;
+            border: 1px solid #ff2a85;
+        }
+        .badge-native {
+            background: #1c2e1f;
+            color: #55f385;
+            border: 1px solid #55f385;
+        }
+        .folder-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+        .table-wrap {
+            background: #121016;
+            border: 1px solid #383047;
+            max-height: 420px;
+            overflow-y: auto;
+            margin-bottom: 24px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid #221c2e;
+        }
+        th {
+            background: #191422;
+            color: var(--acid-yellow);
+            font-family: var(--font-heading);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+        .file-icon { width: 24px; text-align: center; }
+        .file-name { word-break: break-all; color: var(--text-main); }
+        .file-size { text-align: right; color: var(--text-muted); white-space: nowrap; }
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: bold;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            box-shadow: 3px 3px 0px #0a080d;
+        }
+        .btn-download-zip {
+            background: var(--electric-pink);
+            color: #fff;
+            border: 2px solid #000;
+        }
+        .btn-download-zip:hover {
+            opacity: 0.92;
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #0a080d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container folder-view">
+        <div class="trans-stripe">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+
+        <div class="header">
+            <h1 class="title">📁 {$folderName}</h1>
+            <div>{$sourceBadge}</div>
+        </div>
+
+        <div class="folder-meta">
+            Contém <strong>{$fileCount}</strong> arquivo(s) &bull; Tamanho total estimado: <strong>{$formattedTotal}</strong>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Nome / Caminho do Arquivo</th>
+                        <th style="text-align: right;">Tamanho</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {$rowsHtml}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions">
+            <a href="/{$slug}/zip" class="btn btn-download-zip">📦 Baixar Pasta Completa (.zip)</a>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
 }

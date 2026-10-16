@@ -11,28 +11,37 @@ use Fuxico\Views;
 $filterEnv = new class
 {
     public string $tempDir = '';
+
     public string $dbPath = '';
+
     public string $filesDir = '';
+
     public ?Config $config = null;
+
     public ?Database $db = null;
+
     public ?Storage $storage = null;
+
     public ?App $app = null;
 
     public function app(): App
     {
         assert($this->app !== null);
+
         return $this->app;
     }
 
     public function db(): Database
     {
         assert($this->db !== null);
+
         return $this->db;
     }
 
     public function storage(): Storage
     {
         assert($this->storage !== null);
+
         return $this->storage;
     }
 };

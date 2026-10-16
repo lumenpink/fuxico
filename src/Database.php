@@ -47,13 +47,17 @@ class Database
                 expires_at INTEGER NULL,
                 created_at INTEGER NOT NULL,
                 views INTEGER DEFAULT 0,
-                user_id TEXT NULL
+                user_id TEXT NULL,
+                source TEXT NOT NULL DEFAULT "native",
+                mocambo_meta TEXT NULL,
+                data TEXT NULL
             );
 
             CREATE INDEX IF NOT EXISTS idx_items_slug ON items(slug);
             CREATE INDEX IF NOT EXISTS idx_items_expires ON items(expires_at);
             CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
             CREATE INDEX IF NOT EXISTS idx_items_created ON items(created_at);
+            CREATE INDEX IF NOT EXISTS idx_items_source ON items(source);
 
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -67,11 +71,14 @@ class Database
             CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
         ');
 
-        // Check if user_id, max_downloads, hash columns exist on pre-existing items table
+        // Check if user_id, max_downloads, hash, source, mocambo_meta, data columns exist on pre-existing items table
         $columns = $this->pdo->query('PRAGMA table_info(items)')->fetchAll();
         $hasUserId = false;
         $hasMaxDownloads = false;
         $hasHash = false;
+        $hasSource = false;
+        $hasMocamboMeta = false;
+        $hasData = false;
         foreach ($columns as $col) {
             $colName = $col['name'] ?? '';
             if ($colName === 'user_id') {
@@ -80,6 +87,12 @@ class Database
                 $hasMaxDownloads = true;
             } elseif ($colName === 'hash') {
                 $hasHash = true;
+            } elseif ($colName === 'source') {
+                $hasSource = true;
+            } elseif ($colName === 'mocambo_meta') {
+                $hasMocamboMeta = true;
+            } elseif ($colName === 'data') {
+                $hasData = true;
             }
         }
         if (! $hasUserId) {
@@ -91,7 +104,17 @@ class Database
         if (! $hasHash) {
             $this->pdo->exec('ALTER TABLE items ADD COLUMN hash TEXT NULL DEFAULT NULL;');
         }
+        if (! $hasSource) {
+            $this->pdo->exec("ALTER TABLE items ADD COLUMN source TEXT NOT NULL DEFAULT 'native';");
+        }
+        if (! $hasMocamboMeta) {
+            $this->pdo->exec('ALTER TABLE items ADD COLUMN mocambo_meta TEXT NULL;');
+        }
+        if (! $hasData) {
+            $this->pdo->exec('ALTER TABLE items ADD COLUMN data TEXT NULL;');
+        }
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);');
+        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_items_source ON items(source);');
     }
 
     public function isSlugTaken(string $slug): bool
@@ -117,6 +140,7 @@ class Database
      *   file_path?: ?string,
      *   mime_type?: ?string,
      *   size?: int,
+     *   size_bytes?: int,
      *   x_token: string,
      *   is_oneshot?: int,
      *   max_downloads?: ?int,
@@ -124,7 +148,10 @@ class Database
      *   expires_at?: ?int,
      *   created_at?: int,
      *   views?: int,
-     *   user_id?: ?string
+     *   user_id?: ?string,
+     *   source?: string,
+     *   mocambo_meta?: ?string,
+     *   data?: ?string
      * } $data
      */
     public function createItem(array $data): bool
@@ -132,10 +159,12 @@ class Database
         $stmt = $this->pdo->prepare('
             INSERT INTO items (
                 id, slug, original_name, type, target_url, file_path,
-                mime_type, size, x_token, is_oneshot, max_downloads, hash, expires_at, created_at, views, user_id
+                mime_type, size, x_token, is_oneshot, max_downloads, hash, expires_at, created_at, views, user_id,
+                source, mocambo_meta, data
             ) VALUES (
                 :id, :slug, :original_name, :type, :target_url, :file_path,
-                :mime_type, :size, :x_token, :is_oneshot, :max_downloads, :hash, :expires_at, :created_at, :views, :user_id
+                :mime_type, :size, :x_token, :is_oneshot, :max_downloads, :hash, :expires_at, :created_at, :views, :user_id,
+                :source, :mocambo_meta, :data
             )
         ');
 
@@ -147,7 +176,7 @@ class Database
             ':target_url' => $data['target_url'] ?? null,
             ':file_path' => $data['file_path'] ?? null,
             ':mime_type' => $data['mime_type'] ?? 'application/octet-stream',
-            ':size' => $data['size'] ?? 0,
+            ':size' => $data['size_bytes'] ?? $data['size'] ?? 0,
             ':x_token' => $data['x_token'],
             ':is_oneshot' => $data['is_oneshot'] ?? 0,
             ':max_downloads' => $data['max_downloads'] ?? null,
@@ -156,6 +185,9 @@ class Database
             ':created_at' => $data['created_at'] ?? time(),
             ':views' => $data['views'] ?? 0,
             ':user_id' => $data['user_id'] ?? null,
+            ':source' => $data['source'] ?? 'native',
+            ':mocambo_meta' => $data['mocambo_meta'] ?? null,
+            ':data' => $data['data'] ?? null,
         ]);
     }
 
@@ -377,7 +409,7 @@ class Database
     }
 
     /**
-     * @param array<int|string> $ids
+     * @param  array<int|string>  $ids
      */
     public function deleteItemsByIds(array $ids): int
     {

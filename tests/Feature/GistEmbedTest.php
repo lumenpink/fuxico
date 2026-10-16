@@ -11,28 +11,37 @@ use Fuxico\Storage;
 $embedEnv = new class
 {
     public string $tempDir = '';
+
     public string $dbPath = '';
+
     public string $filesDir = '';
+
     public ?Config $config = null;
+
     public ?Database $db = null;
+
     public ?Storage $storage = null;
+
     public ?App $app = null;
 
     public function app(): App
     {
         assert($this->app !== null);
+
         return $this->app;
     }
 
     public function db(): Database
     {
         assert($this->db !== null);
+
         return $this->db;
     }
 
     public function storage(): Storage
     {
         assert($this->storage !== null);
+
         return $this->storage;
     }
 };
@@ -41,24 +50,24 @@ beforeEach(function () use ($embedEnv) {
     $embedEnv->tempDir = sys_get_temp_dir().'/fuxico_embed_test_'.uniqid();
     mkdir($embedEnv->tempDir, 0755, true);
 
-    $embedEnv->dbPath   = $embedEnv->tempDir.'/fuxico.sqlite';
+    $embedEnv->dbPath = $embedEnv->tempDir.'/fuxico.sqlite';
     $embedEnv->filesDir = $embedEnv->tempDir.'/files';
     mkdir($embedEnv->filesDir, 0755, true);
 
-    $embedEnv->config            = new Config;
+    $embedEnv->config = new Config;
     $embedEnv->config->publicMode = false;
-    $embedEnv->config->baseUrl   = 'https://fuxico.test';
+    $embedEnv->config->baseUrl = 'https://fuxico.test';
     $embedEnv->config->authTokens = ['test-token'];
 
-    $embedEnv->db      = new Database($embedEnv->dbPath);
+    $embedEnv->db = new Database($embedEnv->dbPath);
     $embedEnv->storage = new Storage($embedEnv->tempDir, $embedEnv->filesDir);
-    $embedEnv->app     = new App($embedEnv->config, $embedEnv->db, $embedEnv->storage);
+    $embedEnv->app = new App($embedEnv->config, $embedEnv->db, $embedEnv->storage);
 
-    $_GET    = [];
-    $_POST   = [];
-    $_FILES  = [];
+    $_GET = [];
+    $_POST = [];
+    $_FILES = [];
     $_SERVER = [
-        'HTTP_HOST'      => 'fuxico.test',
+        'HTTP_HOST' => 'fuxico.test',
         'REQUEST_SCHEME' => 'https',
     ];
 });
@@ -76,9 +85,9 @@ afterEach(function () use ($embedEnv) {
 test('renderEmbedJs retorna JavaScript válido com IIFE', function () {
     $files = ['hello.txt' => 'Olá, mundo!'];
     $js = GistRenderer::renderEmbedJs($files, [
-        'slug'     => 'meu-gist',
+        'slug' => 'meu-gist',
         'base_url' => 'https://2lp.in',
-        'theme'    => 'zine',
+        'theme' => 'zine',
     ]);
 
     expect($js)
@@ -157,18 +166,18 @@ test('renderEmbedJs escapa conteúdo de arquivo contra XSS', function () {
 function criarGistFixtura(object $env, string $slug = 'gist-embed-test'): string
 {
     $env->db()->createItem([
-        'slug'          => $slug,
+        'slug' => $slug,
         'original_name' => 'gist-embed-test',
-        'type'          => 'gist',
-        'target_url'    => null,
-        'file_path'     => null,
-        'mime_type'     => null,
-        'size'          => 200,
-        'is_oneshot'    => 0,
-        'x_token'       => 'xtok-embed',
-        'expires_at'    => null,
-        'created_at'    => time(),
-        'user_id'       => null,
+        'type' => 'gist',
+        'target_url' => null,
+        'file_path' => null,
+        'mime_type' => null,
+        'size' => 200,
+        'is_oneshot' => 0,
+        'x_token' => 'xtok-embed',
+        'expires_at' => null,
+        'created_at' => time(),
+        'user_id' => null,
     ]);
 
     // Cria diretório do gist e arquivos
@@ -183,7 +192,7 @@ function criarGistFixtura(object $env, string $slug = 'gist-embed-test'): string
 test('GET /<slug>/embed.js retorna JavaScript com conteúdo dos arquivos', function () use ($embedEnv) {
     $slug = criarGistFixtura($embedEnv);
 
-    $_SERVER['REQUEST_URI']    = "/{$slug}/embed.js";
+    $_SERVER['REQUEST_URI'] = "/{$slug}/embed.js";
     $_SERVER['REQUEST_METHOD'] = 'GET';
 
     ob_start();
@@ -201,8 +210,8 @@ test('GET /<slug>/embed.js retorna JavaScript com conteúdo dos arquivos', funct
 test('GET /<slug>/embed.js?file=foo.py renderiza apenas arquivo solicitado', function () use ($embedEnv) {
     $slug = criarGistFixtura($embedEnv);
 
-    $_GET['file']              = 'foo.py';
-    $_SERVER['REQUEST_URI']    = "/{$slug}/embed.js?file=foo.py";
+    $_GET['file'] = 'foo.py';
+    $_SERVER['REQUEST_URI'] = "/{$slug}/embed.js?file=foo.py";
     $_SERVER['REQUEST_METHOD'] = 'GET';
 
     ob_start();
@@ -217,8 +226,8 @@ test('GET /<slug>/embed.js?file=foo.py renderiza apenas arquivo solicitado', fun
 test('GET /<slug>/embed.js?theme=acad aplica tema acad', function () use ($embedEnv) {
     $slug = criarGistFixtura($embedEnv);
 
-    $_GET['theme']             = 'acad';
-    $_SERVER['REQUEST_URI']    = "/{$slug}/embed.js?theme=acad";
+    $_GET['theme'] = 'acad';
+    $_SERVER['REQUEST_URI'] = "/{$slug}/embed.js?theme=acad";
     $_SERVER['REQUEST_METHOD'] = 'GET';
 
     ob_start();
@@ -229,7 +238,7 @@ test('GET /<slug>/embed.js?theme=acad aplica tema acad', function () use ($embed
 });
 
 test('GET /slug-invalido/embed.js retorna 404', function () use ($embedEnv) {
-    $_SERVER['REQUEST_URI']    = '/slug-invalido/embed.js';
+    $_SERVER['REQUEST_URI'] = '/slug-invalido/embed.js';
     $_SERVER['REQUEST_METHOD'] = 'GET';
 
     ob_start();
@@ -241,21 +250,21 @@ test('GET /slug-invalido/embed.js retorna 404', function () use ($embedEnv) {
 
 test('GET /<slug-url>/embed.js retorna 404 (tipo incompatível)', function () use ($embedEnv) {
     $embedEnv->db()->createItem([
-        'slug'          => 'minha-url',
+        'slug' => 'minha-url',
         'original_name' => 'https://example.com',
-        'type'          => 'url',
-        'target_url'    => 'https://example.com',
-        'file_path'     => null,
-        'mime_type'     => null,
-        'size'          => 0,
-        'is_oneshot'    => 0,
-        'x_token'       => 'xtok-url',
-        'expires_at'    => null,
-        'created_at'    => time(),
-        'user_id'       => null,
+        'type' => 'url',
+        'target_url' => 'https://example.com',
+        'file_path' => null,
+        'mime_type' => null,
+        'size' => 0,
+        'is_oneshot' => 0,
+        'x_token' => 'xtok-url',
+        'expires_at' => null,
+        'created_at' => time(),
+        'user_id' => null,
     ]);
 
-    $_SERVER['REQUEST_URI']    = '/minha-url/embed.js';
+    $_SERVER['REQUEST_URI'] = '/minha-url/embed.js';
     $_SERVER['REQUEST_METHOD'] = 'GET';
 
     ob_start();
