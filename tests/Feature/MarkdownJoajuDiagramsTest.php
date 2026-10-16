@@ -188,7 +188,16 @@ test('normalizes joaju base url to /render endpoint correctly', function () {
     expect(MarkdownRenderer::buildJoajuRenderUrl('http://100.69.210.39:3000/'))
         ->toBe('http://100.69.210.39:3000/render');
 
+    expect(MarkdownRenderer::buildJoajuRenderUrl('http://100.69.210.39:3000///'))
+        ->toBe('http://100.69.210.39:3000/render');
+
+    expect(MarkdownRenderer::buildJoajuRenderUrl('  http://100.69.210.39:3000  '))
+        ->toBe('http://100.69.210.39:3000/render');
+
     expect(MarkdownRenderer::buildJoajuRenderUrl('https://joaju.lumen.pink/render'))
+        ->toBe('https://joaju.lumen.pink/render');
+
+    expect(MarkdownRenderer::buildJoajuRenderUrl('https://joaju.lumen.pink/render/'))
         ->toBe('https://joaju.lumen.pink/render');
 
     expect(MarkdownRenderer::buildJoajuRenderUrl('http://joaju:3000'))
@@ -196,4 +205,10 @@ test('normalizes joaju base url to /render endpoint correctly', function () {
 
     expect(MarkdownRenderer::buildJoajuRenderUrl(''))
         ->toBe('https://joaju.lumen.pink/render');
+
+    putenv('FUXICO_JOAJU_URL=http://custom-joaju:8080');
+    expect(MarkdownRenderer::buildJoajuRenderUrl(''))
+        ->toBe('http://custom-joaju:8080/render');
+    putenv('FUXICO_JOAJU_URL');
 });
+
