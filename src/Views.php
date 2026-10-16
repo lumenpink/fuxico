@@ -3142,13 +3142,13 @@ HTML;
             </div>
             <div class="meta-row">
                 <span class="meta-label">Link Direto / Raw:</span>
-                <span class="meta-value">/{$slug}?raw=1</span>
+                <span class="meta-value">/{$slug}/r</span>
             </div>
         </div>
 
         <div class="actions">
             {$zineBtnHtml}
-            <a href="/{$slug}?raw=1" class="btn btn-download">⚡ Baixar Arquivo Cru ({$formattedSize})</a>
+            <a href="/{$slug}/r" class="btn btn-download">⚡ Baixar Arquivo Cru ({$formattedSize})</a>
         </div>
 
         <div class="footer-brand">

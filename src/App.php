@@ -770,8 +770,14 @@ class App
                 return;
             }
 
-            // 1. Raw file inside Gist or Git Repo: /<slug>/raw or /<slug>/raw/<filename>
-            if ($subAction === 'raw') {
+            // 1. Raw file inside Gist, Git Repo, or Single File: /<slug>/raw, /<slug>/r
+            if ($subAction === 'raw' || $subAction === 'r') {
+                if ($item['type'] === 'file') {
+                    $this->streamRawFileItem($item, $slug, $parts);
+
+                    return;
+                }
+
                 $requestedFile = implode('/', array_slice($parts, 2));
                 if ($item['type'] === 'git') {
                     $repoPath = $this->storage->getRepoPath($slug);
@@ -1115,27 +1121,10 @@ class App
             }
 
             // Stream File
-            $this->db->incrementViews($slug);
-            $mime = $item['mime_type'] ?: 'application/octet-stream';
-            $inline = str_starts_with($mime, 'image/') ||
-                      str_starts_with($mime, 'video/') ||
-                      str_starts_with($mime, 'audio/') ||
-                      str_starts_with($mime, 'text/') ||
-                      $mime === 'application/pdf';
-
-            $displayName = count($parts) > 1 ? end($parts) : ($item['original_name'] ?: ($item['file_path'] ?? $slug));
-            $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
-            $viewsAfter = (int) $item['views'] + 1;
-            $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
-
-            if ($shouldBurn) {
-                $this->db->deleteBySlug($slug);
-            }
-
             // Página de Pré-Download para navegadores web (estilo Google Drive/Dropbox)
             $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            $isRaw = isset($_GET['raw']) || isset($_GET['download']);
+            $isRaw = isset($_GET['raw']) || isset($_GET['r']) || isset($_GET['download']);
             $isTerminal = (bool) preg_match('/^(curl|wget|httpie|aria2|fetch)/i', $userAgent);
             $isBrowserHtml = str_contains($accept, 'text/html') && ! $isTerminal;
 
@@ -1147,34 +1136,7 @@ class App
                 return;
             }
 
-            // Stream reverso do Mocambo se source === 'mocambo'
-            if (($item['source'] ?? 'native') === 'mocambo') {
-                $meta = ! empty($item['mocambo_meta']) ? json_decode((string) $item['mocambo_meta'], true) : [];
-                $streamUrl = $meta['stream_url'] ?? null;
-                if ($streamUrl) {
-                    header('Content-Type: '.$mime);
-                    if (! empty($item['size'])) {
-                        header('Content-Length: '.(string) $item['size']);
-                    }
-                    header('Content-Disposition: '.($inline ? 'inline' : 'attachment').'; filename="'.$displayName.'"');
-                    $fp = @fopen($streamUrl, 'rb');
-                    if ($fp) {
-                        fpassthru($fp);
-                        fclose($fp);
-                    } else {
-                        $ch = curl_init($streamUrl);
-                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-                        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                        curl_exec($ch);
-                        curl_close($ch);
-                    }
-
-                    return;
-                }
-            }
-
-            $storageFile = ! empty($item['file_path']) ? (string) $item['file_path'] : $slug;
-            $this->storage->streamFile($storageFile, $mime, $displayName, $inline, $shouldBurn);
+            $this->streamRawFileItem($item, $slug, $parts);
 
             return;
         }
@@ -1182,6 +1144,59 @@ class App
         http_response_code(405);
         header('Content-Type: text/plain');
         echo "Method Not Allowed\n";
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @param  list<string>  $parts
+     */
+    private function streamRawFileItem(array $item, string $slug, array $parts = []): void
+    {
+        $this->db->incrementViews($slug);
+        $mime = $item['mime_type'] ?: 'application/octet-stream';
+        $inline = str_starts_with($mime, 'image/') ||
+                  str_starts_with($mime, 'video/') ||
+                  str_starts_with($mime, 'audio/') ||
+                  str_starts_with($mime, 'text/') ||
+                  $mime === 'application/pdf';
+
+        $displayName = count($parts) > 2 ? end($parts) : ($item['original_name'] ?: ($item['file_path'] ?? $slug));
+        $maxDownloads = isset($item['max_downloads']) && $item['max_downloads'] !== null ? (int) $item['max_downloads'] : null;
+        $viewsAfter = (int) $item['views'] + 1;
+        $shouldBurn = (bool) $item['is_oneshot'] || ($maxDownloads !== null && $viewsAfter >= $maxDownloads);
+
+        if ($shouldBurn) {
+            $this->db->deleteBySlug($slug);
+        }
+
+        // Stream reverso do Mocambo se source === 'mocambo'
+        if (($item['source'] ?? 'native') === 'mocambo') {
+            $meta = ! empty($item['mocambo_meta']) ? json_decode((string) $item['mocambo_meta'], true) : [];
+            $streamUrl = $meta['stream_url'] ?? null;
+            if ($streamUrl) {
+                header('Content-Type: '.$mime);
+                if (! empty($item['size'])) {
+                    header('Content-Length: '.(string) $item['size']);
+                }
+                header('Content-Disposition: '.($inline ? 'inline' : 'attachment').'; filename="'.$displayName.'"');
+                $fp = @fopen($streamUrl, 'rb');
+                if ($fp) {
+                    fpassthru($fp);
+                    fclose($fp);
+                } else {
+                    $ch = curl_init($streamUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    curl_exec($ch);
+                    curl_close($ch);
+                }
+
+                return;
+            }
+        }
+
+        $storageFile = ! empty($item['file_path']) ? (string) $item['file_path'] : $slug;
+        $this->storage->streamFile($storageFile, $mime, $displayName, $inline, $shouldBurn);
     }
 
     /**

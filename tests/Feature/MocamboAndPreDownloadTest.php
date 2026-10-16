@@ -107,7 +107,7 @@ test('browser request to file renders pre-download page while curl receives raw 
     $html = (string) ob_get_clean();
 
     expect($html)->toContain('relatorio-secreto.pdf');
-    expect($html)->toContain('href="/'.$slug.'?raw=1"');
+    expect($html)->toContain('href="/'.$slug.'/r"');
     expect($html)->toContain('class="pre-download');
 
     // 2. CLI curl request (Accept: */* and User-Agent: curl/...)
@@ -123,7 +123,33 @@ test('browser request to file renders pre-download page while curl receives raw 
 
     expect($raw)->toBe($content);
 
-    // 3. Browser with ?raw=1 receives raw bytes
+    // 3. Browser with /slug/r receives raw bytes
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = "/{$slug}/r";
+    $_SERVER['HTTP_ACCEPT'] = 'text/html';
+    $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
+    $_GET = [];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $rawFromSlashR = (string) ob_get_clean();
+
+    expect($rawFromSlashR)->toBe($content);
+
+    // 4. Browser with /slug/raw receives raw bytes
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = "/{$slug}/raw";
+    $_SERVER['HTTP_ACCEPT'] = 'text/html';
+    $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
+    $_GET = [];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $rawFromSlashRaw = (string) ob_get_clean();
+
+    expect($rawFromSlashRaw)->toBe($content);
+
+    // 5. Browser with ?raw=1 receives raw bytes
     $_SERVER['REQUEST_METHOD'] = 'GET';
     $_SERVER['REQUEST_URI'] = "/{$slug}?raw=1";
     $_SERVER['HTTP_ACCEPT'] = 'text/html';
@@ -135,6 +161,19 @@ test('browser request to file renders pre-download page while curl receives raw 
     $rawFromBrowser = (string) ob_get_clean();
 
     expect($rawFromBrowser)->toBe($content);
+
+    // 6. Browser with ?r=1 receives raw bytes
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = "/{$slug}?r=1";
+    $_SERVER['HTTP_ACCEPT'] = 'text/html';
+    $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
+    $_GET = ['r' => '1'];
+
+    ob_start();
+    $testEnv->app()->handleRequest();
+    $rawFromQueryR = (string) ob_get_clean();
+
+    expect($rawFromQueryR)->toBe($content);
 });
 
 test('api mocambo creates share with source mocambo and supports deletion', function () use ($testEnv) {
