@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (ci) continuous deployment no obitwo via Tailscale/SSH, healthcheck ativo de 15s, rollback e descomissionamento do Watchtower (closes #52)
   - (share) página de pré-download, pastas compartilhadas em .zip e integração segura com o Mocambo (closes #48)
   - canonical joaju diagram engines, academic tables, and legacy tag cleanup
   - (markdown) embutir diagramas (kinship, d2, plantuml) via Joaju no baking HTML (closes #44, closes #43)
