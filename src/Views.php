@@ -1099,6 +1099,10 @@ class Views
                         <input type="checkbox" id="urlSecret">
                         <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
                     </label>
+                    <label class="option-item">
+                        <input type="checkbox" id="urlResenha">
+                        <span class="option-label">{$t('opt_resenha')}{$tip('tip_resenha')}</span>
+                    </label>
                 </div>
 
                 <button id="btnShorten" class="btn-action" onclick="handleUrlShorten()">{$t('btn_shorten')}</button>
@@ -1289,6 +1293,7 @@ class Views
 
             if (document.getElementById('urlOneshot').checked) fd.append('oneshot', 'true');
             if (document.getElementById('urlSecret').checked) fd.append('secret', 'true');
+            if (document.getElementById('urlResenha')?.checked) fd.append('resenha', 'true');
 
             const customName = document.getElementById('urlCustomName').value.trim();
             if (customName) fd.append('customName', customName);

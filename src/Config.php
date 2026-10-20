@@ -37,6 +37,10 @@ class Config
 
     public string $joajuUrl;
 
+    public string $resenhaUrl;
+
+    public int $resenhaTimeout;
+
     public function __construct(?string $baseDir = null)
     {
         $base = $baseDir ?? dirname(__DIR__);
@@ -63,6 +67,8 @@ class Config
         $this->secretFilenameLength = (int) (getenv('FUXICO_SECRET_SLUG_LENGTH') ?: self::DEFAULT_SECRET_FILENAME_LENGTH);
         $this->baseUrl = getenv('FUXICO_BASE_URL') ?: null;
         $this->joajuUrl = (string) (getenv('FUXICO_JOAJU_URL') ?: 'http://joaju:3000');
+        $this->resenhaUrl = (string) (getenv('RESENHA_API_URL') ?: '');
+        $this->resenhaTimeout = (int) (getenv('RESENHA_TIMEOUT') ?: 15);
     }
 
     public function isAuthorized(?string $token): bool

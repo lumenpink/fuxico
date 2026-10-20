@@ -475,6 +475,12 @@ class App
                 return;
             }
 
+            if (isset($_POST['resenha']) || isset($_POST['distill'])) {
+                $this->handleResenhaDistill($urlCandidate, $slug, $xToken, $oneshot, $expiresAt, $userId);
+
+                return;
+            }
+
             $this->db->createItem([
                 'id' => bin2hex(random_bytes(8)),
                 'slug' => $slug,
@@ -501,6 +507,101 @@ class App
         http_response_code(400);
         header('Content-Type: text/plain');
         echo "Bad Request: No file or URL provided.\n";
+    }
+
+    private function handleResenhaDistill(string $targetUrl, string $slug, string $xToken, bool $oneshot, ?int $expiresAt, ?string $userId = null): void
+    {
+        $resenhaBase = rtrim(! empty($this->config->resenhaUrl) ? $this->config->resenhaUrl : ((string) getenv('RESENHA_API_URL')), '/');
+        if ($resenhaBase === '') {
+            http_response_code(503);
+            header('Content-Type: text/plain');
+            echo "Error: RESENHA_API_URL não configurada no servidor.\n";
+
+            return;
+        }
+
+        $endpoint = "{$resenhaBase}/?url=".urlencode($targetUrl).'&format=json';
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $this->config->resenhaTimeout ?? 15,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER => ['Accept: application/json'],
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (PHP_VERSION_ID < 80500) {
+            curl_close($ch);
+        }
+
+        if ($httpCode !== 200 || ! $response) {
+            http_response_code(502);
+            header('Content-Type: text/plain');
+            echo "Error: Falha ao destilar artigo via Resenha (HTTP {$httpCode}).\n";
+
+            return;
+        }
+
+        $data = json_decode((string) $response, true);
+        if (! is_array($data) || empty($data['markdown'])) {
+            http_response_code(502);
+            header('Content-Type: text/plain');
+            echo "Error: Resposta inválida do motor Resenha.\n";
+
+            return;
+        }
+
+        $rawMd = (string) $data['markdown'];
+        $targetFilename = "{$slug}.md";
+        file_put_contents($this->storage->getFilePath($targetFilename), $rawMd);
+
+        $renderOptions = [
+            'title' => (string) ($data['title'] ?? 'Resenha'),
+            'slug' => $slug,
+            'original_name' => $targetFilename,
+            'created_at' => time(),
+            'base_url' => $this->getBaseUrl(),
+        ];
+        $bakedHtml = MarkdownRenderer::render($rawMd, $renderOptions);
+        file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
+
+        if (! empty($data['assets']) && is_array($data['assets'])) {
+            $assetsDir = $this->storage->getFilesDir()."/{$slug}_assets";
+            if (! is_dir($assetsDir)) {
+                mkdir($assetsDir, 0755, true);
+            }
+            foreach ($data['assets'] as $asset) {
+                if (! empty($asset['filename']) && ! empty($asset['data_base64'])) {
+                    $cleanName = basename((string) $asset['filename']);
+                    $bytes = base64_decode((string) $asset['data_base64']);
+                    if ($bytes !== false) {
+                        file_put_contents("{$assetsDir}/{$cleanName}", $bytes);
+                    }
+                }
+            }
+        }
+
+        $this->db->createItem([
+            'id' => bin2hex(random_bytes(8)),
+            'slug' => $slug,
+            'original_name' => (string) ($data['title'] ?? $targetUrl),
+            'type' => 'doc',
+            'file_path' => $targetFilename,
+            'mime_type' => 'text/markdown',
+            'size' => strlen($rawMd),
+            'x_token' => $xToken,
+            'is_oneshot' => $oneshot ? 1 : 0,
+            'expires_at' => $expiresAt,
+            'created_at' => time(),
+            'views' => 0,
+            'user_id' => $userId,
+        ]);
+
+        http_response_code(200);
+        header("x-token: {$xToken}");
+        header('Content-Type: text/plain');
+        echo "{$this->getBaseUrl()}/{$slug}\n";
     }
 
     private function handleRemoteFetch(string $remoteUrl, string $slug, string $xToken, bool $oneshot, ?int $expiresAt, ?string $userId = null): void
@@ -657,6 +758,7 @@ class App
             'user_id' => $userId,
         ]);
 
+        http_response_code(200);
         header("x-token: {$xToken}");
         header('Content-Type: text/plain');
         echo "{$this->getBaseUrl()}/{$slug}\n";
