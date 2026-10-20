@@ -73,6 +73,10 @@ jobs:
         if: always()
         run: php scripts/generate_ci_summary.php --step-summary
 
+      # ── Audit Sovereign CD Workflow ─────────────────────────────────────────
+      - name: "Audit Sovereign CD Workflow"
+        run: bash tests/audit_cd_workflow.sh
+
       # ── Verify & Deploy Documentation Site + Reports to Pages ───────────────
       - name: "Verify Site Integrity"
         run: ./bin/verify-site.sh
