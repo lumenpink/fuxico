@@ -1,4 +1,4 @@
-name: Docker Publish
+name: Docker Publish & Sovereign CD
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-and-push-image:
-    name: "Build & Push Production Image"
+    name: "Build, Push & Sovereign CD (obitwo)"
     runs-on: ubuntu-latest
 
     steps:
@@ -51,3 +51,56 @@ jobs:
           push: ${{ steps.check-creds.outputs.has_creds == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Deploy Remotely to obitwo (Tailscale / SSH)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          OBITWO_SSH_HOST: ${{ secrets.OBITWO_SSH_HOST || '100.90.43.39' }}
+          OBITWO_SSH_USER: ${{ secrets.OBITWO_SSH_USER || 'ubuntu' }}
+          OBITWO_SSH_KEY: ${{ secrets.OBITWO_SSH_KEY }}
+        run: |
+          echo "-> Iniciando deploy soberano no nó de borda obitwo ($OBITWO_SSH_HOST)..."
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          if [ -n "$OBITWO_SSH_KEY" ]; then
+            echo "$OBITWO_SSH_KEY" > ~/.ssh/id_obitwo
+            chmod 600 ~/.ssh/id_obitwo
+            SSH_OPTS="-i ~/.ssh/id_obitwo -o StrictHostKeyChecking=accept-new"
+          else
+            SSH_OPTS="-o StrictHostKeyChecking=accept-new"
+          fi
+
+          ssh $SSH_OPTS "$OBITWO_SSH_USER@$OBITWO_SSH_HOST" "
+            set -eo pipefail
+            cd ~/stacks/fuxico
+            OLD_IMAGE_ID=\$(docker inspect --format='{{.Id}}' lumenpink/fuxico:latest 2>/dev/null || true)
+            echo \"OLD_IMAGE_ID=\$OLD_IMAGE_ID\"
+
+            echo '-> Atualizando imagem lumenpink/fuxico:latest...'
+            docker compose pull fuxico
+            docker compose up -d --no-build fuxico
+
+            echo '-> Verificando estabilidade do container fuxico (polling 15s)...'
+            SUCCESS=0
+            for i in \$(seq 1 15); do
+              STATUS=\$(docker inspect --format='{{.State.Status}}' fuxico 2>/dev/null || echo 'unknown')
+              if [ \"\$STATUS\" = 'running' ]; then
+                echo \"  [PASS] Container fuxico saudável e ativo (tentativa \$i/15).\"
+                SUCCESS=1
+                break
+              fi
+              sleep 1
+            done
+
+            if [ \$SUCCESS -ne 1 ]; then
+              echo '✘ [FALHA] Container fuxico não estabilizou no obitwo! Acionando Rollback...'
+              if [ -n \"\$OLD_IMAGE_ID\" ]; then
+                docker tag \"\$OLD_IMAGE_ID\" lumenpink/fuxico:latest
+                docker compose up -d --no-build fuxico
+                echo '✔ Rollback concluído no obitwo.'
+              fi
+              exit 1
+            fi
+
+            echo '-> Limpando camadas órfãs no obitwo...'
+            docker image prune -f
+          "
