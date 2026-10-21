@@ -57,7 +57,6 @@ class Database
             CREATE INDEX IF NOT EXISTS idx_items_expires ON items(expires_at);
             CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
             CREATE INDEX IF NOT EXISTS idx_items_created ON items(created_at);
-            CREATE INDEX IF NOT EXISTS idx_items_source ON items(source);
 
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
