@@ -64,9 +64,13 @@ jobs:
           if [ -n "$OBITWO_SSH_KEY" ]; then
             echo "$OBITWO_SSH_KEY" > ~/.ssh/id_obitwo
             chmod 600 ~/.ssh/id_obitwo
-            SSH_OPTS="-i ~/.ssh/id_obitwo -o StrictHostKeyChecking=accept-new"
+            SSH_OPTS="-i ~/.ssh/id_obitwo -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
+          elif [ -f ~/.ssh/id_obitwo ]; then
+            SSH_OPTS="-i ~/.ssh/id_obitwo -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
+          elif [ -f ~/.ssh/id_ed25519 ]; then
+            SSH_OPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
           else
-            SSH_OPTS="-o StrictHostKeyChecking=accept-new"
+            SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
           fi
 
           ssh $SSH_OPTS "$OBITWO_SSH_USER@$OBITWO_SSH_HOST" "

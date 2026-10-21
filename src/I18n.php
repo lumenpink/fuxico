@@ -155,6 +155,9 @@ class I18n
             'opt_type_file' => 'Arquivo normal (Download direto)',
             'opt_type_doc' => 'Documento renderizado (Markdown com Joaju)',
             'label_rebake_diagrams' => 'Recompilar HTML e diagramas Joaju',
+            'advanced_options_title' => 'Opções Avançadas',
+            'label_default_theme' => 'Tema Padrão:',
+            'opt_theme_keep' => 'Manter atual',
         ],
         'en' => [
             'app_name' => 'FUXICO',
@@ -299,6 +302,9 @@ class I18n
             'opt_type_file' => 'Raw file (Direct download)',
             'opt_type_doc' => 'Rendered document (Markdown with Joaju)',
             'label_rebake_diagrams' => 'Re-bake HTML & Joaju diagrams',
+            'advanced_options_title' => 'Advanced Options',
+            'label_default_theme' => 'Default Theme:',
+            'opt_theme_keep' => 'Keep current',
         ],
     ];
 

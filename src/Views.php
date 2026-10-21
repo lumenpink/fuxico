@@ -525,9 +525,49 @@ class Views
         /* Options */
         .options-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 14px;
-            margin: 22px 0;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        @media (max-width: 520px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Advanced Options Drawer */
+        .advanced-drawer {
+            margin: 18px 0;
+            border: 1px dashed var(--border-color);
+            background: rgba(0, 0, 0, 0.25);
+            padding: 10px 14px;
+            transition: all 0.2s ease;
+        }
+
+        .advanced-drawer[open] {
+            border-style: solid;
+            border-color: var(--acid-yellow);
+            background: var(--card-surface);
+            padding: 14px 16px;
+        }
+
+        .advanced-summary {
+            cursor: pointer;
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--acid-yellow);
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            outline: none;
+        }
+
+        .advanced-summary:hover {
+            color: var(--electric-pink);
         }
 
         .option-item {
@@ -1032,40 +1072,53 @@ class Views
                     <p id="selectedFileName" style="margin-top:14px; font-weight:700; color:var(--acid-yellow);"></p>
                 </div>
 
-                <div class="options-grid">
-                    <label class="option-item">
-                        <input type="checkbox" id="optOneshot">
-                        <span class="option-label">🔥 {$t('opt_burn')}{$tip('tip_burn')}</span>
-                    </label>
-                    <label class="option-item">
-                        <input type="checkbox" id="optSecret">
-                        <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
-                    </label>
-                    <label class="option-item">
-                        <input type="checkbox" id="optDoc">
-                        <span class="option-label">📖 {$t('opt_doc')}{$tip('tip_doc')}</span>
-                    </label>
-                    <label class="option-item">
-                        <input type="checkbox" id="optGist">
-                        <span class="option-label">📦 {$t('opt_gist')}{$tip('tip_gist')}</span>
-                    </label>
-                </div>
+                <details class="advanced-drawer" id="uploadAdvancedDrawer">
+                    <summary class="advanced-summary">⚙️ {$t('advanced_options_title')}</summary>
+                    <div style="margin-top:14px;">
+                        <div class="options-grid">
+                            <label class="option-item">
+                                <input type="checkbox" id="optOneshot">
+                                <span class="option-label">🔥 {$t('opt_burn')}{$tip('tip_burn')}</span>
+                            </label>
+                            <label class="option-item">
+                                <input type="checkbox" id="optSecret">
+                                <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
+                            </label>
+                            <label class="option-item">
+                                <input type="checkbox" id="optDoc" onchange="toggleThemeSelector()">
+                                <span class="option-label">📖 {$t('opt_doc')}{$tip('tip_doc')}</span>
+                            </label>
+                            <label class="option-item">
+                                <input type="checkbox" id="optGist">
+                                <span class="option-label">📦 {$t('opt_gist')}{$tip('tip_gist')}</span>
+                            </label>
+                        </div>
 
-                <div class="form-row">
-                    <label class="form-label" for="optExpires" style="display:inline-flex; align-items:center;">⌛ {$t('opt_expires')}{$tip('tip_expires')}</label>
-                    <select id="optExpires" class="form-control">
-                        <option value="">{$t('exp_none')}</option>
-                        <option value="1h">{$t('exp_1h')}</option>
-                        <option value="24" selected>{$t('exp_24h')}</option>
-                        <option value="7d">{$t('exp_7d')}</option>
-                        <option value="30d">{$t('exp_30d')}</option>
-                    </select>
-                </div>
+                        <div id="uploadThemeRow" class="form-row" style="display:none;">
+                            <label class="form-label" for="optTheme" style="display:inline-flex; align-items:center;">🎨 {$t('label_default_theme')}{$tip('tip_doc')}</label>
+                            <select id="optTheme" class="form-control">
+                                <option value="zine" selected>Zine (Punk / Trans / DIY)</option>
+                                <option value="acad">Acad (Minimalista / Acadêmico)</option>
+                            </select>
+                        </div>
 
-                <div class="form-row">
-                    <label class="form-label" for="optCustomName" style="display:inline-flex; align-items:center;">🏷️ {$t('custom_name_placeholder')}{$tip('tip_custom_name')}</label>
-                    <input type="text" id="optCustomName" class="form-control" placeholder="fofoca-exclusiva">
-                </div>
+                        <div class="form-row">
+                            <label class="form-label" for="optExpires" style="display:inline-flex; align-items:center;">⌛ {$t('opt_expires')}{$tip('tip_expires')}</label>
+                            <select id="optExpires" class="form-control">
+                                <option value="" selected>{$t('exp_none')}</option>
+                                <option value="1h">{$t('exp_1h')}</option>
+                                <option value="24">{$t('exp_24h')}</option>
+                                <option value="7d">{$t('exp_7d')}</option>
+                                <option value="30d">{$t('exp_30d')}</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row" style="margin-bottom:0;">
+                            <label class="form-label" for="optCustomName" style="display:inline-flex; align-items:center;">🏷️ {$t('custom_name_placeholder')}{$tip('tip_custom_name')}</label>
+                            <input type="text" id="optCustomName" class="form-control" placeholder="fofoca-exclusiva">
+                        </div>
+                    </div>
+                </details>
 
                 <button id="btnUpload" class="btn-action" onclick="handleFileUpload()">{$t('btn_upload')}</button>
 
@@ -1085,25 +1138,30 @@ class Views
                     <input type="url" id="shortenUrl" class="form-control" placeholder="https://...">
                 </div>
 
-                <div class="form-row">
-                    <label class="form-label" for="urlCustomName" style="display:inline-flex; align-items:center;">🏷️ {$t('custom_name_placeholder')}{$tip('tip_custom_name')}</label>
-                    <input type="text" id="urlCustomName" class="form-control" placeholder="link-quente">
-                </div>
+                <details class="advanced-drawer" id="urlAdvancedDrawer">
+                    <summary class="advanced-summary">⚙️ {$t('advanced_options_title')}</summary>
+                    <div style="margin-top:14px;">
+                        <div class="form-row">
+                            <label class="form-label" for="urlCustomName" style="display:inline-flex; align-items:center;">🏷️ {$t('custom_name_placeholder')}{$tip('tip_custom_name')}</label>
+                            <input type="text" id="urlCustomName" class="form-control" placeholder="link-quente">
+                        </div>
 
-                <div class="options-grid">
-                    <label class="option-item">
-                        <input type="checkbox" id="urlOneshot">
-                        <span class="option-label">🔥 {$t('opt_burn')}{$tip('tip_burn')}</span>
-                    </label>
-                    <label class="option-item">
-                        <input type="checkbox" id="urlSecret">
-                        <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
-                    </label>
-                    <label class="option-item">
-                        <input type="checkbox" id="urlResenha">
-                        <span class="option-label">{$t('opt_resenha')}{$tip('tip_resenha')}</span>
-                    </label>
-                </div>
+                        <div class="options-grid" style="margin-bottom:0;">
+                            <label class="option-item">
+                                <input type="checkbox" id="urlOneshot">
+                                <span class="option-label">🔥 {$t('opt_burn')}{$tip('tip_burn')}</span>
+                            </label>
+                            <label class="option-item">
+                                <input type="checkbox" id="urlSecret">
+                                <span class="option-label">🕵️ {$t('opt_secret')}{$tip('tip_secret')}</span>
+                            </label>
+                            <label class="option-item">
+                                <input type="checkbox" id="urlResenha">
+                                <span class="option-label">{$t('opt_resenha')}{$tip('tip_resenha')}</span>
+                            </label>
+                        </div>
+                    </div>
+                </details>
 
                 <button id="btnShorten" class="btn-action" onclick="handleUrlShorten()">{$t('btn_shorten')}</button>
 
@@ -1205,6 +1263,14 @@ class Views
             }
         });
 
+        function toggleThemeSelector() {
+            const optDoc = document.getElementById('optDoc');
+            const themeRow = document.getElementById('uploadThemeRow');
+            if (themeRow && optDoc) {
+                themeRow.style.display = optDoc.checked ? 'block' : 'none';
+            }
+        }
+
         function selectFiles(files) {
             selectedFiles = files;
             if (files.length === 1) {
@@ -1212,7 +1278,10 @@ class Views
                 document.getElementById('selectedFileName').innerText = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
                 if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
                     const optDoc = document.getElementById('optDoc');
-                    if (optDoc) optDoc.checked = true;
+                    if (optDoc) {
+                        optDoc.checked = true;
+                        toggleThemeSelector();
+                    }
                 }
             } else if (files.length > 1) {
                 const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
@@ -1250,7 +1319,11 @@ class Views
 
             if (document.getElementById('optOneshot').checked) fd.append('oneshot', 'true');
             if (document.getElementById('optSecret').checked) fd.append('secret', 'true');
-            if (document.getElementById('optDoc').checked) fd.append('doc', 'true');
+            if (document.getElementById('optDoc').checked) {
+                fd.append('doc', 'true');
+                const optTheme = document.getElementById('optTheme');
+                if (optTheme && optTheme.value) fd.append('theme', optTheme.value);
+            }
 
             const customName = document.getElementById('optCustomName').value.trim();
             if (customName) fd.append('customName', customName);
@@ -2132,10 +2205,19 @@ HTML;
 
             <div id="editItemTypeGroup" style="margin-bottom:12px; display:none;">
                 <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_item_type')}</label>
-                <select id="editItemTypeSelect" class="form-control">
+                <select id="editItemTypeSelect" class="form-control" onchange="toggleModalThemeGroup()">
                     <option value="keep">{$t('opt_type_keep')}</option>
                     <option value="file">{$t('opt_type_file')}</option>
                     <option value="doc">{$t('opt_type_doc')}</option>
+                </select>
+            </div>
+
+            <div id="editItemThemeGroup" style="margin-bottom:12px; display:none;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; font-weight:700;">{$t('label_default_theme')}</label>
+                <select id="editItemThemeSelect" class="form-control">
+                    <option value="keep">{$t('opt_theme_keep')}</option>
+                    <option value="zine">Zine (Punk / Trans / DIY)</option>
+                    <option value="acad">Acad (Minimalista / Acadêmico)</option>
                 </select>
             </div>
 
@@ -2748,23 +2830,47 @@ HTML;
 
             const typeGroup = document.getElementById('editItemTypeGroup');
             const typeSelect = document.getElementById('editItemTypeSelect');
+            const themeGroup = document.getElementById('editItemThemeGroup');
+            const themeSelect = document.getElementById('editItemThemeSelect');
             const rebakeGroup = document.getElementById('editItemRebakeGroup');
             const rebakeCheck = document.getElementById('editItemRebakeCheckbox');
             rebakeCheck.checked = false;
 
+            let itemTheme = 'keep';
+            if (item.data) {
+                try {
+                    const parsed = typeof item.data === 'string' ? JSON.parse(item.data) : item.data;
+                    if (parsed && parsed.theme) itemTheme = parsed.theme;
+                } catch(e) {}
+            }
+            themeSelect.value = itemTheme;
+
             if (item.type === 'file' || item.type === 'doc') {
                 typeGroup.style.display = 'block';
                 typeSelect.value = item.type;
+                themeGroup.style.display = (item.type === 'doc' || (item.original_name && item.original_name.endsWith('.md'))) ? 'block' : 'none';
                 rebakeGroup.style.display = (item.type === 'doc' || (item.original_name && item.original_name.endsWith('.md'))) ? 'block' : 'none';
             } else {
                 typeGroup.style.display = 'none';
                 typeSelect.value = 'keep';
+                themeGroup.style.display = 'none';
                 rebakeGroup.style.display = 'none';
             }
 
             document.getElementById('editItemError').style.display = 'none';
             document.getElementById('editItemSuccess').style.display = 'none';
             document.getElementById('editItemModal').classList.add('open');
+        }
+
+        function toggleModalThemeGroup() {
+            const type = document.getElementById('editItemTypeSelect').value;
+            const themeGroup = document.getElementById('editItemThemeGroup');
+            const rebakeGroup = document.getElementById('editItemRebakeGroup');
+            if (themeGroup && rebakeGroup) {
+                const isDoc = type === 'doc';
+                themeGroup.style.display = isDoc ? 'block' : 'none';
+                rebakeGroup.style.display = isDoc ? 'block' : 'none';
+            }
         }
 
         function closeEditItemModal() {
@@ -2828,6 +2934,11 @@ HTML;
             const typeChoice = document.getElementById('editItemTypeSelect').value;
             if (typeChoice !== 'keep') {
                 payload.type = typeChoice;
+            }
+
+            const themeChoice = document.getElementById('editItemThemeSelect').value;
+            if (themeChoice && themeChoice !== 'keep') {
+                payload.theme = themeChoice;
             }
 
             if (document.getElementById('editItemRebakeCheckbox').checked) {

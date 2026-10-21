@@ -392,6 +392,7 @@ class App
 
             if ($itemType === 'doc') {
                 $rawMd = file_get_contents($this->storage->getFilePath($targetFilename));
+                $docTheme = (isset($_POST['theme']) && strtolower((string) $_POST['theme']) === 'acad') ? 'acad' : 'zine';
                 if ($rawMd !== false) {
                     $renderOptions = [
                         'title' => pathinfo($file['name'], PATHINFO_FILENAME),
@@ -399,10 +400,8 @@ class App
                         'original_name' => $file['name'],
                         'created_at' => time(),
                         'base_url' => $this->getBaseUrl(),
+                        'default_theme' => $docTheme,
                     ];
-                    if (isset($_POST['theme'])) {
-                        $renderOptions['default_theme'] = strtolower((string) $_POST['theme']) === 'acad' ? 'acad' : 'zine';
-                    }
                     $bakedHtml = MarkdownRenderer::render($rawMd, $renderOptions);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $bakedHtml);
 
@@ -430,6 +429,11 @@ class App
                 }
             }
 
+            $itemData = [];
+            if ($itemType === 'doc' && isset($docTheme)) {
+                $itemData['theme'] = $docTheme;
+            }
+
             $this->db->createItem([
                 'id' => bin2hex(random_bytes(8)),
                 'slug' => $slug,
@@ -444,8 +448,10 @@ class App
                 'created_at' => time(),
                 'views' => 0,
                 'user_id' => $userId,
+                'data' => ! empty($itemData) ? json_encode($itemData) : null,
             ]);
 
+            http_response_code(200);
             header("x-token: {$xToken}");
             header('Content-Type: text/plain');
             $urlExt = ($itemType !== 'doc' && $ext !== '') ? ".{$ext}" : '';
@@ -1112,12 +1118,15 @@ class App
                 if (! $this->storage->fileExists($htmlFilename)) {
                     $rawMd = file_get_contents($this->storage->getFilePath($item['file_path']));
                     if ($rawMd !== false) {
+                        $itemData = json_decode($item['data'] ?? '{}', true) ?: [];
+                        $docTheme = ($itemData['theme'] ?? 'zine') === 'acad' ? 'acad' : 'zine';
                         $baked = MarkdownRenderer::render($rawMd, [
                             'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
                             'slug' => $slug,
                             'original_name' => $item['original_name'] ?: "{$slug}.md",
                             'created_at' => (int) $item['created_at'],
                             'base_url' => $this->getBaseUrl(),
+                            'default_theme' => $docTheme,
                         ]);
                         file_put_contents($this->storage->getFilePath($htmlFilename), $baked);
                     }
@@ -1913,6 +1922,15 @@ class App
                 $params['hash'] = trim((string) $body['hash']) ?: null;
             }
 
+            // 7. Markdown theme (acad | zine)
+            $themeParam = null;
+            if (isset($body['theme']) && in_array(strtolower((string) $body['theme']), ['acad', 'zine'], true)) {
+                $themeParam = strtolower((string) $body['theme']);
+                $itemData = json_decode($item['data'] ?? '{}', true) ?: [];
+                $itemData['theme'] = $themeParam;
+                $params['data'] = json_encode($itemData);
+            }
+
             if (! empty($params)) {
                 $this->db->updateItemParameters($slug, $params);
             }
@@ -1925,12 +1943,14 @@ class App
                 if ($newType === 'doc' && ! empty($item['file_path'])) {
                     $rawMd = file_get_contents($this->storage->getFilePath($item['file_path']));
                     if ($rawMd !== false) {
+                        $docTheme = $themeParam ?? (json_decode($params['data'] ?? ($item['data'] ?? '{}'), true)['theme'] ?? 'zine');
                         $baked = MarkdownRenderer::render($rawMd, [
                             'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
                             'slug' => $slug,
                             'original_name' => $item['original_name'] ?: "{$slug}.md",
                             'created_at' => (int) $item['created_at'],
                             'base_url' => $this->getBaseUrl(),
+                            'default_theme' => $docTheme,
                         ]);
                         file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
                     }
@@ -1940,15 +1960,17 @@ class App
                         @unlink($htmlFile);
                     }
                 }
-            } elseif (! empty($body['rebake']) && $item['type'] === 'doc' && ! empty($item['file_path'])) {
+            } elseif ((! empty($body['rebake']) || $themeParam !== null) && $item['type'] === 'doc' && ! empty($item['file_path'])) {
                 $rawMd = file_get_contents($this->storage->getFilePath($item['file_path']));
                 if ($rawMd !== false) {
+                    $docTheme = $themeParam ?? (json_decode($params['data'] ?? ($item['data'] ?? '{}'), true)['theme'] ?? 'zine');
                     $baked = MarkdownRenderer::render($rawMd, [
                         'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
                         'slug' => $slug,
                         'original_name' => $item['original_name'] ?: "{$slug}.md",
                         'created_at' => (int) $item['created_at'],
                         'base_url' => $this->getBaseUrl(),
+                        'default_theme' => $docTheme,
                     ]);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
 
@@ -1967,12 +1989,14 @@ class App
                 $this->db->updateItemParameters($slug, ['hash' => hash('sha256', $body['content'])]);
 
                 if ($item['type'] === 'doc' || ($body['type'] ?? '') === 'doc') {
+                    $docTheme = $themeParam ?? (json_decode($params['data'] ?? ($item['data'] ?? '{}'), true)['theme'] ?? 'zine');
                     $baked = MarkdownRenderer::render($body['content'], [
                         'title' => pathinfo($item['original_name'] ?: $slug, PATHINFO_FILENAME),
                         'slug' => $slug,
                         'original_name' => $item['original_name'] ?: "{$slug}.md",
                         'created_at' => (int) $item['created_at'],
                         'base_url' => $this->getBaseUrl(),
+                        'default_theme' => $docTheme,
                     ]);
                     file_put_contents($this->storage->getFilePath("{$slug}.html"), $baked);
 

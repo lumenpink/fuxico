@@ -442,7 +442,7 @@ class Database
      */
     public function updateItemParameters(string $slug, array $params): bool
     {
-        $allowed = ['expires_at', 'max_downloads', 'is_oneshot', 'original_name', 'target_url', 'hash', 'mime_type'];
+        $allowed = ['expires_at', 'max_downloads', 'is_oneshot', 'original_name', 'target_url', 'hash', 'mime_type', 'data'];
         $sets = [];
         $binds = [':slug' => $slug];
         foreach ($params as $k => $v) {
