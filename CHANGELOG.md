@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (ui) gaveta retratil de opcoes avancadas, grid 2 colunas, temas Markdown e CD (closes #51)
   - (ci) continuous deployment no obitwo via Tailscale/SSH, healthcheck ativo de 15s, rollback e descomissionamento do Watchtower (closes #52)
   - (share) página de pré-download, pastas compartilhadas em .zip e integração segura com o Mocambo (closes #48)
   - canonical joaju diagram engines, academic tables, and legacy tag cleanup
