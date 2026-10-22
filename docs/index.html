@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="zine">
+<head>
+    <meta charset="UTF-8">
+    <base href="/index/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuxico — Central de Documentação Zine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false});"></script>
+    <script>
+        (function() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const saved = localStorage.getItem('fuxico_theme');
+                let theme = 'zine';
+                if (params.get('acad') === 'true' || params.get('theme') === 'acad' || params.has('acad')) {
+                    theme = 'acad';
+                } else if (params.get('theme') === 'zine') {
+                    theme = 'zine';
+                } else if (saved === 'acad' || saved === 'zine') {
+                    theme = saved;
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
+    <style>
+        /* Base Resets & Transitions */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ─── DUAL SKIN: 1. TRAVA ZINE (FUXICO STANDARD) ─── */
+        [data-theme="zine"] {
+            --bg-body: #121016;
+            --bg-card: #1a1622;
+            --bg-surface: #221c2e;
+            --text-main: #f5f4ef;
+            --text-muted: #9f97ad;
+            --text-link: #e2f835;
+            --acid-yellow: #e2f835;
+            --acid-hover: #ccee22;
+            --electric-pink: #ff2a85;
+            --tape-black: #0a080d;
+            --border-color: #383047;
+            --border-hard: 2px solid #000;
+            --shadow-hard: 4px 4px 0px #0a080d;
+            --shadow-accent: 5px 5px 0px var(--electric-pink);
+            --font-heading: 'Anton', -apple-system, sans-serif;
+            --font-sub: 'Space Grotesk', -apple-system, sans-serif;
+            --font-body: 'Space Grotesk', -apple-system, sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --code-bg: #09080d;
+            --callout-bg: #1c1726;
+            --mark-bg: rgba(226, 248, 53, 0.3);
+            --mark-color: #e2f835;
+        }
+
+        /* ─── DUAL SKIN: 2. ACADÊMICO DEPRESSIVO MONOCROMÁTICO (?acad=true) ─── */
+        [data-theme="acad"] {
+            --bg-body: #fcfcfc;
+            --bg-card: #ffffff;
+            --bg-surface: #f4f4f5;
+            --text-main: #18181b;
+            --text-muted: #52525b;
+            --text-link: #09090b;
+            --acid-yellow: #09090b;
+            --acid-hover: #27272a;
+            --electric-pink: #27272a;
+            --tape-black: #e4e4e7;
+            --border-color: #d4d4d8;
+            --border-hard: 1px solid #18181b;
+            --shadow-hard: 2px 2px 0px #d4d4d8;
+            --shadow-accent: none;
+            --font-heading: 'Noto Serif', Georgia, serif;
+            --font-sub: 'Noto Serif', Georgia, serif;
+            --font-body: 'Noto Serif', Georgia, serif;
+            --font-mono: 'Space Mono', Courier, monospace;
+            --code-bg: #f4f4f5;
+            --callout-bg: #fafafa;
+            --mark-bg: #e4e4e7;
+            --mark-color: #09090b;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px 40px 16px;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        /* Zine background pattern */
+        [data-theme="zine"] body {
+            background-image: 
+                radial-gradient(circle, rgba(226, 248, 53, 0.04) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 10% 20%, rgba(255, 42, 133, 0.06) 0%, transparent 40%);
+            background-size: 20px 20px, 100% 100%;
+        }
+
+        /* Academic background pattern */
+        [data-theme="acad"] body {
+            background-image: linear-gradient(to right, #f4f4f5 1px, transparent 1px);
+            background-size: 80px 100%;
+        }
+
+        /* Layout Container */
+        .fuxico-container {
+            width: 100%;
+            max-width: 860px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-hard);
+            padding: 36px 32px;
+            position: relative;
+        }
+
+        [data-theme="zine"] .fuxico-container {
+            box-shadow: 8px 12px 0px #0a080d, 8px 12px 0px 2px var(--electric-pink);
+            border: 2px solid var(--border-color);
+        }
+
+        [data-theme="acad"] .fuxico-container {
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            max-width: 820px;
+            padding: 56px 48px;
+        }
+
+        /* Trans Pride Stripes */
+        .trans-stripe {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+        }
+        .trans-stripe.bottom {
+            margin-top: 36px;
+            margin-bottom: 0;
+            border-top: 2px solid #000;
+            border-bottom: none;
+        }
+        .trans-stripe-line { flex: 1; width: 100%; }
+        .trans-stripe-line.blue { background-color: #5BCEFA; }
+        .trans-stripe-line.pink { background-color: #F5A9B8; }
+        .trans-stripe-line.white { background-color: #FFFFFF; }
+
+        /* In Academic mode, hide decorative stripes and tape */
+        [data-theme="acad"] .trans-stripe,
+        [data-theme="acad"] .duct-tape {
+            display: none !important;
+        }
+
+        /* Duct tape badge */
+        .duct-tape {
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1.5deg);
+            background: rgba(226, 248, 53, 0.96);
+            color: #000;
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            padding: 4px 28px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.6);
+            z-index: 10;
+            user-select: none;
+            text-transform: uppercase;
+        }
+
+        /* Document Top Toolbar */
+        .doc-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        [data-theme="acad"] .doc-toolbar {
+            border-bottom: 1px solid #18181b;
+            font-size: 0.85rem;
+            padding-bottom: 12px;
+            margin-bottom: 36px;
+        }
+
+        .doc-breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doc-breadcrumbs a {
+            color: var(--text-link);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .doc-breadcrumbs a:hover { text-decoration: underline; }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-tool {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.4);
+            user-select: none;
+        }
+
+        [data-theme="acad"] .btn-tool {
+            background: #ffffff;
+            border: 1px solid #71717a;
+            color: #18181b;
+            box-shadow: none;
+            border-radius: 2px;
+        }
+
+        .btn-tool:hover {
+            border-color: var(--acid-yellow);
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .btn-tool:hover {
+            background: #f4f4f5;
+            color: #000;
+            border-color: #000;
+        }
+
+        /* ─── TYPOGRAPHY & ARTICLE CONTENT ─── */
+        .fuxico-article {
+            font-size: 1.05rem;
+        }
+
+        [data-theme="acad"] .fuxico-article {
+            font-size: 1.08rem;
+            text-align: justify;
+        }
+
+        /* Headings */
+        .fuxico-article h1,
+        .fuxico-article h2,
+        .fuxico-article h3,
+        .fuxico-article h4,
+        .fuxico-article h5,
+        .fuxico-article h6 {
+            color: var(--text-main);
+            margin-top: 1.6em;
+            margin-bottom: 0.6em;
+            line-height: 1.25;
+            scroll-margin-top: 20px;
+        }
+
+        [data-theme="zine"] .fuxico-article h1 {
+            font-family: var(--font-heading);
+            font-size: 2.4rem;
+            color: var(--acid-yellow);
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0px #000;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        [data-theme="zine"] .fuxico-article h2 {
+            font-family: var(--font-sub);
+            font-size: 1.6rem;
+            color: var(--electric-pink);
+            letter-spacing: 0.5px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 6px;
+        }
+        [data-theme="zine"] .fuxico-article h3 {
+            font-family: var(--font-sub);
+            font-size: 1.3rem;
+            color: var(--text-main);
+        }
+
+        [data-theme="acad"] .fuxico-article h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 1.2em;
+            border-bottom: 1px solid #18181b;
+            padding-bottom: 12px;
+        }
+        [data-theme="acad"] .fuxico-article h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 1.8em;
+            border-bottom: 1px solid #e4e4e7;
+            padding-bottom: 4px;
+        }
+        [data-theme="acad"] .fuxico-article h3 {
+            font-size: 1.18rem;
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        /* Paragraphs & Text */
+        .fuxico-article p {
+            margin-bottom: 1.2em;
+        }
+
+        .fuxico-article a {
+            color: var(--text-link);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        [data-theme="zine"] .fuxico-article a:hover {
+            background: var(--acid-yellow);
+            color: #000;
+            text-decoration: none;
+        }
+
+        .fuxico-article strong { font-weight: 700; }
+        .fuxico-article em { font-style: italic; }
+        .fuxico-article s, .fuxico-article del { text-decoration: line-through; opacity: 0.75; }
+
+        /* Highlights */
+        .fuxico-article mark {
+            background-color: var(--mark-bg);
+            color: var(--mark-color);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        /* Blockquotes */
+        .fuxico-article blockquote {
+            border-left: 4px solid var(--electric-pink);
+            background: var(--callout-bg);
+            padding: 12px 18px;
+            margin: 1.4em 0;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        [data-theme="acad"] .fuxico-article blockquote {
+            border-left: 3px solid #71717a;
+            background: #fafafa;
+            color: #3f3f46;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* Obsidian Callouts */
+        .callout {
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--callout-color, var(--acid-yellow));
+            background: color-mix(in srgb, var(--callout-color, #e2f835) 9%, var(--callout-bg));
+            padding: 14px 18px;
+            margin: 1.5em 0;
+            border-radius: 4px;
+        }
+
+        .callout-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-family: var(--font-sub);
+            color: var(--callout-color, var(--acid-yellow));
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            letter-spacing: 0.2px;
+        }
+
+        .callout-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--callout-color, inherit);
+        }
+
+        .callout-icon svg {
+            display: block;
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.2;
+        }
+
+        .callout-fold {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            color: var(--callout-color, inherit);
+            opacity: 0.7;
+            transition: transform 0.2s ease;
+            transform: rotate(-90deg);
+        }
+
+        details.callout[open] .callout-fold {
+            transform: rotate(0deg);
+        }
+
+        [data-theme="acad"] .callout {
+            border: 1px solid #e4e4e7;
+            border-left: 4px solid var(--callout-color, #18181b);
+            background: color-mix(in srgb, var(--callout-color, #18181b) 7%, #ffffff);
+            box-shadow: none;
+        }
+
+        [data-theme="acad"] .callout-title {
+            color: var(--callout-color, #18181b);
+            font-family: var(--font-heading);
+            font-size: 0.92rem;
+        }
+
+        /* Callout Types & Colors */
+        .callout-note { --callout-color: #0284c7; }
+        .callout-abstract, .callout-summary, .callout-tldr { --callout-color: #0d9488; }
+        .callout-info { --callout-color: #0284c7; }
+        .callout-todo { --callout-color: #7c3aed; }
+        .callout-tip, .callout-hint { --callout-color: #10b981; }
+        .callout-success, .callout-check, .callout-done { --callout-color: #16a34a; }
+        .callout-question, .callout-help, .callout-faq { --callout-color: #d97706; }
+        .callout-warning, .callout-caution, .callout-attention { --callout-color: #ea580c; }
+        .callout-failure, .callout-fail, .callout-missing { --callout-color: #dc2626; }
+        .callout-danger, .callout-error { --callout-color: #e11d48; }
+        .callout-bug { --callout-color: #f43f5e; }
+        .callout-example { --callout-color: #9333ea; }
+        .callout-quote, .callout-cite { --callout-color: #64748b; }
+        .callout-important { --callout-color: #ec4899; }
+
+        /* Dark mode palette adjustments */
+        [data-theme="zine"] .callout-note { --callout-color: #38bdf8; }
+        [data-theme="zine"] .callout-abstract, [data-theme="zine"] .callout-summary, [data-theme="zine"] .callout-tldr { --callout-color: #2dd4bf; }
+        [data-theme="zine"] .callout-info { --callout-color: #38bdf8; }
+        [data-theme="zine"] .callout-todo { --callout-color: #a855f7; }
+        [data-theme="zine"] .callout-tip, [data-theme="zine"] .callout-hint { --callout-color: #34d399; }
+        [data-theme="zine"] .callout-success, [data-theme="zine"] .callout-check, [data-theme="zine"] .callout-done { --callout-color: #22c55e; }
+        [data-theme="zine"] .callout-question, [data-theme="zine"] .callout-help, [data-theme="zine"] .callout-faq { --callout-color: #fbbf24; }
+        [data-theme="zine"] .callout-warning, [data-theme="zine"] .callout-caution, [data-theme="zine"] .callout-attention { --callout-color: #fb923c; }
+        [data-theme="zine"] .callout-failure, [data-theme="zine"] .callout-fail, [data-theme="zine"] .callout-missing { --callout-color: #f87171; }
+        [data-theme="zine"] .callout-danger, [data-theme="zine"] .callout-error { --callout-color: #fb7185; }
+        [data-theme="zine"] .callout-bug { --callout-color: #f43f5e; }
+        [data-theme="zine"] .callout-example { --callout-color: #c084fc; }
+        [data-theme="zine"] .callout-quote, [data-theme="zine"] .callout-cite { --callout-color: #94a3b8; }
+        [data-theme="zine"] .callout-important { --callout-color: #f472b6; }
+
+        .callout-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .callout-content p {
+            margin: 0.6em 0;
+        }
+        .callout-content p:first-child {
+            margin-top: 0;
+        }
+        .callout-content p:last-child {
+            margin-bottom: 0;
+        }
+        .callout-content ul, .callout-content ol {
+            margin: 0.5em 0 0.5em 1.5em;
+        }
+
+        details.callout summary.callout-title {
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+        }
+        details.callout[open] summary.callout-title {
+            margin-bottom: 8px;
+        }
+        details.callout summary.callout-title::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Footnotes */
+        .footnotes {
+            margin-top: 3em;
+            padding-top: 1.5em;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+        .footnotes ol {
+            padding-left: 1.5em;
+        }
+        .footnotes li {
+            margin-bottom: 0.6em;
+        }
+        .footnote-ref a, .footnote-backref {
+            color: var(--electric-pink);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footnote-ref a:hover, .footnote-backref:hover {
+            text-decoration: underline;
+        }
+
+        /* LaTeX & Math Rendering */
+        .math-block {
+            margin: 1.5em 0;
+            overflow-x: auto;
+            text-align: center;
+        }
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 0;
+        }
+
+        /* Diagram Figures (Joaju Native Baking) */
+        .diagram-figure {
+            margin: 1.8em 0;
+            border: 2px solid var(--border-color);
+            background: var(--code-bg);
+            box-shadow: var(--shadow-hard);
+            overflow: hidden;
+            display: block;
+        }
+
+        [data-theme="acad"] .diagram-figure {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+            background: #ffffff;
+        }
+
+        .diagram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--tape-black);
+            padding: 8px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        [data-theme="acad"] .diagram-header {
+            background: #f4f4f5;
+            border-bottom: 1px solid #d4d4d8;
+            color: #52525b;
+        }
+
+        .diagram-badge {
+            font-weight: 700;
+            color: var(--acid-yellow);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        [data-theme="acad"] .diagram-badge {
+            color: #18181b;
+        }
+
+        .diagram-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-diagram-action {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-diagram-action:hover {
+            color: var(--text-main);
+            border-color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .btn-diagram-action:hover {
+            color: #000;
+            border-color: #000;
+        }
+
+        .diagram-viewport {
+            width: 100%;
+            overflow-x: auto;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+        }
+
+        [data-theme="acad"] .diagram-viewport {
+            background: #ffffff;
+            padding: 24px;
+        }
+
+        .diagram-viewport svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .diagram-table .diagram-viewport {
+            display: block;
+            padding: 16px 20px;
+        }
+
+        .diagram-table .joaju-academic-table-wrapper {
+            margin: 0 auto;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .joaju-academic-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin: 8px 0;
+            border-top: 2px solid var(--text-main, #000) !important;
+            border-bottom: 2px solid var(--text-main, #000) !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+
+        .fuxico-article .joaju-academic-table th,
+        .fuxico-article .joaju-academic-table td,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table th,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table td {
+            border-left: none !important;
+            border-right: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .fuxico-article .joaju-academic-table thead th,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table thead th {
+            border-top: none !important;
+            border-bottom: 1px solid var(--text-main, #000) !important;
+            padding: 6px 8px;
+            font-weight: 700;
+            vertical-align: bottom;
+            white-space: normal;
+        }
+
+        .fuxico-article .joaju-academic-table tbody td,
+        [data-theme="acad"] .fuxico-article .joaju-academic-table tbody td {
+            border-top: none !important;
+            border-bottom: none !important;
+            padding: 5px 8px;
+            vertical-align: middle;
+            white-space: normal;
+        }
+
+        .joaju-academic-table tbody tr:hover {
+            background: rgba(0, 0, 0, 0.03) !important;
+        }
+
+        .joaju-table-title {
+            font-weight: 700;
+            font-size: 0.92rem;
+            margin-bottom: 6px;
+            text-align: left;
+            color: var(--text-main, #000);
+        }
+
+        .joaju-table-note {
+            font-size: 0.78rem;
+            font-style: italic;
+            margin-top: 6px;
+            text-align: left;
+            color: var(--text-muted, #555);
+            line-height: 1.35;
+        }
+
+        [data-theme="acad"] .joaju-academic-table {
+            border-top: 2px solid #000 !important;
+            border-bottom: 2px solid #000 !important;
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        [data-theme="acad"] .joaju-academic-table thead th {
+            border-bottom: 1px solid #000 !important;
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        [data-theme="acad"] .joaju-academic-table tbody td {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        [data-theme="acad"] .joaju-table-title {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+            font-weight: bold;
+        }
+
+        [data-theme="acad"] .joaju-table-note {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+        }
+
+        .diagram-source {
+            border-top: 1px dashed var(--border-color);
+            background: var(--code-bg);
+        }
+
+        /* Code Blocks */
+        .code-block-wrapper {
+            margin: 1.5em 0;
+            border: 1px solid var(--border-color);
+            background: var(--code-bg);
+            box-shadow: var(--shadow-hard);
+            overflow: hidden;
+        }
+
+        [data-theme="acad"] .code-block-wrapper {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+            background: #fafafa;
+        }
+
+        [data-theme="acad"] .code-block-header {
+            background: #f4f4f5;
+            color: #71717a;
+            border-bottom: 1px solid #e4e4e7;
+        }
+
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--tape-black);
+            padding: 6px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .btn-copy-code {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
+        .btn-copy-code:hover {
+            color: var(--text-main);
+            border-color: var(--acid-yellow);
+        }
+
+        .fuxico-article pre {
+            padding: 14px 16px;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            background: transparent;
+        }
+
+        .fuxico-article code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border: 1px solid var(--border-color);
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .fuxico-article code {
+            color: #18181b;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+        }
+
+        .fuxico-article pre code,
+        [data-theme="acad"] .fuxico-article pre code,
+        [data-theme="zine"] .fuxico-article pre code {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            color: inherit !important;
+            box-shadow: none !important;
+            display: block;
+        }
+
+        /* Lists */
+        .fuxico-article ul, .fuxico-article ol {
+            margin: 1.2em 0 1.2em 2em;
+        }
+
+        .fuxico-article li {
+            margin-bottom: 0.4em;
+        }
+
+        .task-list-item {
+            list-style-type: none;
+            margin-left: -1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-list-item input[type="checkbox"] {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            cursor: default;
+            position: relative;
+        }
+
+        .task-list-item input[type="checkbox"]:checked {
+            background: var(--acid-yellow);
+            border-color: var(--acid-yellow);
+        }
+
+        .task-list-item input[type="checkbox"]:checked::after {
+            content: '✔';
+            position: absolute;
+            top: -3px;
+            left: 2px;
+            font-size: 11px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1.6em 0;
+        }
+
+        .fuxico-article table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+            margin: 0 auto;
+        }
+
+        .fuxico-article th {
+            background: var(--tape-black);
+            color: var(--text-main);
+            font-family: var(--font-sub);
+            font-weight: 700;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        [data-theme="zine"] .fuxico-article th {
+            color: var(--acid-yellow);
+        }
+
+        [data-theme="acad"] .fuxico-article th {
+            background: #f4f4f5;
+            color: #18181b;
+            border: 1px solid #d4d4d8;
+            font-family: var(--font-heading);
+            font-size: 0.88rem;
+        }
+
+        .fuxico-article td {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+        }
+
+        [data-theme="acad"] .fuxico-article td {
+            border: 1px solid #e4e4e7;
+        }
+
+        /* Images & Figures */
+        .fuxico-article img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1.8em auto;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-hard);
+        }
+
+        [data-theme="acad"] .fuxico-article img {
+            border: 1px solid #d4d4d8;
+            box-shadow: none;
+        }
+
+        /* Horizontal Rule */
+        .fuxico-article hr {
+            border: none;
+            border-top: 2px dashed var(--border-color);
+            margin: 2.2em 0;
+        }
+
+        [data-theme="acad"] .fuxico-article hr {
+            border-top: 1px solid #d4d4d8;
+        }
+
+        /* Footer */
+        .doc-footer {
+            margin-top: 36px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .doc-footer a {
+            color: var(--acid-yellow);
+            text-decoration: none;
+        }
+
+        [data-theme="acad"] .doc-footer a {
+            color: #18181b;
+            text-decoration: underline;
+        }
+
+        /* ─── RESPONSIVIDADE E DISPOSITIVOS MÓVEIS (TICKET #46) ─── */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px 8px 90px 8px;
+            }
+
+            .fuxico-container {
+                padding: 20px 14px 24px 14px;
+                border-width: 1px;
+            }
+
+            [data-theme="zine"] .fuxico-container {
+                box-shadow: 4px 6px 0px #0a080d, 4px 6px 0px 1px var(--electric-pink);
+            }
+
+            [data-theme="acad"] .fuxico-container {
+                padding: 24px 16px 28px 16px;
+                border-width: 1px;
+                box-shadow: none;
+            }
+
+            /* Toolbar fixa na parte inferior da tela (Mobile App Bar) */
+            .doc-toolbar {
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+            }
+
+            .toolbar-actions {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                background: rgba(26, 22, 34, 0.94);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-top: 1px solid var(--border-color);
+                padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+            }
+
+            [data-theme="acad"] .toolbar-actions {
+                background: rgba(255, 255, 255, 0.95);
+                border-top: 1px solid #d4d4d8;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+            }
+
+            .toolbar-actions .btn-tool {
+                flex: 1;
+                min-height: 44px;
+                padding: 8px 10px;
+                font-size: 0.8rem;
+                justify-content: center;
+                text-align: center;
+            }
+
+            /* Tipografia fluida */
+            .fuxico-article h1,
+            [data-theme="zine"] .fuxico-article h1,
+            [data-theme="acad"] .fuxico-article h1 {
+                font-size: 1.85rem;
+                line-height: 1.15;
+                word-break: break-word;
+            }
+
+            .fuxico-article h2,
+            [data-theme="zine"] .fuxico-article h2,
+            [data-theme="acad"] .fuxico-article h2 {
+                font-size: 1.45rem;
+                word-break: break-word;
+            }
+
+            .fuxico-article h3,
+            [data-theme="zine"] .fuxico-article h3,
+            [data-theme="acad"] .fuxico-article h3 {
+                font-size: 1.2rem;
+                word-break: break-word;
+            }
+
+            /* Tabelas e Wrappers com Rolagem Segura */
+            .table-wrapper,
+            .diagram-table .joaju-academic-table-wrapper,
+            .joaju-academic-table-wrapper {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 1.2em 0;
+            }
+
+            .fuxico-article .joaju-academic-table th,
+            .fuxico-article .joaju-academic-table td,
+            [data-theme="acad"] .fuxico-article .joaju-academic-table th,
+            [data-theme="acad"] .fuxico-article .joaju-academic-table td {
+                padding: 6px 8px;
+                font-size: 0.8rem;
+            }
+
+            .joaju-table-title {
+                font-size: 0.88rem;
+            }
+
+            .joaju-table-note {
+                font-size: 0.74rem;
+            }
+
+            /* Fórmulas matemáticas e código */
+            .katex-display {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                padding: 6px 0;
+            }
+
+            .code-block-wrapper pre,
+            .diagram-source pre,
+            .fuxico-article pre {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                font-size: 0.8rem;
+            }
+
+            /* Diagramas interativos em telas móveis */
+            .diagram-viewport {
+                padding: 12px;
+                overflow: hidden;
+                touch-action: pan-y pinch-zoom;
+            }
+
+            .diagram-header {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 8px 12px;
+            }
+
+            .btn-diagram-action,
+            .btn-copy-code {
+                min-height: 36px;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px 4px 90px 4px;
+            }
+
+            .fuxico-container {
+                padding: 16px 10px 24px 10px;
+            }
+
+            .toolbar-actions .btn-tool {
+                font-size: 0.75rem;
+                padding: 8px 6px;
+            }
+
+            .fuxico-article h1,
+            [data-theme="zine"] .fuxico-article h1,
+            [data-theme="acad"] .fuxico-article h1 {
+                font-size: 1.6rem;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 20mm 15mm 20mm 15mm;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 11pt !important;
+                line-height: 1.4 !important;
+            }
+
+            .doc-toolbar,
+            .trans-stripe,
+            .duct-tape,
+            .doc-footer,
+            .diagram-actions,
+            .btn-diagram-action,
+            .btn-copy-code,
+            .diagram-source {
+                display: none !important;
+            }
+
+            .fuxico-container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+
+            .fuxico-article {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            .diagram-figure {
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin: 1.5em 0 !important;
+            }
+
+            .diagram-header {
+                display: none !important;
+            }
+
+            .diagram-viewport {
+                padding: 0 !important;
+            }
+
+            .joaju-academic-table {
+                font-size: 8.5pt !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .joaju-academic-table thead {
+                display: table-header-group;
+            }
+
+            .joaju-academic-table tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .fuxico-article img {
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            a {
+                text-decoration: underline !important;
+                color: #000000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fuxico-container">
+        <div class="trans-stripe" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+        <div class="duct-tape">FUXICO // DOCUMENTO</div>
+
+        <nav class="doc-toolbar">
+            <div class="doc-breadcrumbs">
+                <a href="/">FUXICO</a>
+                <span>/</span>
+                <span>docs-index.md</span>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn-tool" id="btnThemeToggle" onclick="toggleTheme()" title="Alternar entre visual Zine e Acadêmico">
+                    <span id="themeLabel">🏛️ Acadêmico</span>
+                </button>
+                <a href="?raw=1" class="btn-tool" title="Ver ou baixar markdown puro">
+                    ⬇ Raw
+                </a>
+                <a href="/index/pdf" class="btn-tool" target="_blank" title="Baixar PDF compilado com Joaju e Typst">📄 PDF</a>
+                <button type="button" class="btn-tool" onclick="copyDocUrl()" title="Copiar link do documento">
+                    🔗 Copiar
+                </button>
+            </div>
+        </nav>
+
+        <article class="fuxico-article">
+            <h1 id="central-de-documentacao-do-fuxico">📚 Central de Documentação do Fuxico</h1>
+<div class="callout callout-note"><div class="callout-title"><span class="callout-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span><span class="callout-title-text">Note</span></div><div class="callout-content"><p>Bem-vinda à documentação técnica e cultural do <strong>Fuxico</strong> — tecnologia travesti latino-americana de compartilhamento efêmero, visualização de markdown, gists e git http smart protocol.</p></div></div>
+<hr>
+<h2 id="guias-e-manuais-disponiveis">Guias e Manuais Disponíveis</h2>
+<h3 id="fuxico-api-specification-api-html"><a href="api.html" target="_blank" rel="noopener noreferrer">Fuxico API Specification</a></h3>
+<p>Consulte a especificação completa em <a href="api.html" target="_blank" rel="noopener noreferrer">Fuxico API Specification</a>.</p>
+<h3 id="arquitetura-do-fuxico-architecture-html"><a href="architecture.html" target="_blank" rel="noopener noreferrer">Arquitetura do Fuxico</a></h3>
+<p>Fuxico: A malícia popular do boca a boca no terminal e na web.</p>
+<h3 id="manual-das-ferramentas-de-linha-de-comando-fux-cli-html"><a href="cli.html" target="_blank" rel="noopener noreferrer">Manual das Ferramentas de Linha de Comando (<code>fux</code>)</a></h3>
+<p>O Fuxico oferece duas implementações de cliente de terminal com paridade funcional total:</p>
+<h3 id="fuxico-production-deployment-guide-deployment-html"><a href="deployment.html" target="_blank" rel="noopener noreferrer">Fuxico Production Deployment Guide</a></h3>
+<p>[!IMPORTANT]</p>
+<h3 id="glossario-cultural-pajuba-no-fuxico-pajuba-html"><a href="pajuba.html" target="_blank" rel="noopener noreferrer">Glossário Cultural &amp; Pajubá no Fuxico</a></h3>
+<p>"A tecnologia que não sabe debochar se leva a sério demais para ser livre."</p>
+<h3 id="especificacao-dos-protocolos-do-fuxico-protocols-html"><a href="protocols.html" target="_blank" rel="noopener noreferrer">Especificação dos Protocolos do Fuxico</a></h3>
+<p>[!TIP]</p>
+<hr>
+<h2 id="links-rapidos">Links Rápidos</h2>
+<ul>
+<li>🏠 <a href="../index.html" target="_blank" rel="noopener noreferrer">Voltar para a Página Principal do Fuxico</a></li>
+<li>💻 <a href="../commands.html" target="_blank" rel="noopener noreferrer">Manual de Comandos da CLI</a></li>
+<li>💾 <a href="../downloads.html" target="_blank" rel="noopener noreferrer">Seção de Downloads &amp; Binários</a></li>
+<li>🐱 <a href="https://codeberg.org/lumenpink/fuxico" target="_blank" rel="noopener noreferrer">Repositório Oficial no Codeberg</a></li>
+</ul>
+        </article>
+
+        <div class="trans-stripe bottom" role="img" aria-label="Faixa do Orgulho Trans">
+            <div class="trans-stripe-line blue"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line white"></div>
+            <div class="trans-stripe-line pink"></div>
+            <div class="trans-stripe-line blue"></div>
+        </div>
+    </div>
+
+    <footer class="doc-footer">
+        <p>Postado em 2026-10-22 00:28:47 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'zine';
+            const next = current === 'zine' ? 'acad' : 'zine';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fuxico_theme', next);
+            updateThemeLabel(next);
+        }
+
+        function updateThemeLabel(theme) {
+            const label = document.getElementById('themeLabel');
+            if (label) {
+                label.innerText = theme === 'zine' ? '🏛️ Acadêmico' : '⚡ Zine';
+            }
+        }
+
+        function copyDocUrl() {
+            navigator.clipboard.writeText(window.location.href.split('?')[0])
+                .then(() => alert('Link copiado para a área de transferência!'));
+        }
+
+        function toggleDiagramSource(btn) {
+            const fig = btn.closest('.diagram-figure');
+            if (!fig) return;
+            const src = fig.querySelector('.diagram-source');
+            const view = fig.querySelector('.diagram-viewport');
+            if (src && view) {
+                const isHidden = src.style.display === 'none' || getComputedStyle(src).display === 'none';
+                src.style.display = isHidden ? 'block' : 'none';
+                view.style.display = isHidden ? 'none' : 'flex';
+                btn.innerText = isHidden ? 'Visual' : 'Código';
+            }
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-block-wrapper') || btn.closest('.diagram-figure');
+            const pre = container ? container.querySelector('pre') : null;
+            if (pre) {
+                navigator.clipboard.writeText(pre.innerText).then(() => {
+                    const original = btn.innerText;
+                    btn.innerText = 'Copiado!';
+                    setTimeout(() => { btn.innerText = original; }, 2000);
+                });
+            }
+        }
+
+        // Gestos táteis nos diagramas (Pinch-to-zoom & Pan para mobile)
+        function initDiagramTouchInteractions() {
+            document.querySelectorAll('.diagram-viewport').forEach(viewport => {
+                const svg = viewport.querySelector('svg');
+                if (!svg) return;
+
+                let scale = 1;
+                let pointX = 0;
+                let pointY = 0;
+                let startX = 0;
+                let startY = 0;
+                let initialDistance = 0;
+                let isDragging = false;
+                let lastTap = 0;
+
+                function setTransform() {
+                    svg.style.transform = 'translate(' + pointX + 'px, ' + pointY + 'px) scale(' + scale + ')';
+                }
+
+                viewport.addEventListener('touchstart', e => {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        initialDistance = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                    } else if (e.touches.length === 1) {
+                        const now = Date.now();
+                        if (now - lastTap < 300) {
+                            e.preventDefault();
+                            if (scale > 1) {
+                                scale = 1;
+                                pointX = 0;
+                                pointY = 0;
+                            } else {
+                                scale = 2;
+                            }
+                            setTransform();
+                            lastTap = 0;
+                            return;
+                        }
+                        lastTap = now;
+
+                        if (scale > 1) {
+                            isDragging = true;
+                            startX = e.touches[0].clientX - pointX;
+                            startY = e.touches[0].clientY - pointY;
+                        }
+                    }
+                }, { passive: false });
+
+                viewport.addEventListener('touchmove', e => {
+                    if (e.touches.length === 2 && initialDistance > 0) {
+                        e.preventDefault();
+                        const currentDistance = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        const diff = currentDistance / initialDistance;
+                        scale = Math.min(Math.max(0.8, scale * (1 + (diff - 1) * 0.5)), 4);
+                        initialDistance = currentDistance;
+                        setTransform();
+                    } else if (e.touches.length === 1 && isDragging) {
+                        e.preventDefault();
+                        pointX = e.touches[0].clientX - startX;
+                        pointY = e.touches[0].clientY - startY;
+                        setTransform();
+                    }
+                }, { passive: false });
+
+                viewport.addEventListener('touchend', e => {
+                    if (e.touches.length < 2) {
+                        initialDistance = 0;
+                    }
+                    if (e.touches.length === 0) {
+                        isDragging = false;
+                        if (scale <= 1) {
+                            pointX = 0;
+                            pointY = 0;
+                            setTransform();
+                        }
+                    }
+                });
+            });
+        }
+
+        // Initialize button label and touch gestures on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'zine';
+            updateThemeLabel(current);
+            initDiagramTouchInteractions();
+        });
+    </script>
+</body>
+</html>

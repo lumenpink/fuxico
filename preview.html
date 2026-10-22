@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUXICO — Galeria Visual & Preview do Site de Documentação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --acid-yellow: #e2f835;
+      --electric-pink: #ff2a85;
+      --bg-dark: #121016;
+      --card-bg: #1a1622;
+      --card-surface: #241e30;
+      --text-main: #f5f4ef;
+      --text-muted: #a7a2b5;
+      --trans-blue: #5bcefa;
+      --trans-pink: #f5a9b8;
+      --trans-white: #ffffff;
+      --border-color: #383048;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(#251f33 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: var(--text-main);
+      font-family: 'Space Grotesk', sans-serif;
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+
+    /* Trans Pride Top Banner */
+    .trans-banner {
+      display: flex;
+      height: 10px;
+      width: 100%;
+    }
+    .trans-banner span { flex: 1; }
+    .trans-banner .b { background: var(--trans-blue); }
+    .trans-banner .p { background: var(--trans-pink); }
+    .trans-banner .w { background: var(--trans-white); }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    header {
+      position: relative;
+      background: var(--card-bg);
+      border: 3px solid var(--border-color);
+      box-shadow: 8px 8px 0px var(--electric-pink);
+      padding: 35px 25px;
+      margin-bottom: 40px;
+    }
+
+    .duct-tape {
+      position: absolute;
+      top: -16px;
+      left: 30px;
+      background: var(--acid-yellow);
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 18px;
+      letter-spacing: 2px;
+      transform: rotate(-1.5deg);
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+
+    h1.brand-title {
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      color: var(--acid-yellow);
+      letter-spacing: 2px;
+      line-height: 1;
+      text-transform: uppercase;
+      text-shadow: 3px 3px 0px var(--electric-pink);
+    }
+
+    .brand-sub {
+      font-family: 'Space Mono', monospace;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    .cultural-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 15px;
+      background: #0f0d14;
+      border: 1px solid var(--electric-pink);
+      padding: 6px 14px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--trans-blue);
+    }
+
+    section {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: 6px 6px 0px rgba(0,0,0,0.4);
+    }
+
+    h2.section-title {
+      font-family: 'Anton', sans-serif;
+      font-size: 2rem;
+      color: var(--acid-yellow);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+
+    .art-card {
+      background: var(--card-surface);
+      border: 2px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .art-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0px 8px 20px rgba(226, 248, 53, 0.15);
+      border-color: var(--acid-yellow);
+    }
+
+    .art-img-wrapper {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-bottom: 2px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .art-img-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: opacity 0.2s;
+    }
+
+    .art-info {
+      padding: 16px;
+      flex-grow: 1;
+    }
+
+    .art-tag {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--electric-pink);
+      color: #fff;
+      padding: 2px 8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .art-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .art-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* SBC Table */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+
+    table.sbc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    table.sbc-table th {
+      background: #14111a;
+      color: var(--acid-yellow);
+      font-family: 'Space Mono', monospace;
+      text-align: left;
+      padding: 14px;
+      border-bottom: 2px solid var(--acid-yellow);
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    table.sbc-table td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    table.sbc-table tr:hover td {
+      background: rgba(226, 248, 53, 0.03);
+    }
+
+    .badge-arch {
+      background: #201a2c;
+      border: 1px solid var(--electric-pink);
+      color: var(--electric-pink);
+      padding: 3px 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .file-name {
+      font-family: 'Space Mono', monospace;
+      color: var(--acid-yellow);
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    .sbc-list {
+      color: #ded9e8;
+      line-height: 1.5;
+    }
+
+    .sbc-list strong {
+      color: var(--trans-blue);
+    }
+
+    /* Terminal Box */
+    .terminal-box {
+      background: #0d0b11;
+      border: 2px solid var(--acid-yellow);
+      box-shadow: 6px 6px 0px var(--electric-pink);
+      padding: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.95rem;
+      margin-top: 15px;
+    }
+
+    .cmd-line {
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .cmd-line .prompt { color: var(--electric-pink); font-weight: 700; }
+    .cmd-line .cmd { color: var(--acid-yellow); font-weight: 700; }
+
+    footer {
+      text-align: center;
+      padding-top: 30px;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--electric-pink);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <!-- OpenGraph / Social Meta (GOST Chapter 11) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FUXICO — Visual Gallery, Artworks & UI Screenshots">
+  <meta property="og:description" content="Visual showcase of Trava Zine collage artwork, high-contrast photocopier aesthetics, localized UI screenshots, and OpenGraph social cards.">
+  <meta property="og:image" content="https://fuxico.2lp.in/assets/og_preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://fuxico.2lp.in/preview.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FUXICO — Visual Gallery, Artworks & UI Screenshots">
+  <meta name="twitter:description" content="Visual showcase of Trava Zine collage artwork, high-contrast photocopier aesthetics, localized UI screenshots, and OpenGraph social cards.">
+  <meta name="twitter:image" content="https://fuxico.2lp.in/assets/og_preview.png">
+</head>
+<body>
+
+  <div class="trans-banner">
+    <span class="b"></span><span class="p"></span><span class="w"></span><span class="p"></span><span class="b"></span>
+  </div>
+
+  <div class="container">
+    <header>
+      <div class="duct-tape">PREVIEW // FUXICO.2LP.IN</div>
+      <h1 class="brand-title">FUXICO</h1>
+      <p class="brand-sub">A malícia popular do boca a boca — Central de Documentação & Distribuição Estática</p>
+      <div class="cultural-badge">
+        <span>🏳️‍⚧️ Fervo & tecnologia travesti latina</span>
+        <span>•</span>
+        <span>⚡ 100% Estático & Standalone</span>
+      </div>
+    </header>
+
+    <!-- 1. Colagens Zine & Arte -->
+    <section>
+      <h2 class="section-title">🎨 1. Colagens Zine & Arte Risográfica</h2>
+      <p style="color: var(--text-muted);">
+        Artes concebidas na estética independente de zine, com recortes Xerox, retículas de meio-tom (halftone), lambe-lambes de rua, fita adesiva amarela e a faixa do orgulho trans.
+      </p>
+
+      <div class="gallery-grid">
+        <!-- Hero Poster -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/art/fuxico-zine-hero.jpg', '_blank')">
+            <img src="assets/art/fuxico-zine-hero.jpg" alt="Fuxico Underground Zine Hero Banner" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Poster // Capa</span>
+            <h3 class="art-title">Zine Hero Banner</h3>
+            <p class="art-desc">Colagem de alto contraste com colagens de jornais punk, spray rosa elétrico, fitas trans e o lema "SOLTA O VERBO".</p>
+          </div>
+        </div>
+
+        <!-- SBC Boards -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/art/fuxico-sbc-boards.jpg', '_blank')">
+            <img src="assets/art/fuxico-sbc-boards.jpg" alt="SBCs na Fotocopiadora Xerox" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Hardware // SBCs</span>
+            <h3 class="art-title">Orange, Banana & Pi no Scanner</h3>
+            <p class="art-desc">Placas SBCs escaneadas diretamente no vidro da fotocopiadora com etiquetas, cabos flat, fitas cassete e esquemas de circuitos.</p>
+          </div>
+        </div>
+
+        <!-- Travesti Tech -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/art/fuxico-travesti-zine.jpg', '_blank')">
+            <img src="assets/art/fuxico-travesti-zine.jpg" alt="Tecnologia Travesti Latina" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Manifesto // Pajubá</span>
+            <h3 class="art-title">Tecnologia Travesti Latina</h3>
+            <p class="art-desc">Arte de manifesto hacker e contracultura celebrando termos autênticos do Pajubá (Aquendar, Desaquendar, Bafão) e monitor CRT.</p>
+          </div>
+        </div>
+
+        <!-- OpenGraph Social Banner (GOST Cap 11) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/og_preview.png', '_blank')">
+            <img src="assets/og_preview.png" alt="OpenGraph Social Card & Banner (Norma GOST)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Social // GOST Cap. 11</span>
+            <h3 class="art-title">Card OpenGraph & Poster Oficial</h3>
+            <p class="art-desc">Banner oficial 1200x630 com Safe Zone 4:3 centralizada, fita adesiva, faixa trans e tipografia Anton de alto contraste.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Prints Reais da Interface & Terminal -->
+    <section>
+      <h2 class="section-title">📸 2. Prints Reais da Interface & Terminal (PT-BR & EN)</h2>
+      <p style="color: var(--text-muted);">
+        Capturas pixel-perfect da aplicação Fuxico rodando localmente, localizadas entre Português (com Pajubá) e Inglês internacional.
+      </p>
+
+      <div class="gallery-grid">
+        <!-- Dropzone UI (PT) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/prints/ui-dropzone.png', '_blank')">
+            <img src="assets/prints/ui-dropzone.png" alt="Fuxico Dropzone Upload UI (PT)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Web UI // PT-BR</span>
+            <h3 class="art-title">Dropzone & Envio Efêmero</h3>
+            <p class="art-desc">Interface zine com vocabulário pajubá (bafão, queima-de-arquivo, aquendar), fitas adesivas e slug cifrado.</p>
+          </div>
+        </div>
+
+        <!-- Dropzone UI (EN) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/prints/ui-dropzone-en.png', '_blank')">
+            <img src="assets/prints/ui-dropzone-en.png" alt="Fuxico Dropzone Upload UI (EN)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Web UI // English</span>
+            <h3 class="art-title">Dropzone & Ephemeral Share</h3>
+            <p class="art-desc">International interface with standard terminology, oneshot expiration, custom slug, and trans pride ribbon.</p>
+          </div>
+        </div>
+
+        <!-- Dashboard UI (PT) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/prints/ui-dashboard.png', '_blank')">
+            <img src="assets/prints/ui-dashboard.png" alt="Fuxico Dashboard UI (PT)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Web UI // PT-BR</span>
+            <h3 class="art-title">Painel de Gestão (Pajubá)</h3>
+            <p class="art-desc">Painel com contadores de fofocas no ar, volume total em MB, cliques e ações imediatas com X-Token.</p>
+          </div>
+        </div>
+
+        <!-- Dashboard UI (EN) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/prints/ui-dashboard-en.png', '_blank')">
+            <img src="assets/prints/ui-dashboard-en.png" alt="Fuxico Dashboard UI (EN)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">Web UI // English</span>
+            <h3 class="art-title">Management Dashboard</h3>
+            <p class="art-desc">Authenticated file manager showing active items, total storage volume, view counts, and quick management actions.</p>
+          </div>
+        </div>
+
+        <!-- Terminal CLI (PT) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/prints/ui-terminal.png', '_blank')">
+            <img src="assets/prints/ui-terminal.png" alt="Terminal CLI fux (PT)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">CLI // PT-BR</span>
+            <h3 class="art-title">fux em Ação no Terminal</h3>
+            <p class="art-desc">Demonstração com flags em pajubá (--caduca, --queima, --copia), deboche no stderr e URL limpa no stdout.</p>
+          </div>
+        </div>
+
+        <!-- Terminal CLI (EN) -->
+        <div class="art-card">
+          <div class="art-img-wrapper" onclick="window.open('assets/prints/ui-terminal-en.png', '_blank')">
+            <img src="assets/prints/ui-terminal-en.png" alt="Terminal CLI fux (EN)" loading="lazy">
+          </div>
+          <div class="art-info">
+            <span class="art-tag">CLI // English</span>
+            <h3 class="art-title">fux Terminal CLI (EN)</h3>
+            <p class="art-desc">CLI execution with standard flags (-e 24h, -c), spilling the beans to stderr and clean URL output to stdout.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Tabela Didática de Hardware & Clones SBCs -->
+    <section>
+      <h2 class="section-title">🍓 3. Tabela Didática de Hardware & Clones SBCs</h2>
+      <p style="color: var(--text-muted);">
+        Para acabar com a clássica confusão de arquiteturas, esta tabela estará disponível diretamente na página de downloads:
+      </p>
+
+      <div class="table-container">
+        <table class="sbc-table">
+          <thead>
+            <tr>
+              <th>Arquitetura</th>
+              <th>Binário Standalone Direto</th>
+              <th>Placas & Clones Cobertos (SBCs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge-arch">Linux ARMv7</span><br><small style="color:var(--text-muted)">32-bit armhf</small></td>
+              <td><span class="file-name">fux-linux-armv7</span></td>
+              <td class="sbc-list">
+                <strong>Orange Pi:</strong> Zero, One, Lite, PC, PC Plus, 2G-IOT (Allwinner H2+/H3)<br>
+                <strong>Banana Pi:</strong> M2 Berry, M2+, M2 Magic, M2 Ultra<br>
+                <strong>Raspberry Pi:</strong> 2, 3, 4 (rodando SO 32-bit)<br>
+                <strong>Outros:</strong> NanoPi NEO, NanoPi Air, BeagleBone Black, Cubieboard
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge-arch">Linux ARM64</span><br><small style="color:var(--text-muted)">64-bit aarch64</small></td>
+              <td><span class="file-name">fux-linux-aarch64</span></td>
+              <td class="sbc-list">
+                <strong>Orange Pi:</strong> 5, 5 Plus, 3B, Zero 2, Zero 3<br>
+                <strong>Banana Pi:</strong> BPI-M5, BPI-M4 Zero, BPI-R3<br>
+                <strong>Raspberry Pi:</strong> 3, 4, 5, Zero 2 W (rodando SO 64-bit)<br>
+                <strong>Outros:</strong> Rock Pi 4, Pine64, Odroid C4/N2, Servidores ARM (Ampere, Graviton)
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge-arch">Linux ARMv6</span><br><small style="color:var(--text-muted)">32-bit legadão</small></td>
+              <td><span class="file-name">fux-linux-armv6</span></td>
+              <td class="sbc-list">
+                <strong>Raspberry Pi:</strong> 1 Modelo A/B/B+, Raspberry Pi Zero v1.x e Zero W<br>
+                <strong>Outros:</strong> Pogoplug clássico
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge-arch">Linux x86_64</span><br><small style="color:var(--text-muted)">musl estático</small></td>
+              <td><span class="file-name">fux-linux-x86_64</span></td>
+              <td class="sbc-list">
+                PCs Intel/AMD 64-bit, Notebooks, Servidores VPS, Mini PCs (NUC, Beelink), Alpine, Debian, Arch, Docker
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge-arch">Windows 64-bit</span><br><small style="color:var(--text-muted)">x86_64</small></td>
+              <td><span class="file-name">fux-windows-x86_64.exe</span></td>
+              <td class="sbc-list">
+                Windows 10, Windows 11, Windows Server 64-bit
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge-arch">Shell Universal</span><br><small style="color:var(--text-muted)">POSIX / Bash</small></td>
+              <td><span class="file-name">fux</span></td>
+              <td class="sbc-list">
+                Qualquer sistema Unix com <code>curl</code> (Linux, macOS, FreeBSD, OpenBSD, Termux no Android, OpenWrt)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. Instalador Universal em 1 Linha -->
+    <section>
+      <h2 class="section-title">⚡ 4. Instalador Direto em 1 Linha</h2>
+      <p style="color: var(--text-muted);">
+        Sem dependências complexas — o script detecta a CPU e o SO e entrega o executável pronto:
+      </p>
+
+      <div class="terminal-box">
+        <div class="cmd-line">
+          <span class="prompt">$</span> <span class="cmd">curl -fsSL https://fuxico.2lp.in/install.sh | bash</span>
+        </div>
+        <div style="color: var(--text-muted); margin-top: 10px; font-size: 0.85rem;">
+          [fux-installer] Detectado: Linux (armv7l) — Orange Pi / Banana Pi / RPi 32-bit<br>
+          [fux-installer] Baixando binário standalone direto: fux-linux-armv7...<br>
+          [fux-installer] Validando checksum SHA-256... OK!<br>
+          [fux-installer] Instalado com sucesso em ~/.local/bin/fux ✨
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Orgulhosamente produzido por uma <a href="https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)" target="_blank">travesti latina</a> :)<br>
+      FUXICO // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Codeberg</a> // GPL-3.0-or-later
+    </footer>
+  </div>
+
+</body>
+</html>

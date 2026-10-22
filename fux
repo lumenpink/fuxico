@@ -1,0 +1,594 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# fux - A malícia popular do boca a boca no terminal
+# ==============================================================================
+# Regra de ouro: deboche no stderr, URL pura no stdout!
+# Suporta dialetos: nullpointer (0x0.st) e rustypaste
+# ==============================================================================
+
+set -euo pipefail
+
+# Visual formatting (stderr only)
+BOLD="$(printf '\033[1m')"
+YELLOW="$(printf '\033[0;33m')"
+PINK="$(printf '\033[0;35m')"
+CYAN="$(printf '\033[0;36m')"
+RESET="$(printf '\033[0m')"
+
+# Default values
+CONFIG_FILE=""
+SERVER_URL=""
+AUTH_TOKEN=""
+DIALECT="nullpointer"
+EXPIRATION="24"
+ONESHOT=false
+SECRET=false
+CUSTOM_NAME=""
+TARGET_URL=""
+DELETE_TARGET=""
+LIST_FILES=false
+COPY_CLIPBOARD=false
+SILENT=false
+IS_GIST=false
+
+# First pre-pass to check for --config / -C / --conf
+ARGS=("$@")
+for ((i=0; i<${#ARGS[@]}; i++)); do
+    case "${ARGS[i]}" in
+        -C|--config|--conf)
+            if (( i + 1 < ${#ARGS[@]} )); then
+                CONFIG_FILE="${ARGS[i+1]}"
+            fi
+            ;;
+        --config=*|--conf=*)
+            CONFIG_FILE="${ARGS[i]#*=}"
+            ;;
+    esac
+done
+
+# Load configuration file if present
+load_config() {
+    local file="$1"
+    if [[ -f "$file" ]]; then
+        while IFS='=' read -r key val || [[ -n "$key" ]]; do
+            # Strip comments and trim whitespace
+            key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/#.*//')
+            val=$(echo "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/#.*//')
+            # Remove surrounding quotes
+            val="${val#\"}"
+            val="${val%\"}"
+            val="${val#\'}"
+            val="${val%\'}"
+
+            [[ -z "$key" ]] && continue
+
+            case "$(echo "$key" | tr '[:upper:]' '[:lower:]')" in
+                server|servidor|url|fuxico_url)
+                    [[ -z "$SERVER_URL" ]] && SERVER_URL="$val"
+                    ;;
+                token|ficha|auth_token|fuxico_token)
+                    [[ -z "$AUTH_TOKEN" ]] && AUTH_TOKEN="$val"
+                    ;;
+                dialect|dialeto|sotaque)
+                    DIALECT="$val"
+                    ;;
+                expires|caduca|expiration)
+                    EXPIRATION="$val"
+                    ;;
+                oneshot|queima)
+                    if [[ "$val" =~ ^(true|yes|1|sim|s)$ ]]; then
+                        ONESHOT=true
+                    fi
+                    ;;
+                secret|segredo)
+                    if [[ "$val" =~ ^(true|yes|1|sim|s)$ ]]; then
+                        SECRET=true
+                    fi
+                    ;;
+            esac
+        done < "$file"
+    fi
+}
+
+if [[ -n "$CONFIG_FILE" ]]; then
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo -e "${PINK}[fux]${RESET} arquivo de configuração não encontrado: $CONFIG_FILE" >&2
+        exit 1
+    fi
+    load_config "$CONFIG_FILE"
+elif [[ -n "${FUXICO_CONFIG:-}" && -f "$FUXICO_CONFIG" ]]; then
+    load_config "$FUXICO_CONFIG"
+else
+    # Default search paths
+    XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
+    for candidate in \
+        "$XDG_CONFIG/fux/config.toml" \
+        "$HOME/.fuxrc"; do
+        if [[ -f "$candidate" ]]; then
+            load_config "$candidate"
+            break
+        fi
+    done
+fi
+
+# Fallback to Environment Variables or Defaults
+SERVER_URL="${SERVER_URL:-${FUXICO_URL:-http://localhost:8080}}"
+AUTH_TOKEN="${AUTH_TOKEN:-${FUXICO_TOKEN:-}}"
+
+log() {
+    if [[ "${SILENT}" == false ]]; then
+        echo -e "${YELLOW}[fux]${RESET} $*" >&2
+    fi
+}
+
+usage() {
+    cat <<EOF
+${BOLD}fux${RESET} - A malícia popular do boca a boca no terminal
+fux é um chuchuzim fuxiquento.
+
+${BOLD}Uso:${RESET}
+    fux [opções] <arquivo>
+    cat dump.sql | fux [opções]
+    fux -q <arquivo>               (queima de arquivo: some no 1º download)
+    fux -u <url>                   (encurtar fofoca)
+    fux -g <arq1> <arq2>...        (publicar gist multi-arquivo com abas)
+    fux git init [nome]            (inicializar repositório git efêmero)
+    fux -d <slug>                  (queimar fofoca com token)
+    fux -l                         (listar fofocas ativas)
+
+${BOLD}Opções (EN & PT-BR):${RESET}
+    -S, --server, --servidor <url>     URL do servidor (padrão: \$FUXICO_URL ou http://localhost:8080)
+    -t, --token, --ficha <token>       Token/Ficha de autorização (ou \$FUXICO_TOKEN)
+    -D, -m, --dialect, --dialeto <d>   Dialeto: 'nullpointer' (0x0) ou 'rustypaste' (rpaste)
+    -e, --expires, --caduca <tempo>    Validade do bafão (ex: 2h, 24, 7d, 30d)
+    -q, -1, -o, --queima, --oneshot    Queima-de-arquivo (destruição no primeiro GET)
+    -s, --secret, --segredo            Fofoca cifrada (slug de 16 caracteres indecifrável)
+    -n, --name, --nome, --apelido <n>  Apelido customizado / slug
+    -g, --gist                         Publicar como Gist multi-arquivo com abas interativas
+    -u, --url, --shorten, --encurta <u> Encurtar URL de destino
+    -d, --delete, --apaga <slug>       Apagar / queimar fofoca
+    -l, --list, --lista                Listar fofocas ativas (JSON)
+    -c, --copy, --copia                Copiar link pro clipboard (xclip/wl-copy/pbcopy)
+    -C, --config, --conf <arquivo>     Caminho para arquivo de configuração TOML
+    --quiet, --calado, --caladinho     Modo silencioso: silencia o stderr
+    -h, --help, --ajuda, --socorro     Mostra esta ajuda
+
+${BOLD}Exemplos:${RESET}
+    fux pedrada.pdf -q
+    fux fofoca.png --caduca 2h --copia
+    fux gist app.py README.md config.json
+    fux -g main.rs Cargo.toml
+    cat dump.sql | fux -e 2h
+    fux --encurta https://exemplo.com --segredo
+    url=\$(fux bafao.png --calado)
+EOF
+}
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -q|-1|-o|--queima|--oneshot)
+            ONESHOT=true
+            shift
+            ;;
+        -e|--expires|--caduca)
+            EXPIRATION="${2:-}"
+            shift 2
+            ;;
+        --expires=*|--caduca=*)
+            EXPIRATION="${1#*=}"
+            shift
+            ;;
+        -s|--secret|--segredo)
+            SECRET=true
+            shift
+            ;;
+        -u|--url|--shorten|--encurta)
+            TARGET_URL="${2:-}"
+            shift 2
+            ;;
+        --url=*|--shorten=*|--encurta=*)
+            TARGET_URL="${1#*=}"
+            shift
+            ;;
+        -n|--name|--alias|--nome|--apelido)
+            CUSTOM_NAME="${2:-}"
+            shift 2
+            ;;
+        --name=*|--alias=*|--nome=*|--apelido=*)
+            CUSTOM_NAME="${1#*=}"
+            shift
+            ;;
+        -g|--gist)
+            IS_GIST=true
+            shift
+            ;;
+        -t|--token|--ficha)
+            AUTH_TOKEN="${2:-}"
+            shift 2
+            ;;
+        --token=*|--ficha=*)
+            AUTH_TOKEN="${1#*=}"
+            shift
+            ;;
+        -S|--server|--servidor)
+            SERVER_URL="${2:-}"
+            shift 2
+            ;;
+        --server=*|--servidor=*)
+            SERVER_URL="${1#*=}"
+            shift
+            ;;
+        -D|-m|--dialect|--dialeto|--sotaque)
+            DIALECT="${2:-}"
+            shift 2
+            ;;
+        --dialect=*|--dialeto=*|--sotaque=*)
+            DIALECT="${1#*=}"
+            shift
+            ;;
+        -d|--delete|--apaga)
+            DELETE_TARGET="${2:-}"
+            shift 2
+            ;;
+        --delete=*|--apaga=*)
+            DELETE_TARGET="${1#*=}"
+            shift
+            ;;
+        -l|--list|--lista)
+            LIST_FILES=true
+            shift
+            ;;
+        -c|--copy|--copia)
+            COPY_CLIPBOARD=true
+            shift
+            ;;
+        -C|--config|--conf)
+            # Already parsed in pre-pass
+            shift 2
+            ;;
+        --config=*|--conf=*)
+            shift
+            ;;
+        --quiet|--calado|--caladinho)
+            SILENT=true
+            shift
+            ;;
+        -h|--help|--ajuda|--socorro)
+            usage
+            exit 0
+            ;;
+        *)
+            POSITIONAL_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Normalize dialect
+case "$(echo "$DIALECT" | tr '[:upper:]' '[:lower:]')" in
+    rustypaste|rpaste|rusty)
+        DIALECT="rustypaste"
+        ;;
+    nullpointer|0x0|0x0.st|default)
+        DIALECT="nullpointer"
+        ;;
+    *)
+        echo -e "${PINK}[fux]${RESET} sotaque desconhecido: ${DIALECT} (use 'nullpointer' ou 'rustypaste')" >&2
+        exit 1
+        ;;
+esac
+
+copy_to_clipboard() {
+    local text="$1"
+    if command -v wl-copy >/dev/null 2>&1; then
+        printf "%s" "$text" | wl-copy
+    elif command -v xclip >/dev/null 2>&1; then
+        printf "%s" "$text" | xclip -selection clipboard
+    elif command -v pbcopy >/dev/null 2>&1; then
+        printf "%s" "$text" | pbcopy
+    fi
+}
+
+handle_curl_error() {
+    local http_code="$1"
+    local body="$2"
+    local operation="${3:-operação}"
+
+    if [[ "$http_code" -eq 401 ]]; then
+        echo -e "${PINK}[fux]${RESET} acesso negado (HTTP 401): ficha/token de autenticação incorreto ou ausente." >&2
+        echo -e "${PINK}[fux]${RESET} dica: use 'fux -t <sua-ficha>' ou configure 'token = \"...\"' em ~/.config/fux/config.toml" >&2
+    elif [[ "$http_code" -eq 400 ]]; then
+        echo -e "${PINK}[fux]${RESET} requisição rejeitada (HTTP 400): ${body:-verifique os parâmetros ou a extensão do arquivo.}" >&2
+    elif [[ "$http_code" -eq 403 ]]; then
+        echo -e "${PINK}[fux]${RESET} ação proibida (HTTP 403): ${body:-permissão insuficiente para esta operação.}" >&2
+    elif [[ "$http_code" -eq 404 ]]; then
+        echo -e "${PINK}[fux]${RESET} não encontrado (HTTP 404): o arquivo ou rota solicitada não existe." >&2
+    elif [[ "$http_code" -eq 409 ]]; then
+        echo -e "${PINK}[fux]${RESET} conflito de nome (HTTP 409): ${body:-apelido ou slug já está em uso.}" >&2
+    elif [[ "$http_code" -eq 413 ]]; then
+        echo -e "${PINK}[fux]${RESET} arquivo grande demais (HTTP 413): o tamanho ultrapassa o limite máximo do servidor." >&2
+    else
+        echo -e "${PINK}[fux]${RESET} erro na ${operation} (HTTP ${http_code}): ${body}" >&2
+    fi
+    exit 1
+}
+
+# 1. Listar fofocas
+if [[ "${LIST_FILES}" == true ]]; then
+    log "consultando o cofre de fofocas..."
+    CURL_ARGS=("-s" "-i")
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/list" || true)
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+    BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$BODY" "listagem de fofocas"
+    fi
+
+    echo "${BODY}"
+    exit 0
+fi
+
+# 2. Queimar / Apagar fofoca
+if [[ -n "${DELETE_TARGET}" ]]; then
+    log "queimando a fofoca '${DELETE_TARGET}'..."
+    if [[ "${DIALECT}" == "nullpointer" ]]; then
+        # 0x0.st specification: POST /<slug> -F token=<token> -F delete=
+        RES=$(curl -s -w "\n%{http_code}" -X POST \
+            -F "token=${AUTH_TOKEN}" \
+            -F "delete=" \
+            "${SERVER_URL%/}/${DELETE_TARGET}" || true)
+        HTTP_CODE=$(echo "$RES" | tail -n 1)
+        BODY=$(echo "$RES" | sed '$d')
+        if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+            log "segredo incinerado com sucesso."
+            exit 0
+        fi
+    fi
+
+    # Rustypaste style or fallback: DELETE /<slug>
+    RES=$(curl -s -w "\n%{http_code}" -X DELETE -H "Authorization: Bearer ${AUTH_TOKEN}" "${SERVER_URL%/}/${DELETE_TARGET}" || true)
+    HTTP_CODE=$(echo "$RES" | tail -n 1)
+    BODY=$(echo "$RES" | sed '$d')
+    if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+        log "segredo incinerado com sucesso."
+    else
+        handle_curl_error "$HTTP_CODE" "$BODY" "remoção da fofoca"
+    fi
+    exit 0
+fi
+
+# 3. Encurtar URL
+if [[ -n "${TARGET_URL}" ]]; then
+    log "espalhando o link quente..."
+    CURL_ARGS=("-s" "-i")
+
+    if [[ "${DIALECT}" == "rustypaste" ]]; then
+        CURL_ARGS+=("-F" "url=${TARGET_URL}")
+        if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-H" "expire: ${EXPIRATION}"); fi
+        if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-H" "oneshot: true"); fi
+    else
+        # Nullpointer style
+        CURL_ARGS+=("-F" "shorten=${TARGET_URL}")
+        if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+        if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+    fi
+
+    if [[ "${SECRET}" == true ]]; then CURL_ARGS+=("-F" "secret="); fi
+    if [[ -n "${CUSTOM_NAME}" ]]; then CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}"); fi
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/" || true)
+
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+    BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+    X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$BODY" "encurtamento de link"
+    fi
+
+    if [[ -n "$X_TOKEN" ]]; then
+        log "ficha de gerência (X-Token): ${X_TOKEN}"
+    fi
+
+    log "tá na rua! link encurtado:"
+    echo "${BODY}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${BODY}"; fi
+    exit 0
+fi
+
+# 3.5 Inicialização de Repositório Git (fux git init [nome])
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 && "${POSITIONAL_ARGS[0]}" == "git" ]]; then
+    SUB_GIT="${POSITIONAL_ARGS[1]:-init}"
+    REPO_NAME="${POSITIONAL_ARGS[2]:-${CUSTOM_NAME:-}}"
+    if [[ -z "${REPO_NAME}" ]]; then
+        REPO_NAME=$(basename "$PWD")
+    fi
+
+    log "inicializando repositório git efêmero no fuxico..."
+    CURL_ARGS=("-s" "-i" "-X" "POST" "${SERVER_URL%/}/api/git")
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+    CURL_ARGS+=("-F" "name=${REPO_NAME}")
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+
+    RESPONSE=$(curl "${CURL_ARGS[@]}" || true)
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+    JSON_RESP=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$JSON_RESP" "criação de repositório git"
+    fi
+
+    CLONE_URL=$(echo "$JSON_RESP" | grep -o '"clone_url": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
+    GIT_TOKEN=$(echo "$JSON_RESP" | grep -o '"x_token": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
+
+    if [[ -z "${CLONE_URL}" ]]; then
+        echo -e "${PINK}[fux]${RESET} falha ao criar repositório git: ${JSON_RESP}" >&2
+        exit 1
+    fi
+
+    if [[ -n "${GIT_TOKEN}" ]]; then
+        log "ficha do repositório (X-Token): ${GIT_TOKEN}"
+    fi
+
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git remote remove fuxico 2>/dev/null || true
+        git remote add fuxico "${CLONE_URL}" 2>/dev/null || true
+        log "remote 'fuxico' configurado no repositório git local."
+        log "para enviar commits: git push -u fuxico main"
+    fi
+
+    echo "${CLONE_URL}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${CLONE_URL}"; fi
+    exit 0
+fi
+
+# 4. Upload de Gist (multi-arquivo)
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 && "${POSITIONAL_ARGS[0]}" == "gist" ]]; then
+    IS_GIST=true
+    POSITIONAL_ARGS=("${POSITIONAL_ARGS[@]:1}")
+fi
+
+if [[ ${#POSITIONAL_ARGS[@]} -gt 1 ]]; then
+    IS_GIST=true
+fi
+
+if [[ "${IS_GIST}" == true ]]; then
+    if [[ ${#POSITIONAL_ARGS[@]} -eq 0 ]]; then
+        echo -e "${PINK}[fux]${RESET} especifique ao menos um arquivo para o gist" >&2
+        exit 1
+    fi
+    log "empacotando o gist com ${#POSITIONAL_ARGS[@]} arquivos..."
+    CURL_ARGS=("-s" "-i")
+    for f in "${POSITIONAL_ARGS[@]}"; do
+        if [[ ! -f "$f" ]]; then
+            echo -e "${PINK}[fux]${RESET} arquivo não encontrado: $f" >&2
+            exit 1
+        fi
+        CURL_ARGS+=("-F" "files[]=@${f};filename=$(basename "$f")")
+    done
+    CURL_ARGS+=("-F" "type=gist")
+    if [[ -n "${CUSTOM_NAME}" ]]; then CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}"); fi
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+    if [[ "${SECRET}" == true ]]; then CURL_ARGS+=("-F" "secret="); fi
+    if [[ -n "${AUTH_TOKEN}" ]]; then CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}"); fi
+
+    RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/" || true)
+    HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+    BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+    X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+    if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+        handle_curl_error "$HTTP_CODE" "$BODY" "publicação do gist"
+    fi
+
+    if [[ -n "$X_TOKEN" ]]; then
+        log "ficha de gerência (X-Token): ${X_TOKEN}"
+    fi
+
+    log "tá na rua! gist multi-arquivo publicado:"
+    echo "${BODY}"
+    if [[ "${COPY_CLIPBOARD}" == true ]]; then copy_to_clipboard "${BODY}"; fi
+    exit 0
+fi
+
+# 5. Upload de Arquivo (ou stdin)
+FILE_TO_UPLOAD=""
+TEMP_FILE=""
+
+cleanup() {
+    if [[ -n "${TEMP_FILE}" && -f "${TEMP_FILE}" ]]; then
+        rm -f "${TEMP_FILE}"
+    fi
+}
+trap cleanup EXIT
+
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 ]]; then
+    FILE_TO_UPLOAD="${POSITIONAL_ARGS[0]}"
+    if [[ ! -f "${FILE_TO_UPLOAD}" ]]; then
+        echo -e "${PINK}[fux]${RESET} arquivo não encontrado: ${FILE_TO_UPLOAD}" >&2
+        exit 1
+    fi
+elif [ ! -t 0 ]; then
+    TEMP_FILE=$(mktemp /tmp/fux_stdin_XXXXXX)
+    cat > "${TEMP_FILE}"
+    FILE_TO_UPLOAD="${TEMP_FILE}"
+    if [[ -z "${CUSTOM_NAME}" ]]; then
+        MIME_DETECTED=$(file -b --mime-type "${TEMP_FILE}" 2>/dev/null || echo "text/plain")
+        case "${MIME_DETECTED}" in
+            application/json) CUSTOM_NAME="stdin.json" ;;
+            text/csv) CUSTOM_NAME="stdin.csv" ;;
+            text/html) CUSTOM_NAME="stdin.html" ;;
+            text/markdown|text/x-markdown) CUSTOM_NAME="stdin.md" ;;
+            application/pdf) CUSTOM_NAME="stdin.pdf" ;;
+            image/png) CUSTOM_NAME="stdin.png" ;;
+            image/jpeg) CUSTOM_NAME="stdin.jpg" ;;
+            *) CUSTOM_NAME="stdin.txt" ;;
+        esac
+    fi
+else
+    usage
+    exit 1
+fi
+
+log "espalhando o bafão..."
+
+CURL_ARGS=("-s" "-i")
+
+if [[ -n "${CUSTOM_NAME}" ]]; then
+    CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD};filename=${CUSTOM_NAME}")
+    CURL_ARGS+=("-F" "customName=${CUSTOM_NAME}")
+else
+    CURL_ARGS+=("-F" "file=@${FILE_TO_UPLOAD}")
+fi
+
+if [[ "${DIALECT}" == "rustypaste" ]]; then
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-H" "expire: ${EXPIRATION}"); fi
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-H" "oneshot: true"); fi
+else
+    # Nullpointer style
+    if [[ -n "${EXPIRATION}" ]]; then CURL_ARGS+=("-F" "expires=${EXPIRATION}"); fi
+    if [[ "${ONESHOT}" == true ]]; then CURL_ARGS+=("-F" "oneshot=true"); fi
+fi
+
+if [[ "${SECRET}" == true ]]; then
+    CURL_ARGS+=("-F" "secret=")
+fi
+
+if [[ -n "${AUTH_TOKEN}" ]]; then
+    CURL_ARGS+=("-H" "Authorization: Bearer ${AUTH_TOKEN}")
+fi
+
+RESPONSE=$(curl "${CURL_ARGS[@]}" "${SERVER_URL%/}/" || true)
+
+# Split headers and body
+HTTP_CODE=$(echo "$RESPONSE" | grep -m1 '^HTTP/' | awk '{print $2}' || echo "000")
+BODY=$(echo "$RESPONSE" | awk 'BEGIN{body=0} /^\r?$/{body=1; next} body{print}')
+X_TOKEN=$(echo "$RESPONSE" | awk -F': ' 'tolower($1)=="x-token"{gsub(/\r/,""); print $2}')
+
+if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+    handle_curl_error "$HTTP_CODE" "$BODY" "publicação da fofoca"
+fi
+
+if [[ -n "$X_TOKEN" ]]; then
+    log "ficha de gerência (X-Token): ${X_TOKEN}"
+fi
+
+if [[ "${ONESHOT}" == true ]]; then
+    log "tá na rua! modo queima-de-arquivo ativado (evapora no 1º download)."
+else
+    log "tá na rua!"
+fi
+
+# Regra de ouro: apenas a URL pura no stdout!
+echo "${BODY}"
+
+if [[ "${COPY_CLIPBOARD}" == true ]]; then
+    copy_to_clipboard "${BODY}"
+    log "link copiado pro clipboard."
+fi

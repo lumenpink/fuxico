@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUXICO — Especificação dos Protocolos (0x0.st & Rustypaste)</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <!-- OpenGraph / Social Meta (GOST Chapter 11) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FUXICO — Protocolos, Especificação de API e Clientes">
+  <meta property="og:description" content="Compatibilidade nativa com 0x0.st, rustypaste, scripts curl e repositórios git remotos via HTTP com zero dependências externas.">
+  <meta property="og:image" content="https://fuxico.2lp.in/assets/og_preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://fuxico.2lp.in/pt/protocol.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FUXICO — Protocolos, Especificação de API e Clientes">
+  <meta name="twitter:description" content="Compatibilidade nativa com 0x0.st, rustypaste, scripts curl e repositórios git remotos via HTTP com zero dependências externas.">
+  <meta name="twitter:image" content="https://fuxico.2lp.in/assets/og_preview.png">
+</head>
+<body>
+
+  <!-- Faixa do Orgulho Trans -->
+  <div class="trans-ribbon">
+    <span class="tb"></span><span class="tp"></span><span class="tw"></span><span class="tp"></span><span class="tb"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="../assets/favicon.svg" alt="Logo Fuxico">
+        <span>FUXICO</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Visão Geral</a></li>
+        <li><a href="installation.html">Instalação</a></li>
+        <li><a href="downloads.html">Downloads</a></li>
+        <li><a href="commands.html">Manual CLI</a></li>
+        <li><a href="protocol.html" class="active">Protocolos</a></li>
+        <li><a href="pajuba.html">Pajubá</a></li>
+        <li><a href="../docs/index.html">Docs Zine</a></li>
+      </ul>
+      <div class="lang-switch">
+        <a href="../protocol.html" class="lang-btn">EN</a>
+        <a href="protocol.html" class="lang-btn active">PT</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header class="hero-header">
+      <div class="duct-tape">ESPECIFICAÇÃO TÉCNICA // MOTOR MULTIPROTOCOLO</div>
+      <h1 class="page-title">ESPECIFICAÇÃO DE PROTOCOLOS</h1>
+      <p class="subtitle">
+        O Fuxico implementa 5 protocolos principais de comunicação: <strong>The Null Pointer (0x0.st)</strong>, <strong>rustypaste</strong>, <strong>Publicação Zine em Markdown</strong>, <strong>Gists Multifiles</strong> e <strong>Git HTTP Smart Protocol</strong>.
+      </p>
+      <div class="badge-row">
+        <span class="badge">🌐 Compatibilidade Nativa cURL & Git</span>
+        <span class="badge neon">🔑 Cabeçalho de Gestão X-Token</span>
+        <span class="badge">📝 Markdown, Gists & Repositórios Bare</span>
+      </div>
+    </header>
+
+    <!-- Protocolo 0x0.st -->
+    <section class="doc-section">
+      <h2 class="section-heading">0️⃣ 1. Protocolo The Null Pointer (0x0.st)</h2>
+      <p class="lead">
+        Envie formulários multipart padrão via <code>POST /</code>:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Campo / Parâmetro</th>
+              <th>Tipo</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>file</code></td>
+              <td>Multipart File</td>
+              <td>Conteúdo do arquivo físico a ser enviado.</td>
+            </tr>
+            <tr>
+              <td><code>url</code></td>
+              <td>String URL</td>
+              <td>Instrui o servidor a baixar e armazenar o conteúdo de uma URL remota.</td>
+            </tr>
+            <tr>
+              <td><code>shorten</code></td>
+              <td>String URL</td>
+              <td>Encurta a URL informada e devolve um link de redirecionamento.</td>
+            </tr>
+            <tr>
+              <td><code>secret</code></td>
+              <td>Flag / Vazio</td>
+              <td>Gera um slug secreto e imprevisível de alta entropia (16 caracteres).</td>
+            </tr>
+            <tr>
+              <td><code>expires</code></td>
+              <td>Inteiro / String</td>
+              <td>Tempo de retenção em horas (ex: <code>24</code>) ou timestamp epoch em ms.</td>
+            </tr>
+            <tr>
+              <td><code>oneshot</code></td>
+              <td>Flag / Boolean</td>
+              <td>Queima-de-arquivo: se enviado, o arquivo se autodestrói logo no primeiro download.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading">Exemplos com cURL</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">curl — exemplos 0x0.st</span>
+          <button class="copy-btn" data-target="cmd-0x0-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-0x0-pt"># Upload com validade de 24 horas:
+curl -F 'file=@foto.png' -F 'expires=24' https://fuxico.2lp.in/
+
+# Encurtar uma URL:
+curl -F 'shorten=https://codeberg.org/lumenpink/fuxico' https://fuxico.2lp.in/
+
+# Gerenciar / Apagar com a ficha X-Token:
+curl -F 'token=&lt;X-Token&gt;' -F 'delete=' https://fuxico.2lp.in/abcde.png</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Protocolo Rustypaste -->
+    <section class="doc-section">
+      <h2 class="section-heading">🦀 2. Protocolo Rustypaste</h2>
+      <p class="lead">
+        Envie arquivos utilizando cabeçalhos HTTP para configuração:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Cabeçalho / Endpoint</th>
+              <th>Formato</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>expire: &lt;tempo&gt;</code></td>
+              <td>Cabeçalho</td>
+              <td>String de duração: <code>10m</code>, <code>2h</code>, <code>7d</code>, etc.</td>
+            </tr>
+            <tr>
+              <td><code>oneshot: true</code></td>
+              <td>Cabeçalho</td>
+              <td>Ativa autodestruição após o primeiro download.</td>
+            </tr>
+            <tr>
+              <td><code>filename: &lt;nome&gt;</code></td>
+              <td>Cabeçalho</td>
+              <td>Sobrescreve o nome do arquivo para download amigável.</td>
+            </tr>
+            <tr>
+              <td><code>DELETE /&lt;slug&gt;</code></td>
+              <td>Método HTTP</td>
+              <td>Apaga um envio usando <code>Authorization: Bearer &lt;token&gt;</code>.</td>
+            </tr>
+            <tr>
+              <td><code>GET /list</code></td>
+              <td>Endpoint JSON</td>
+              <td>Retorna lista estruturada em JSON dos envios ativos.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading">Exemplos com cURL</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">curl — exemplos rustypaste</span>
+          <button class="copy-btn" data-target="cmd-rpaste-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-rpaste-pt"># Upload com cabeçalho de expiração de 10 minutos:
+curl -F 'file=@segredo.txt' -H 'expire: 10m' https://fuxico.2lp.in/
+
+# Apagar via método DELETE:
+curl -X DELETE -H 'Authorization: Bearer &lt;token&gt;' https://fuxico.2lp.in/abcde.png
+
+# Listar uploads ativos:
+curl -H 'Authorization: Bearer &lt;token&gt;' https://fuxico.2lp.in/list</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subpath Aliases Amigáveis -->
+    <section class="doc-section">
+      <h2 class="section-heading">📎 3. Apelidos de Subcaminho (Subpath Aliasing)</h2>
+      <p class="lead">
+        Precisa compartilhar um arquivo de modo que ao salvar ele tenha um nome legível em vez de um slug aleatório? O Fuxico suporta subpath aliasing nativamente:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">Estrutura de URL com Subpath</span>
+        </div>
+        <div class="terminal-body">
+          <pre>https://fuxico.2lp.in/&lt;slug&gt;.&lt;ext&gt;/&lt;nome_amigavel&gt;</pre>
+        </div>
+      </div>
+      <p>
+        Exemplo: <code>https://fuxico.2lp.in/8x9yt.png/avatar-lumen-2026.png</code> serve o mesmo arquivo definindo o cabeçalho <code>Content-Disposition: inline; filename="avatar-lumen-2026.png"</code>.
+      </p>
+    </section>
+
+    <!-- Publicação Zine em Markdown -->
+    <section class="doc-section">
+      <h2 class="section-heading">📝 4. Publicação Zine em Markdown</h2>
+      <p class="lead">
+        Envie documentos Markdown padrão para publicar leitores web autônomos com realce de sintaxe, suporte a Obsidian e alternador de tema:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Campo / Requisição</th>
+              <th>Formato</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>POST /api/doc</code> ou <code>POST / (doc=true)</code></td>
+              <td>Multipart</td>
+              <td>Envia arquivo Markdown e aciona a compilação atômica do leitor HTML.</td>
+            </tr>
+            <tr>
+              <td><code>GET /&lt;slug&gt;</code></td>
+              <td>Negociação de Conteúdo</td>
+              <td>Navegadores recebem o leitor HTML estilizado; chamadas via curl recebem o Markdown cru puro.</td>
+            </tr>
+            <tr>
+              <td><code>GET /&lt;slug&gt;?raw=1</code></td>
+              <td>Texto Puro</td>
+              <td>Força explicitamente a entrega do conteúdo Markdown fonte intacto.</td>
+            </tr>
+            <tr>
+              <td><code>POST /&lt;slug&gt;/assets</code></td>
+              <td>Multipart</td>
+              <td>Envia imagens ou anexos vinculados a <code>/&lt;slug&gt;/assets/&lt;arquivo&gt;</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading">Exemplo com cURL</h3>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">curl — publicação de markdown</span>
+          <button class="copy-btn" data-target="cmd-doc-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-doc-pt"># Publicar nota Markdown como documento Zine autônomo:
+curl -F 'file=@artigo.md' -F 'doc=true' https://fuxico.2lp.in/</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Protocolo de Gists Multifiles -->
+    <section class="doc-section">
+      <h2 class="section-heading">📦 5. Protocolo de Gists Multifiles</h2>
+      <p class="lead">
+        Envie múltiplos trechos de código em uma única requisição JSON via <code>POST /api/gist</code>. O Fuxico compila um visualizador em abas e gera endpoints de código cru e arquivo ZIP:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">cURL — criar gist com múltiplos arquivos</span>
+          <button class="copy-btn" data-target="cmd-gist-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-gist-pt">curl -X POST https://fuxico.2lp.in/api/gist \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      { "name": "main.rs", "content": "fn main() { println!(\"olá!\"); }" },
+      { "name": "Cargo.toml", "content": "[package]\nname = \"demo\"\nversion = \"0.1.0\"" }
+    ],
+    "expires": "7d",
+    "oneshot": false
+  }'</pre>
+        </div>
+      </div>
+
+      <p style="margin-top: 15px;">
+        <strong>Endpoints Disponíveis:</strong><br>
+        • Leitor Web: <code>https://fuxico.2lp.in/&lt;slug&gt;</code> (Visualizador com abas interativas)<br>
+        • Arquivo Cru (raw): <code>https://fuxico.2lp.in/&lt;slug&gt;/raw/&lt;nome_arquivo&gt;</code> (Conteúdo individual do arquivo)<br>
+        • Pacote ZIP: <code>https://fuxico.2lp.in/&lt;slug&gt;/zip</code> (Download de arquivo ZIP com todos os arquivos do gist)
+      </p>
+    </section>
+
+    <!-- Git HTTP Smart Protocol -->
+    <section class="doc-section">
+      <h2 class="section-heading">🌱 6. Git HTTP Smart Protocol</h2>
+      <p class="lead">
+        Hospede repositórios Git remotos efêmeros ou permanentes sobre HTTP padrão, sem necessidade de servidores SSH dedicados:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">bash — ciclo de vida Git HTTP</span>
+          <button class="copy-btn" data-target="cmd-git-proto-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-git-proto-pt"># 1. Inicializar repositório bare remoto via CLI:
+fux git init meu-projeto
+
+# 2. Adicionar o remote ao seu repositório git local:
+git remote add fuxico https://&lt;FICHA&gt;@fuxico.2lp.in/&lt;slug&gt;.git
+
+# 3. Enviar commits:
+git push fuxico main
+
+# 4. Clonar de qualquer terminal:
+git clone https://fuxico.2lp.in/&lt;slug&gt;.git</pre>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <p>Orgulhosamente produzido por uma <a href="https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)" target="_blank">travesti latina</a> :)</p>
+    <p style="margin-top: 6px; font-size: 0.8rem;">
+      FUXICO // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Repositório no Codeberg</a> // Dedicado ao Domínio Público via GPL-3.0-or-later
+    </p>
+  </footer>
+
+  <script src="../assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUXICO — Downloads & Guia Didático de Hardware para SBCs</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <!-- OpenGraph / Social Meta (GOST Chapter 11) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FUXICO — Clientes CLI, Binários Oficiais e Pacotes Prontos">
+  <meta property="og:description" content="Baixe executáveis nativos em Rust e Bash, pacotes standalone PHP e consulte o guia de placas SBCs ARM64 e x86_64 para seu nó local.">
+  <meta property="og:image" content="https://fuxico.2lp.in/assets/og_preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://fuxico.2lp.in/pt/downloads.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FUXICO — Clientes CLI, Binários Oficiais e Pacotes Prontos">
+  <meta name="twitter:description" content="Baixe executáveis nativos em Rust e Bash, pacotes standalone PHP e consulte o guia de placas SBCs ARM64 e x86_64 para seu nó local.">
+  <meta name="twitter:image" content="https://fuxico.2lp.in/assets/og_preview.png">
+</head>
+<body>
+
+  <!-- Faixa do Orgulho Trans -->
+  <div class="trans-ribbon">
+    <span class="tb"></span><span class="tp"></span><span class="tw"></span><span class="tp"></span><span class="tb"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="../assets/favicon.svg" alt="Logo Fuxico">
+        <span>FUXICO</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Visão Geral</a></li>
+        <li><a href="installation.html">Instalação</a></li>
+        <li><a href="downloads.html" class="active">Downloads</a></li>
+        <li><a href="commands.html">Manual CLI</a></li>
+        <li><a href="protocol.html">Protocolos</a></li>
+        <li><a href="pajuba.html">Pajubá</a></li>
+        <li><a href="../docs/index.html">Docs Zine</a></li>
+      </ul>
+      <div class="lang-switch">
+        <a href="../downloads.html" class="lang-btn">EN</a>
+        <a href="downloads.html" class="lang-btn active">PT</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header class="hero-header">
+      <div class="duct-tape">ARTEFATOS DIRETOS // SEM COMPACTAÇÃO OBRIGATÓRIA</div>
+      <h1 class="page-title">DOWNLOADS & HARDWARE SBC</h1>
+      <p class="subtitle">
+        Binários standalone compilados diretamente para sua arquitetura. Arquivos individuais com libc musl estática — sem incompatibilidade de versão de glibc, sem arquivos .tar.gz obrigatórios. É baixar, dar <code>chmod +x</code> e rodar.
+      </p>
+      <div class="badge-row">
+        <span class="badge">🍓 Suporte Prioritário a ARM32 & ARM64</span>
+        <span class="badge neon">🔒 Manifesto Criptográfico SHA-256</span>
+        <span class="badge">⚡ Zero Dependências Externas</span>
+      </div>
+    </header>
+
+    <!-- Instalador Rápido -->
+    <section class="doc-section">
+      <h2 class="section-heading">⚡ Instalação Rápida (Recomendada)</h2>
+      <p class="lead">
+        O instalador universal detecta seu sistema operacional e arquitetura de CPU e baixa o binário standalone correspondente:
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">bash — instalador</span>
+          <button class="copy-btn" data-target="cmd-curl-install-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-curl-install-pt">curl -fsSL https://fuxico.2lp.in/install.sh | bash</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Banner das Placas SBC na Fotocopiadora -->
+    <section class="doc-section">
+      <div style="margin-bottom: 25px;">
+        <img src="../assets/art/fuxico-sbc-boards.jpg" alt="Orange Pi, Banana Pi e Raspberry Pi no Scanner" style="width: 100%; border: 2px solid var(--border-color); border-radius: 2px; display: block;" class="lightbox-trigger">
+      </div>
+
+      <h2 class="section-heading">🍓 Guia Didático de Compatibilidade com SBCs</h2>
+      <p class="lead">
+        Ninguém merece ter que adivinhar a arquitetura da sua placa de desenvolvimento. Encontre sua placa ou clone abaixo e baixe o binário correto:
+      </p>
+
+      <div class="table-container">
+        <table class="fux-table">
+          <thead>
+            <tr>
+              <th>Plataforma / Arquitetura</th>
+              <th>Binário Direto</th>
+              <th>Placas & Clones Suportados</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span class="badge-arch">Linux ARMv7</span><br>
+                <small style="color:var(--text-muted)">32-bit Hard Float (armhf)</small>
+              </td>
+              <td><a href="../fux-linux-armv7" class="file-link">fux-linux-armv7</a></td>
+              <td>
+                <strong>Orange Pi:</strong> Zero, One, Lite, PC, PC Plus, 2G-IOT (Allwinner H2+/H3)<br>
+                <strong>Banana Pi:</strong> M2 Berry, M2+, M2 Magic, M2 Ultra<br>
+                <strong>Raspberry Pi:</strong> 2, 3, 4 (rodando Raspberry Pi OS 32-bit)<br>
+                <strong>Outras SBCs:</strong> NanoPi NEO, NanoPi Air, BeagleBone Black, Cubieboard
+              </td>
+              <td><a href="../fux-linux-armv7" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="badge-arch">Linux ARM64</span><br>
+                <small style="color:var(--text-muted)">64-bit (aarch64)</small>
+              </td>
+              <td><a href="../fux-linux-aarch64" class="file-link">fux-linux-aarch64</a></td>
+              <td>
+                <strong>Orange Pi:</strong> 5, 5 Plus, 3B, Zero 2, Zero 3 (Rockchip RK3588, Allwinner H616/H618)<br>
+                <strong>Banana Pi:</strong> BPI-M5, BPI-M4 Zero, BPI-R3<br>
+                <strong>Raspberry Pi:</strong> 3, 4, 5, Zero 2 W (rodando SO 64-bit)<br>
+                <strong>Outras SBCs:</strong> Rock Pi 4, Pine64, Odroid C4/N2, Servidores ARM na Nuvem (Ampere, AWS Graviton)
+              </td>
+              <td><a href="../fux-linux-aarch64" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="badge-arch">Linux ARMv6</span><br>
+                <small style="color:var(--text-muted)">32-bit Legadão (armel)</small>
+              </td>
+              <td><a href="../fux-linux-armv6" class="file-link">fux-linux-armv6</a></td>
+              <td>
+                <strong>Raspberry Pi:</strong> 1 Modelo A, B, B+, Raspberry Pi Zero v1.x e Zero W (Broadcom BCM2835)<br>
+                <strong>Outras SBCs:</strong> Série Pogoplug clássica
+              </td>
+              <td><a href="../fux-linux-armv6" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="badge-arch">Linux x86_64</span><br>
+                <small style="color:var(--text-muted)">64-bit Musl Estático</small>
+              </td>
+              <td><a href="../fux-linux-x86_64" class="file-link">fux-linux-x86_64</a></td>
+              <td>
+                PCs e Notebooks Intel/AMD 64-bit, Servidores VPS, Mini PCs (Intel NUC, Beelink, Minisforum), Alpine, Debian, Ubuntu, Arch, Docker
+              </td>
+              <td><a href="../fux-linux-x86_64" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="badge-arch">Windows x86_64</span><br>
+                <small style="color:var(--text-muted)">64-bit Portátil (.exe)</small>
+              </td>
+              <td><a href="../fux-windows-x86_64.exe" class="file-link">fux-windows-x86_64.exe</a></td>
+              <td>
+                Windows 10, Windows 11, Windows Server 2016+ (64-bit)
+              </td>
+              <td><a href="../fux-windows-x86_64.exe" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="badge-arch">Shell Universal</span><br>
+                <small style="color:var(--text-muted)">Script POSIX / Bash</small>
+              </td>
+              <td><a href="../fux" class="file-link">fux</a></td>
+              <td>
+                Qualquer ambiente Unix equipado com <code>curl</code> (Linux, macOS Apple Silicon / Intel, FreeBSD, OpenBSD, Termux no Android, roteadores OpenWrt)
+              </td>
+              <td><a href="../fux" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="badge-arch">Servidor Standalone</span><br>
+                <small style="color:var(--text-muted)">Arquivo Único PHP 8.2+</small>
+              </td>
+              <td><a href="../fuxico.php" class="file-link">fuxico.php</a></td>
+              <td>
+                Servidor completo auto-contido em arquivo único. Roda em qualquer máquina com PHP 8.2+ sem composer.
+              </td>
+              <td><a href="../fuxico.php" class="dl-btn" style="padding: 6px 12px; font-size: 0.8rem;">Baixar</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Verificação Criptográfica -->
+    <section class="doc-section">
+      <h2 class="section-heading">🔒 Verificação Criptográfica SHA-256</h2>
+      <p class="lead">
+        Sempre confira a autenticidade e integridade dos arquivos baixados. Baixe o manifesto oficial:
+      </p>
+      <div style="margin-bottom: 20px;">
+        <a href="../checksums.sha256" class="dl-btn outline">⬇️ Baixar checksums.sha256</a>
+      </div>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="terminal-title">verificação sha256sum</span>
+          <button class="copy-btn" data-target="cmd-verify-pt">COPIAR</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="cmd-verify-pt"># Validar binário individual:
+curl -sSL https://fuxico.2lp.in/checksums.sha256 | grep fux-linux-x86_64 | sha256sum -c -
+
+# Validar todos os arquivos baixados na pasta:
+sha256sum -c checksums.sha256</pre>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <p>Orgulhosamente produzido por uma <a href="https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)" target="_blank">travesti latina</a> :)</p>
+    <p style="margin-top: 6px; font-size: 0.8rem;">
+      FUXICO // <a href="https://codeberg.org/lumenpink/fuxico" target="_blank">Repositório no Codeberg</a> // Dedicado ao Domínio Público via GPL-3.0-or-later
+    </p>
+  </footer>
+
+  <script src="../assets/main.js"></script>
+</body>
+</html>
