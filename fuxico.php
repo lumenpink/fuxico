@@ -9,8 +9,8 @@ declare(strict_types=1);
  * │  100% compatible with 0x0.st and rustypaste protocols      │
  * └─────────────────────────────────────────────────────────────┘
  *
- * Version: 0.3.0-dev.120+20261022.062eb0b+a1c45e5
- * Built:   2026-10-22 02:18:16 UTC
+ * Version: 0.3.0-dev.122+20261022.691465c+05b7baf
+ * Built:   2026-10-22 22:05:58 UTC
  * License: GPL-3.0-or-later
  * Source:  https://codeberg.org/lumenpink/fuxico
  *
@@ -53,8 +53,8 @@ namespace {
 
     if (!defined('FUXICO_COMPILED')) {
         define('FUXICO_COMPILED', true);
-        define('FUXICO_VERSION', '0.3.0-dev.120+20261022.062eb0b+a1c45e5');
-        define('FUXICO_BUILD_DATE', '2026-10-22 02:18:16 UTC');
+        define('FUXICO_VERSION', '0.3.0-dev.122+20261022.691465c+05b7baf');
+        define('FUXICO_BUILD_DATE', '2026-10-22 22:05:58 UTC');
     }
 }
 
