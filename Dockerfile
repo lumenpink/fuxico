@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:alpine
+FROM dunglas/frankenphp:php8.5-alpine
 
 LABEL maintainer="Lumen Pink <hi@lumen.pink>"
 LABEL org.opencontainers.image.title="Fuxico"

@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eo pipefail
 
-WORKFLOW_DIR="/home/lumen/src/fuxico/.forgejo/workflows"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WORKFLOW_DIR="${ROOT_DIR}/.forgejo/workflows"
 WORKFLOW="$WORKFLOW_DIR/ci.yml"
 
 echo "=== [TEST] Auditoria do Workflow Canônico Único de CI/CD (fuxico) ==="
