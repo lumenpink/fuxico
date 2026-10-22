@@ -197,7 +197,7 @@ test('scripts/build_bundles.sh produces full distribution suite with valid sha25
     $tarballs = glob($distDir.'/fuxico-*.tar.gz');
     expect($tarballs)->not->toBeEmpty();
     expect(filesize($tarballs[0]))->toBeGreaterThan(1000);
-});
+})->skip(fn () => trim((string) shell_exec('which cargo 2>/dev/null')) === '', 'Cargo not available in this environment');
 
 test('scripts/build_clients.sh compiles native rust client standalone binary and checksums', function () {
     $rootDir = dirname(__DIR__, 2);
@@ -223,4 +223,4 @@ test('scripts/build_clients.sh compiles native rust client standalone binary and
 
     $checksums = (string) file_get_contents($distDir.'/checksums.sha256');
     expect($checksums)->toContain('fux-linux-x86_64');
-});
+})->skip(fn () => trim((string) shell_exec('which cargo 2>/dev/null')) === '', 'Cargo not available in this environment');

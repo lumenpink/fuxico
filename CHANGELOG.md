@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Features
+  - (test) isolar testes dependentes de cargo em ambientes php ci (closes #54)
   - (ci) unificar esteira em ci.yml unico e corrigir precedencia ssh ro (closes #53)
   - (ui) gaveta retratil de opcoes avancadas, grid 2 colunas, temas Markdown e CD (closes #51)
   - (ci) continuous deployment no obitwo via Tailscale/SSH, healthcheck ativo de 15s, rollback e descomissionamento do Watchtower (closes #52)
