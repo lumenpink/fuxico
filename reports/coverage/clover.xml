@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1792706756">
-  <project timestamp="1792706756" name="Clover Coverage">
+<coverage generated="1792723749">
+  <project timestamp="1792723749" name="Clover Coverage">
     <package name="Fuxico">
       <file name="/workspace/lumen/fuxico/src/App.php">
         <class name="Fuxico\App" namespace="Fuxico">

@@ -9,8 +9,8 @@ declare(strict_types=1);
  * │  100% compatible with 0x0.st and rustypaste protocols      │
  * └─────────────────────────────────────────────────────────────┘
  *
- * Version: 0.3.0-dev.122+20261022.691465c+05b7baf
- * Built:   2026-10-22 22:05:58 UTC
+ * Version: 0.3.0-dev.125+20261023.9ed568e+5c576de
+ * Built:   2026-10-23 02:49:10 UTC
  * License: GPL-3.0-or-later
  * Source:  https://codeberg.org/lumenpink/fuxico
  *
@@ -53,8 +53,8 @@ namespace {
 
     if (!defined('FUXICO_COMPILED')) {
         define('FUXICO_COMPILED', true);
-        define('FUXICO_VERSION', '0.3.0-dev.122+20261022.691465c+05b7baf');
-        define('FUXICO_BUILD_DATE', '2026-10-22 22:05:58 UTC');
+        define('FUXICO_VERSION', '0.3.0-dev.125+20261023.9ed568e+5c576de');
+        define('FUXICO_BUILD_DATE', '2026-10-23 02:49:10 UTC');
     }
 }
 
@@ -1519,7 +1519,7 @@ class I18n
             'footer_travesti_link' => 'https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)',
             'tip_burn' => '🏳️‍⚧️ No Pajubá: Desaquenda é soltar, revelar. ⚡ Técnico: O arquivo evapora permanentemente do disco imediatamente após o primeiro download.',
             'tip_secret' => '🏳️‍⚧️ No Pajubá: Aquendar é guardar, esconder e proteger a sete chaves. ⚡ Técnico: Gera uma URL com slug cifrado de 16 caracteres de alta entropia para impedir que curiosos adivinhem ou escaneiem o link.',
-            'tip_resenha' => 'Destila o conteúdo editorial do link via motor Resenha, removendo ruídos e anúncios, empacotando imagens e gerando um Fuxico Doc soberano.',
+            'tip_resenha' => 'Destila o conteúdo editorial do link via motor Resenha, removendo ruídos e anúncios, empacotando imagens e gerando um Fuxico Doc limpo e completo.',
             'tip_doc' => '⚡ Técnico: Compila Markdown para HTML estático standalone com skins Trava Zine e Acadêmico Depressivo (?acad=true).',
             'tip_expires' => 'Tempo de retenção do babado antes de prescrever e ser purgado automaticamente do cofre.',
             'tip_custom_name' => 'Defina um apelido personalizado para a URL (ex: fuxico.cc/meu-babado) em vez de um código gerado aleatoriamente.',
