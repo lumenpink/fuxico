@@ -63,6 +63,7 @@ $compileFiles = [
     'GistRenderer.php',
     'GitBackend.php',
     'RepoRenderer.php',
+    'OgCard.php',
     'Views.php',
     'App.php',
 ];

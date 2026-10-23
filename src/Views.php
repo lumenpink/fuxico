@@ -3078,6 +3078,16 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$filename} - Fuxico Pré-Download</title>
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{$filename} — Fuxico">
+    <meta property="og:description" content="Arquivo compartilhado via Fuxico ({$formattedSize}, {$safeMime})">
+    <meta property="og:image" content="/{$slug}/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{$filename} — Fuxico">
+    <meta name="twitter:description" content="Arquivo compartilhado via Fuxico ({$formattedSize}, {$safeMime})">
+    <meta name="twitter:image" content="/{$slug}/og.png">
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -3328,6 +3338,16 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$folderName} - Fuxico Pasta</title>
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{$folderName} — Pasta Fuxico">
+    <meta property="og:description" content="Pasta compartilhada via Fuxico">
+    <meta property="og:image" content="/{$slug}/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{$folderName} — Pasta Fuxico">
+    <meta name="twitter:description" content="Pasta compartilhada via Fuxico">
+    <meta name="twitter:image" content="/{$slug}/og.png">
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {

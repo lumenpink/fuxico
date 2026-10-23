@@ -197,6 +197,26 @@ class App
             return;
         }
 
+        // 2.6 Open Graph dynamic card endpoint: /og/<slug>
+        if ($method === 'GET' && str_starts_with($path, 'og/')) {
+            $ogSlug = explode('.', substr($path, 3))[0];
+            $item = $this->db->findBySlug($ogSlug);
+            if ($item && ($item['expires_at'] === null || $item['expires_at'] > time())) {
+                $png = OgCard::generatePng($item, $this->config);
+                header('Content-Type: image/png');
+                header('Content-Length: '.(string) strlen($png));
+                header('Cache-Control: public, max-age=3600');
+                echo $png;
+
+                return;
+            }
+            http_response_code(404);
+            header('Content-Type: text/plain');
+            echo "404 Not Found: Card não encontrado ou expirado.\n";
+
+            return;
+        }
+
         // 3. Root Endpoint
         if ($path === '') {
             if ($method === 'POST') {
@@ -833,6 +853,17 @@ class App
         if (count($parts) > 1) {
             $subAction = $parts[1];
 
+            // Open Graph Dynamic Card: /<slug>/og ou /<slug>/og.png
+            if ($subAction === 'og' || $subAction === 'og.png') {
+                $png = OgCard::generatePng($item, $this->config);
+                header('Content-Type: image/png');
+                header('Content-Length: '.(string) strlen($png));
+                header('Cache-Control: public, max-age=3600');
+                echo $png;
+
+                return;
+            }
+
             // 0. Widget de embed JavaScript: /<slug>/embed.js
             if ($subAction === 'embed.js') {
                 if (! in_array($item['type'], ['gist', 'file'], true)) {
@@ -1050,6 +1081,17 @@ class App
                 http_response_code(404);
                 header('Content-Type: text/plain');
                 echo "File Expired\n";
+
+                return;
+            }
+
+            // Open Graph Dynamic Card via query: /<slug>?og=1
+            if (isset($_GET['og'])) {
+                $png = OgCard::generatePng($item, $this->config);
+                header('Content-Type: image/png');
+                header('Content-Length: '.(string) strlen($png));
+                header('Cache-Control: public, max-age=3600');
+                echo $png;
 
                 return;
             }

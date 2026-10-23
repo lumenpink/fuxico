@@ -208,6 +208,16 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$repoName} · Repositório Git · Fuxico</title>
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{$repoName} — Repositório Git Fuxico">
+    <meta property="og:description" content="Repositório git soberano hospedado via Fuxico">
+    <meta property="og:image" content="/{$slug}/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{$repoName} — Repositório Git Fuxico">
+    <meta name="twitter:description" content="Repositório git soberano hospedado via Fuxico">
+    <meta name="twitter:image" content="/{$slug}/og.png">
     <style>
         {$sourceStyle}
     </style>
