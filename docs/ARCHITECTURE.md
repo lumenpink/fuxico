@@ -10,7 +10,7 @@
 
 O Fuxico foi concebido a partir de três pilares inegociáveis de engenharia e cultura:
 
-1. **Zero dependências externas em runtime:**
+1. **Autonomia total sem bancos externos:**
    Uma única instância do Fuxico não exige Redis, PostgreSQL, Node.js ou daemons pesados. Tudo o que ele precisa é do interpretador PHP (>= 8.2) com a extensão `pdo_sqlite` habilitada.
 2. **Distribuição Standalone Single-File (`fuxico.php`):**
    Todo o código-fonte (classes, visualizadores HTML, CSS zine e acadêmico, banco de dados e utilitários) é compilado pelo script [`compile.php`](file:///home/lumen/src/fuxico/compile.php) em um único arquivo portátil auto-contido. Esse arquivo pode ser servido diretamente pelo PHP built-in server (`php -S`), FrankenPHP, Apache ou Nginx.

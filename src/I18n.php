@@ -102,7 +102,7 @@ class I18n
             'footer_travesti_link' => 'https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)',
             'tip_burn' => '🏳️‍⚧️ No Pajubá: Desaquenda é soltar, revelar. ⚡ Técnico: O arquivo evapora permanentemente do disco imediatamente após o primeiro download.',
             'tip_secret' => '🏳️‍⚧️ No Pajubá: Aquendar é guardar, esconder e proteger a sete chaves. ⚡ Técnico: Gera uma URL com slug cifrado de 16 caracteres de alta entropia para impedir que curiosos adivinhem ou escaneiem o link.',
-            'tip_resenha' => 'Destila o conteúdo editorial do link via motor Resenha, removendo ruídos e anúncios, empacotando imagens e gerando um Fuxico Doc soberano.',
+            'tip_resenha' => 'Destila o conteúdo editorial do link via motor Resenha, removendo ruídos e anúncios, empacotando imagens e gerando um Fuxico Doc limpo e completo.',
             'tip_doc' => '⚡ Técnico: Compila Markdown para HTML estático standalone com skins Trava Zine e Acadêmico Depressivo (?acad=true).',
             'tip_expires' => 'Tempo de retenção do babado antes de prescrever e ser purgado automaticamente do cofre.',
             'tip_custom_name' => 'Defina um apelido personalizado para a URL (ex: fuxico.cc/meu-babado) em vez de um código gerado aleatoriamente.',

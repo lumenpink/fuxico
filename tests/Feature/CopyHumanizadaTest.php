@@ -30,7 +30,7 @@ test('comunicacao do site, readme e i18n nao contem jargoes tecnicos proibidos',
 
         foreach ($forbiddenTerms as $term) {
             expect(mb_stripos($content, $term))->toBeFalse(
-                "O arquivo ".basename($file)." nao deve conter o jargao técnico '{$term}'."
+                'O arquivo '.basename($file)." nao deve conter o jargao técnico '{$term}'."
             );
         }
     }

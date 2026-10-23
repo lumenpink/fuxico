@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > O Fuxico oferece duas implementações de cliente de terminal com paridade funcional total:
-> 1. **Cliente Nativo em Rust (`fux-cli`):** Binário standalone compilado estaticamente com `musl`, zero dependências de bibliotecas dinâmicas, disponível para x86_64, aarch64, armv7, armv6, macOS e Windows.
+> 1. **Cliente Nativo em Rust (`fux-cli`):** Binário standalone pronto para uso e sem precisar de bibliotecas extras, disponível para x86_64, aarch64, armv7, armv6, macOS e Windows.
 > 2. **Cliente Universal em Bash (`fux`):** Script portátil sem dependências externas além de `bash` e `curl`, pronto para rodar em qualquer sistema Unix (Linux, macOS, BSD, Termux no Android).
 
 ---

@@ -1,6 +1,6 @@
 # ⚡ FUXICO
 
-> **A malícia popular do boca a boca.** Compartilhar arquivo na borda não precisa parecer um manifesto de guerra fria; pode ser a esperteza de passar a informação adiante pelo puro prazer de fazer a roda girar. Estética de zine e risografia independente, 100% de compatibilidade com os protocolos **0x0.st (nullpointer)** e **rustypaste**, e a CLI mais rápida de digitar: `fux`.
+> **A malícia popular do boca a boca.** Compartilhar arquivos e links não precisa parecer um manifesto de guerra fria; pode ser a esperteza de passar a informação adiante pelo puro prazer de fazer a roda girar. Estética de zine e risografia independente, 100% de compatibilidade com os protocolos **0x0.st (nullpointer)** e **rustypaste**, e a CLI mais rápida de digitar: `fux`.
 
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.2-blue.svg)](https://php.net/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL-3.0-or-later_1.0-lightgrey.svg)](LICENSE)
@@ -47,7 +47,7 @@ docker compose up -d
 ```
 Visit [http://localhost:8080](http://localhost:8080) to access the service.
 
-### 2. Portable Single-File Mode (Zero Composer / Zero Dependencies)
+### 2. Portable Single-File Mode (Zero Composer / Pronto para Uso)
 Download `fuxico.php` and run directly on any server with PHP 8.2+:
 ```bash
 # Baixar o arquivo único e rodar instantaneamente:
@@ -188,12 +188,12 @@ cat dump.sql | ./bin/fux --caduca 2h
 ```
 
 ### 2. `fux` CLI Nativo em Rust Multiplataforma (`cli/`)
-Cliente compilado na especificação **Rust 2024 spec** com as mesmíssimas opções e aliases. Binários estáticos e independentes (sem glibc, sem compactação obrigatória — é baixar direto, dar `chmod +x` e rodar):
+Cliente compilado para alto desempenho com as mesmíssimas opções e aliases. Binários prontos e independentes (sem complicação com bibliotecas, sem compactação obrigatória — é baixar direto, dar `chmod +x` e rodar):
 
 | Arquitetura | Binário Standalone | Hardware / SBCs Suportados |
 | :--- | :--- | :--- |
-| **Linux x86_64** (Static musl) | `fux-linux-x86_64` | PCs Intel/AMD 64-bit, Servidores, VPS, containers Docker |
-| **Linux ARM64** (Static musl) | `fux-linux-aarch64` | Raspberry Pi 3/4/5 (SO 64-bit), Orange Pi 5 / 3B / Zero 3, Banana Pi BPI-M5 / M4 Zero, Rock Pi 4, Pine64, Odroid C4/N2 |
+| **Linux x86_64** (Standalone 64-bit) | `fux-linux-x86_64` | PCs Intel/AMD 64-bit, Servidores, VPS, containers Docker |
+| **Linux ARM64** (Standalone 64-bit) | `fux-linux-aarch64` | Raspberry Pi 3/4/5 (SO 64-bit), Orange Pi 5 / 3B / Zero 3, Banana Pi BPI-M5 / M4 Zero, Rock Pi 4, Pine64, Odroid C4/N2 |
 | **Linux ARMv7** (32-bit Hard Float) | `fux-linux-armv7` | Orange Pi Zero / One / Lite / PC, Banana Pi M2 / M2 Berry, Raspberry Pi 2 / 3 / 4 (SO 32-bit), NanoPi NEO / Air, BeagleBone Black, Cubieboard |
 | **Linux ARMv6** (32-bit Legacy) | `fux-linux-armv6` | Raspberry Pi 1, Raspberry Pi Zero / Zero W (v1.x), Pogoplug clássico |
 | **Windows x86_64** | `fux-windows-x86_64.exe` | Windows 10, 11 e Windows Server 64-bit |
