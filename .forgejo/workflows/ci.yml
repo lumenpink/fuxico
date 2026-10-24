@@ -22,7 +22,7 @@ jobs:
     name: "PHP 8.4 — Tests & Lint"
     runs-on: ubuntu-latest
     container:
-      image: lumenpink/gost-ci-php:latest
+      image: gambi.2lp.in/lumen/gost-ci-php:latest
 
     steps:
       - name: "Checkout"
@@ -123,7 +123,7 @@ jobs:
     name: "Psalm — Static Security Analysis"
     runs-on: ubuntu-latest
     container:
-      image: lumenpink/gost-ci-php:latest
+      image: gambi.2lp.in/lumen/gost-ci-php:latest
     needs: test
 
     steps:
@@ -169,7 +169,7 @@ jobs:
     name: "Security Auditing (PHP)"
     runs-on: ubuntu-latest
     container:
-      image: lumenpink/gost-ci-php:latest
+      image: gambi.2lp.in/lumen/gost-ci-php:latest
     needs: test
 
     steps:
@@ -195,7 +195,7 @@ jobs:
     name: "Rust CLI — Check"
     runs-on: ubuntu-latest
     container:
-      image: codeberg.org/lumenpink/gost-ci-rust:latest
+      image: gambi.2lp.in/lumen/gost-ci-rust:latest
     needs: test
 
     steps:
