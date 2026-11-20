@@ -1,4 +1,5 @@
 {
+    "version": "0.3.0-dev.131+20261024.ee18962",
     "name": "lumenpink/fuxico",
     "description": "Fuxico: A malícia popular do boca a boca - File sharing and URL shortener with 0x0.st and rustypaste protocol support",
     "type": "project",

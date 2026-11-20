@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "slug": "fuxico",
+  "title": "Fuxico",
+  "site_type": "app",
+  "tagline": "A malícia popular do boca a boca - Compartilhamento efêmero e encurtador de links",
+  "summary": "Plataforma de compartilhamento efêmero de arquivos e encurtador de URLs com compatibilidade total aos protocolos 0x0.st e rustypaste.",
+  "abstract": "O Fuxico é um serviço de compartilhamento efêmero de arquivos e encurtador de links de alta velocidade em PHP e FrankenPHP, com estética zine e compatibilidade 0x0.st.",
+  "tags": [
+    "fuxico",
+    "filesharing",
+    "pastebin",
+    "url-shortener",
+    "php",
+    "frankenphp"
+  ],
+  "icon": "⚡",
+  "theme": {
+    "bg_color": "#121016",
+    "accent_color": "#e2f835"
+  }
+}

@@ -5,7 +5,7 @@
 - **Status**: Em implementação (DD-TDD)
 
 ## 1. Objetivo
-Substituir termos excessivamente técnicos e jargões desnecessários (tais como `musl`, `binário estático`, `soberania na borda`, `zero dependências`) por explicações diretas, acessíveis e acolhedoras sobre como subir e compartilhar arquivos e links sem rastreadores, com rapidez e sem complicação.
+Substituir termos excessivamente técnicos e jargões desnecessários (tais como `musl`, `binário estático`, `autonomia na borda`, `zero dependências`) por explicações diretas, acessíveis e acolhedoras sobre como subir e compartilhar arquivos e links sem rastreadores, com rapidez e sem complicação.
 
 ## 2. Princípios de Redação
 1. **Comunicação Direta e Descomplicada**: O foco é na utilidade prática: enviar arquivos efêmeros, queimar após o download, encurtar links e criar gists sem cadastro e sem burocracia.
@@ -13,8 +13,8 @@ Substituir termos excessivamente técnicos e jargões desnecessários (tais como
 3. **Eliminação de Jargões**:
    - `musl` / `binário estático musl` → `executável standalone`, `executável pronto`, `sem complicação com bibliotecas`
    - `zero dependências` / `zero dependências externas` → `sem complicação`, `funciona direto`, `sem precisar instalar pacotes extras`
-   - `soberania na borda` → `autonomia e controle nas suas mãos`, `circulação livre de informação sem intermediários`
-   - `soberano` → `independente`, `livre`, `completo`
+   - `autonomia na borda` → `autonomia e controle nas suas mãos`, `circulação livre de informação sem intermediários`
+   - `autônomo` → `independente`, `livre`, `completo`
 
 ## 3. Arquivos Afetados
 - `site/index.html` e `site/pt/index.html`

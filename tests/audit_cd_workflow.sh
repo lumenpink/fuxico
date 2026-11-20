@@ -91,4 +91,4 @@ if [ $FAILED -ne 0 ]; then
     exit 1
 fi
 
-echo "✔ [GREEN TEST] Auditoria aprovada: esteira unificada e CD soberano validados."
+echo "✔ [GREEN TEST] Auditoria aprovada: esteira unificada e CD autônomo validados."

@@ -1,0 +1,5 @@
+[containers]
+target = "gambi"
+
+[sites]
+target = "cloudflare-pages"

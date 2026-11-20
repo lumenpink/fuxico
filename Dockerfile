@@ -14,16 +14,20 @@ RUN echo "upload_max_filesize = 512M" > "$PHP_INI_DIR/conf.d/fuxico.ini" && \
     echo "post_max_size = 512M" >> "$PHP_INI_DIR/conf.d/fuxico.ini" && \
     echo "memory_limit = 512M" >> "$PHP_INI_DIR/conf.d/fuxico.ini" && \
     echo "max_execution_time = 300" >> "$PHP_INI_DIR/conf.d/fuxico.ini" && \
-    mkdir -p /data && \
-    chown -R www-data:www-data /data
+    addgroup -g 1000 -S appuser && \
+    adduser -u 1000 -S appuser -G appuser && \
+    mkdir -p /data /app && \
+    chown -R 1000:1000 /data /app
 
 WORKDIR /app
 
 # Zero external runtime dependencies: native PSR-4 autoloader in index.php
-COPY src/ /app/src/
-COPY bin/ /app/bin/
-COPY index.php /app/index.php
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY --chown=1000:1000 src/ /app/src/
+COPY --chown=1000:1000 bin/ /app/bin/
+COPY --chown=1000:1000 index.php /app/index.php
+COPY --chown=1000:1000 Caddyfile /etc/caddy/Caddyfile
+
+USER 1000:1000
 
 # Native container healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     image: lumenpink/fuxico:latest
     container_name: fuxico
+    user: "1000:1000"
     restart: unless-stopped
     ports:
       - "${PORT:-8080}:8080"
@@ -16,17 +17,8 @@ services:
       - FUXICO_DATA_DIR=/data
     volumes:
       - ./data:/data
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: fuxico_watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=86400
-      - WATCHTOWER_LABEL_ENABLE=true
-      - WATCHTOWER_INCLUDE_RESTARTING=true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
