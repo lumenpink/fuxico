@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+  - (composer) omitir campo version estatico em conformidade com schema e regex (closes #60)
+
 ### Features
   - (test) isolar testes dependentes de cargo em ambientes php ci (closes #54)
   - (ci) unificar esteira em ci.yml unico e corrigir precedencia ssh ro (closes #53)
