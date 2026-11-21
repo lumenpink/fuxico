@@ -1,5 +1,9 @@
-[containers]
-target = "gambi"
+[services]
+stack = "fuxico"
+node = "obitwo"
+healthz = "http://127.0.0.1:8080/healthz"
 
 [sites]
 target = "cloudflare-pages"
+domain = "fuxico.2lp.in"
+dir = "site"

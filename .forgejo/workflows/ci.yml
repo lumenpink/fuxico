@@ -261,9 +261,6 @@ jobs:
     needs: [test]
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_PROJECT_NAME: ${{ vars.CLOUDFLARE_PROJECT_NAME || 'fuxico' }}
     steps:
       - name: "Checkout repository"
         uses: https://github.com/actions/checkout@v4
@@ -293,57 +290,11 @@ jobs:
             php scripts/build_docs.php || true
           fi
 
-      - name: "Deploy to Cloudflare Workers (fuxico.2lp.in)"
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::warning::Cloudflare credentials (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID) not configured in repository secrets. Skipping Cloudflare deployment."
-          else
-            echo "Publishing static documentation site via Cloudflare Workers..."
-            npx wrangler deploy || echo "::warning::Cloudflare deployment exited with status $?. Continuing with redundancy deployment."
-          fi
-
-      - name: "Deploy to Codeberg Pages (Fallback Redundancy)"
+      - name: "Publish Site Bundle to Forgejo Generic Packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GAMBI_2LP_IN_TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GAMBI_2LP_IN_TOKEN || secrets.FORGEJO_TOKEN || secrets.GIT_2LP_TOKEN }}
         run: |
-          git config user.name "actions-user"
-          git config user.email "actions@codeberg.org"
-
-          WORKTREE_DIR=$(mktemp -d)
-          if git ls-remote --exit-code --heads origin pages >/dev/null 2>&1; then
-            git fetch origin pages:pages
-            git worktree add "$WORKTREE_DIR" pages
-          else
-            git worktree add --orphan -b pages "$WORKTREE_DIR"
-          fi
-
-          # Preserve coverage directory if it exists on pages
-          if [ -d "$WORKTREE_DIR/coverage" ]; then
-            cp -r "$WORKTREE_DIR/coverage" /tmp/coverage-backup
-          fi
-
-          rm -rf "${WORKTREE_DIR:?}"/*
-          cp -r site/* "$WORKTREE_DIR/"
-
-          # Restore coverage directory
-          if [ -d /tmp/coverage-backup ]; then
-            mkdir -p "$WORKTREE_DIR/coverage"
-            cp -r /tmp/coverage-backup/* "$WORKTREE_DIR/coverage/"
-          fi
-
-          cd "$WORKTREE_DIR"
-          # Ensure no CNAME in Codeberg Pages branch to avoid hijacking custom domain
-          rm -f CNAME
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No documentation changes to deploy to Codeberg Pages."
-          else
-            git commit -m "docs(site): deploy documentation to Codeberg Pages [skip ci]"
-            git push origin pages
-            echo "Successfully deployed documentation to Codeberg Pages."
-          fi
-          cd - >/dev/null
-          git worktree remove "$WORKTREE_DIR" --force || true
+          cccp package upload site
 
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 6 — Container Build, Push & Autonomous CD (obitwo)
@@ -394,58 +345,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: "Deploy Remotely to obitwo (Tailscale / SSH)"
-        env:
-          OBITWO_SSH_HOST: ${{ secrets.OBITWO_SSH_HOST || '100.90.43.39' }}
-          OBITWO_SSH_USER: ${{ secrets.OBITWO_SSH_USER || 'ubuntu' }}
-          OBITWO_SSH_KEY: ${{ secrets.OBITWO_SSH_KEY }}
-        run: |
-          echo "-> Iniciando deploy autônomo no nó de borda obitwo ($OBITWO_SSH_HOST)..."
-          if [ -f ~/.ssh/id_obitwo ]; then
-            SSH_OPTS="-i ~/.ssh/id_obitwo -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
-          elif [ -f ~/.ssh/id_ed25519 ]; then
-            SSH_OPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
-          elif [ -n "$OBITWO_SSH_KEY" ]; then
-            mkdir -p ~/.ssh && chmod 700 ~/.ssh
-            echo "$OBITWO_SSH_KEY" > /tmp/id_ci_obitwo
-            chmod 600 /tmp/id_ci_obitwo
-            SSH_OPTS="-i /tmp/id_ci_obitwo -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
-          else
-            SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
-          fi
-
-          ssh $SSH_OPTS "$OBITWO_SSH_USER@$OBITWO_SSH_HOST" "
-            set -eo pipefail
-            cd ~/stacks/fuxico
-            OLD_IMAGE_ID=\$(docker inspect --format='{{.Id}}' lumenpink/fuxico:latest 2>/dev/null || true)
-            echo \"OLD_IMAGE_ID=\$OLD_IMAGE_ID\"
-
-            echo '-> Atualizando imagem lumenpink/fuxico:latest...'
-            docker compose pull fuxico
-            docker compose up -d --no-build fuxico
-
-            echo '-> Verificando estabilidade do container fuxico (polling 15s)...'
-            SUCCESS=0
-            for i in \$(seq 1 15); do
-              STATUS=\$(docker inspect --format='{{.State.Status}}' fuxico 2>/dev/null || echo 'unknown')
-              if [ \"\$STATUS\" = 'running' ]; then
-                echo \"  [PASS] Container fuxico saudável e ativo (tentativa \$i/15).\"
-                SUCCESS=1
-                break
-              fi
-              sleep 1
-            done
-
-            if [ \$SUCCESS -ne 1 ]; then
-              echo '✘ [FALHA] Container fuxico não estabilizou no obitwo! Acionando Rollback...'
-              if [ -n \"\$OLD_IMAGE_ID\" ]; then
-                docker tag \"\$OLD_IMAGE_ID\" lumenpink/fuxico:latest
-                docker compose up -d --no-build fuxico
-                echo '✔ Rollback concluído no obitwo.'
-              fi
-              exit 1
-            fi
-
-            echo '-> Limpando camadas órfãs no obitwo...'
-            docker image prune -f
-          "

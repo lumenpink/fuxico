@@ -1,6 +1,6 @@
 [package]
 name = "fux"
-version = "0.3.0-dev.134+20261120.8d820a6"
+version = "0.3.0-dev.135+20261120.0b26976"
 edition = "2024"
 description = "Native Rust CLI client for Fuxico / 0x0.st / rustypaste"
 
