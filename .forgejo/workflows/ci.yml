@@ -253,14 +253,15 @@ jobs:
             -Dsonar.php.coverage.reportPaths=coverage/clover.xml
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 5 — Deploy Static Documentation Site (Cloudflare + Codeberg Fallback)
+  # JOB 5 — Publish Static Documentation Site Bundle to Generic Packages
   # ─────────────────────────────────────────────────────────────────────────────
   deploy-site:
     name: "Deploy Documentation Site"
     runs-on: ubuntu-latest
+    container:
+      image: gambi.2lp.in/lumen/gost-ci-php:latest
     needs: [test]
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
-    env:
     steps:
       - name: "Checkout repository"
         uses: https://github.com/actions/checkout@v4
