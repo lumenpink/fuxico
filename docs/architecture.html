@@ -5,16 +5,6 @@
     <base href="/architecture/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fuxico — Arquitetura do Fuxico</title>
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="Fuxico — Arquitetura do Fuxico — Fuxico">
-    <meta property="og:description" content="Documento publicado via Fuxico">
-    <meta property="og:image" content="/architecture/og.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Fuxico — Arquitetura do Fuxico — Fuxico">
-    <meta name="twitter:description" content="Documento publicado via Fuxico">
-    <meta name="twitter:image" content="/architecture/og.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -1249,7 +1239,7 @@
 <h2 id="1-principios-fundamentais-filosofia">1. Princípios Fundamentais & Filosofia</h2>
 <p>O Fuxico foi concebido a partir de três pilares inegociáveis de engenharia e cultura:</p>
 <ol>
-<li><strong>Autonomia total sem bancos externos:</strong></li>
+<li><strong>Zero dependências externas em runtime:</strong></li>
 <p>   Uma única instância do Fuxico não exige Redis, PostgreSQL, Node.js ou daemons pesados. Tudo o que ele precisa é do interpretador PHP (>= 8.2) com a extensão <code>pdo_sqlite</code> habilitada.</p>
 <li><strong>Distribuição Standalone Single-File (<code>fuxico.php</code>):</strong></li>
 <p>   Todo o código-fonte (classes, visualizadores HTML, CSS zine e acadêmico, banco de dados e utilitários) é compilado pelo script <a href="file:///home/lumen/src/fuxico/compile.php" target="_blank" rel="noopener noreferrer"><code>compile.php</code></a> em um único arquivo portátil auto-contido. Esse arquivo pode ser servido diretamente pelo PHP built-in server (<code>php -S</code>), FrankenPHP, Apache ou Nginx.</p>
@@ -1333,7 +1323,7 @@
     </div>
 
     <footer class="doc-footer">
-        <p>Postado em 2026-11-24 23:39:53 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
+        <p>Postado em 2026-10-01 11:31:00 // <strong>FUXICO DOCS</strong> // <a href="/">Soltar Fofoca</a></p>
     </footer>
 
     <script>

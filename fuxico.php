@@ -9,8 +9,8 @@ declare(strict_types=1);
  * │  100% compatible with 0x0.st and rustypaste protocols      │
  * └─────────────────────────────────────────────────────────────┘
  *
- * Version: 0.3.0-dev.137+20261121.bf1f1a6+4305ef7
- * Built:   2026-11-24 23:41:20 UTC
+ * Version: 0.3.0-dev.115+20261021.92d73b7+8973e6b
+ * Built:   2026-11-27 01:34:26 UTC
  * License: GPL-3.0-or-later
  * Source:  https://codeberg.org/lumenpink/fuxico
  *
@@ -53,8 +53,8 @@ namespace {
 
     if (!defined('FUXICO_COMPILED')) {
         define('FUXICO_COMPILED', true);
-        define('FUXICO_VERSION', '0.3.0-dev.137+20261121.bf1f1a6+4305ef7');
-        define('FUXICO_BUILD_DATE', '2026-11-24 23:41:20 UTC');
+        define('FUXICO_VERSION', '0.3.0-dev.115+20261021.92d73b7+8973e6b');
+        define('FUXICO_BUILD_DATE', '2026-11-27 01:34:26 UTC');
     }
 }
 
@@ -1519,7 +1519,7 @@ class I18n
             'footer_travesti_link' => 'https://pt.wikipedia.org/wiki/Travesti_(identidade_de_g%C3%AAnero)',
             'tip_burn' => '🏳️‍⚧️ No Pajubá: Desaquenda é soltar, revelar. ⚡ Técnico: O arquivo evapora permanentemente do disco imediatamente após o primeiro download.',
             'tip_secret' => '🏳️‍⚧️ No Pajubá: Aquendar é guardar, esconder e proteger a sete chaves. ⚡ Técnico: Gera uma URL com slug cifrado de 16 caracteres de alta entropia para impedir que curiosos adivinhem ou escaneiem o link.',
-            'tip_resenha' => 'Destila o conteúdo editorial do link via motor Resenha, removendo ruídos e anúncios, empacotando imagens e gerando um Fuxico Doc limpo e completo.',
+            'tip_resenha' => 'Destila o conteúdo editorial do link via motor Resenha, removendo ruídos e anúncios, empacotando imagens e gerando um Fuxico Doc soberano.',
             'tip_doc' => '⚡ Técnico: Compila Markdown para HTML estático standalone com skins Trava Zine e Acadêmico Depressivo (?acad=true).',
             'tip_expires' => 'Tempo de retenção do babado antes de prescrever e ser purgado automaticamente do cofre.',
             'tip_custom_name' => 'Defina um apelido personalizado para a URL (ex: fuxico.cc/meu-babado) em vez de um código gerado aleatoriamente.',
@@ -1847,16 +1847,6 @@ class MarkdownRenderer
     <meta charset="UTF-8">
     {$baseTag}<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$title}</title>
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="{$title} — Fuxico">
-    <meta property="og:description" content="Documento publicado via Fuxico">
-    <meta property="og:image" content="/{$slug}/og.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{$title} — Fuxico">
-    <meta name="twitter:description" content="Documento publicado via Fuxico">
-    <meta name="twitter:image" content="/{$slug}/og.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -4199,16 +4189,6 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$title} — Fuxico Gist</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{$title} — Fuxico Gist">
-    <meta property="og:description" content="Gist de código publicado via Fuxico">
-    <meta property="og:image" content="/{$slug}/og.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{$title} — Fuxico Gist">
-    <meta name="twitter:description" content="Gist de código publicado via Fuxico">
-    <meta name="twitter:image" content="/{$slug}/og.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -5667,16 +5647,6 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$repoName} · Repositório Git · Fuxico</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{$repoName} — Repositório Git Fuxico">
-    <meta property="og:description" content="Repositório git soberano hospedado via Fuxico">
-    <meta property="og:image" content="/{$slug}/og.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{$repoName} — Repositório Git Fuxico">
-    <meta name="twitter:description" content="Repositório git soberano hospedado via Fuxico">
-    <meta name="twitter:image" content="/{$slug}/og.png">
     <style>
         {$sourceStyle}
     </style>
@@ -6428,218 +6398,6 @@ body.theme-acad {
     border: 1px solid #ddd;
 }
 CSS;
-    }
-}
-}
-
-/* --- Module: OgCard.php --- */
-namespace Fuxico {
-class OgCard
-{
-    /**
-     * Gera os bytes de uma imagem PNG de 1200x630 pixels para Open Graph.
-     */
-    public static function generatePng(array $item, Config $config): string
-    {
-        $width = 1200;
-        $height = 630;
-
-        $im = imagecreatetruecolor($width, $height);
-        if ($im === false) {
-            return '';
-        }
-
-        // Ativar antialiasing
-        if (function_exists('imageantialias')) {
-            imageantialias($im, true);
-        }
-
-        // 1. Paleta de Cores
-        $bg = imagecolorallocate($im, 18, 16, 22); // #121016
-        $cardBg = imagecolorallocate($im, 26, 22, 34); // #1a1622
-        $pink = imagecolorallocate($im, 255, 42, 133); // #ff2a85
-        $yellow = imagecolorallocate($im, 226, 248, 53); // #e2f835
-        $white = imagecolorallocate($im, 245, 244, 239); // #f5f4ef
-        $muted = imagecolorallocate($im, 159, 151, 173); // #9f97ad
-        $borderDark = imagecolorallocate($im, 10, 8, 13); // #0a080d
-
-        // Cores da Listra Trans
-        $transBlue = imagecolorallocate($im, 91, 206, 250); // #5BCEFA
-        $transPink = imagecolorallocate($im, 245, 169, 184); // #F5A9B8
-        $transWhite = imagecolorallocate($im, 255, 255, 255); // #FFFFFF
-
-        // Fundo principal
-        imagefilledrectangle($im, 0, 0, $width, $height, $bg);
-
-        // Retícula pontilhada de fundo (textura de fanzine / xerox)
-        $dotColor = imagecolorallocatealpha($im, 226, 248, 53, 120);
-        for ($x = 20; $x < $width; $x += 40) {
-            for ($y = 20; $y < $height; $y += 40) {
-                imagefilledellipse($im, $x, $y, 3, 3, $dotColor);
-            }
-        }
-
-        // Sombra dura da moldura central
-        $mx1 = 50;
-        $my1 = 45;
-        $mx2 = $width - 50;
-        $my2 = $height - 45;
-        imagefilledrectangle($im, $mx1 + 12, $my1 + 12, $mx2 + 12, $my2 + 12, $borderDark);
-
-        // Moldura do card central
-        imagefilledrectangle($im, $mx1, $my1, $mx2, $my2, $cardBg);
-        imagesetthickness($im, 4);
-        imagerectangle($im, $mx1, $my1, $mx2, $my2, $pink);
-
-        // Listra Trans no topo do card
-        $stripeY = $my1 + 16;
-        $stripeH = 6;
-        $stripes = [$transBlue, $transPink, $transWhite, $transPink, $transBlue];
-        foreach ($stripes as $idx => $sCol) {
-            $sy = $stripeY + ($idx * $stripeH);
-            imagefilledrectangle($im, $mx1 + 4, $sy, $mx2 - 4, $sy + $stripeH - 1, $sCol);
-        }
-
-        // Localizar fontes TrueType no sistema
-        $fontMono = self::findFont([
-            '/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf',
-            '/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf',
-        ]);
-        $fontSans = self::findFont([
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-            '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
-        ]);
-
-        // Cabeçalho: Logo FUXICO // VANGUARDA TRAVESTI
-        $headerText = '⚡ FUXICO // ARQUIVO EFÊMERO & ZINE DE CÓDIGO';
-        if ($fontMono) {
-            imagettftext($im, 16, 0, $mx1 + 36, $my1 + 80, $yellow, $fontMono, $headerText);
-        } else {
-            imagestring($im, 5, $mx1 + 36, $my1 + 65, $headerText, $yellow);
-        }
-
-        // Linha divisória
-        imagesetthickness($im, 2);
-        imageline($im, $mx1 + 36, $my1 + 96, $mx2 - 36, $my1 + 96, $pink);
-
-        // Extração de Título do Item
-        $title = (string) ($item['original_name'] ?: $item['slug'] ?: 'Publicação Fuxico');
-        if (! empty($item['type']) && $item['type'] === 'doc') {
-            $itemData = json_decode((string) ($item['data'] ?? '{}'), true) ?: [];
-            if (! empty($itemData['title'])) {
-                $title = (string) $itemData['title'];
-            }
-        }
-
-        // Sanitização e formatação do título
-        $title = trim($title);
-        $displayTitle = self::wrapText($title, 40);
-
-        $titleY = $my1 + 180;
-        if ($fontSans) {
-            imagettftext($im, 36, 0, $mx1 + 36, $titleY, $white, $fontSans, $displayTitle);
-        } else {
-            imagestring($im, 5, $mx1 + 36, $titleY - 40, substr($displayTitle, 0, 50), $white);
-        }
-
-        // Metadados do Item: Tipo, Tamanho, Data
-        $type = strtoupper((string) ($item['type'] ?? 'FILE'));
-        $size = (int) ($item['size_bytes'] ?? $item['size'] ?? 0);
-        $formattedSize = match (true) {
-            $size >= 1073741824 => number_format($size / 1073741824, 2).' GB',
-            $size >= 1048576 => number_format($size / 1048576, 2).' MB',
-            $size >= 1024 => number_format($size / 1024, 2).' KB',
-            $size > 0 => $size.' B',
-            default => 'N/A',
-        };
-
-        $badgeText = "[ TIPO: {$type} ]   [ TAMANHO: {$formattedSize} ]";
-        if (! empty($item['is_oneshot'])) {
-            $badgeText .= '   [ 🔥 QUEIMA APÓS LEITURA ]';
-        }
-
-        $badgeY = $my1 + 360;
-        // Fundo do badge
-        imagefilledrectangle($im, $mx1 + 36, $badgeY - 26, $mx1 + 720, $badgeY + 12, $borderDark);
-        imagesetthickness($im, 2);
-        imagerectangle($im, $mx1 + 36, $badgeY - 26, $mx1 + 720, $badgeY + 12, $yellow);
-
-        if ($fontMono) {
-            imagettftext($im, 15, 0, $mx1 + 48, $badgeY, $yellow, $fontMono, $badgeText);
-        } else {
-            imagestring($im, 4, $mx1 + 48, $badgeY - 18, $badgeText, $yellow);
-        }
-
-        // Rodapé do Card
-        $footerY = $my2 - 40;
-        $urlDisplay = rtrim((string) $config->baseUrl, '/').'/'.($item['slug'] ?? '');
-        $securityNotice = '🔒 Fuxico Soberano // Sem Rastreamento // Criptografia na Borda';
-
-        if ($fontMono) {
-            imagettftext($im, 16, 0, $mx1 + 36, $footerY, $pink, $fontMono, '↗ '.$urlDisplay);
-            imagettftext($im, 12, 0, $mx1 + 36, $footerY + 24, $muted, $fontMono, $securityNotice);
-        } else {
-            imagestring($im, 4, $mx1 + 36, $footerY - 20, '↗ '.$urlDisplay, $pink);
-            imagestring($im, 2, $mx1 + 36, $footerY + 5, $securityNotice, $muted);
-        }
-
-        ob_start();
-        imagepng($im);
-        $output = (string) ob_get_clean();
-
-        return $output;
-    }
-
-    /**
-     * Localiza a primeira fonte TrueType existente na lista de caminhos candidatos.
-     */
-    private static function findFont(array $candidates): ?string
-    {
-        foreach ($candidates as $font) {
-            if (file_exists($font) && is_readable($font)) {
-                return $font;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Quebra texto em linhas com limite máximo de caracteres.
-     */
-    private static function wrapText(string $text, int $maxChars): string
-    {
-        if (mb_strlen($text, 'UTF-8') <= $maxChars) {
-            return $text;
-        }
-
-        $words = explode(' ', $text);
-        $lines = [];
-        $current = '';
-
-        foreach ($words as $word) {
-            if (mb_strlen($current.' '.$word, 'UTF-8') <= $maxChars) {
-                $current = $current === '' ? $word : $current.' '.$word;
-            } else {
-                if ($current !== '') {
-                    $lines[] = $current;
-                }
-                $current = $word;
-                if (count($lines) >= 2) {
-                    break;
-                }
-            }
-        }
-        if ($current !== '' && count($lines) < 2) {
-            $lines[] = $current;
-        }
-
-        $result = implode("\n", $lines);
-        if (mb_strlen($text, 'UTF-8') > mb_strlen($result, 'UTF-8')) {
-            $result .= '...';
-        }
-
-        return $result;
     }
 }
 }
@@ -9720,16 +9478,6 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$filename} - Fuxico Pré-Download</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{$filename} — Fuxico">
-    <meta property="og:description" content="Arquivo compartilhado via Fuxico ({$formattedSize}, {$safeMime})">
-    <meta property="og:image" content="/{$slug}/og.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{$filename} — Fuxico">
-    <meta name="twitter:description" content="Arquivo compartilhado via Fuxico ({$formattedSize}, {$safeMime})">
-    <meta name="twitter:image" content="/{$slug}/og.png">
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -9980,16 +9728,6 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{$folderName} - Fuxico Pasta</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{$folderName} — Pasta Fuxico">
-    <meta property="og:description" content="Pasta compartilhada via Fuxico">
-    <meta property="og:image" content="/{$slug}/og.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{$folderName} — Pasta Fuxico">
-    <meta name="twitter:description" content="Pasta compartilhada via Fuxico">
-    <meta name="twitter:image" content="/{$slug}/og.png">
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -10366,26 +10104,6 @@ class App
         // 2.5 Dedicated Admin Panel endpoint
         if ($path === 'painel') {
             $this->handlePainel($method);
-
-            return;
-        }
-
-        // 2.6 Open Graph dynamic card endpoint: /og/<slug>
-        if ($method === 'GET' && str_starts_with($path, 'og/')) {
-            $ogSlug = explode('.', substr($path, 3))[0];
-            $item = $this->db->findBySlug($ogSlug);
-            if ($item && ($item['expires_at'] === null || $item['expires_at'] > time())) {
-                $png = OgCard::generatePng($item, $this->config);
-                header('Content-Type: image/png');
-                header('Content-Length: '.(string) strlen($png));
-                header('Cache-Control: public, max-age=3600');
-                echo $png;
-
-                return;
-            }
-            http_response_code(404);
-            header('Content-Type: text/plain');
-            echo "404 Not Found: Card não encontrado ou expirado.\n";
 
             return;
         }
@@ -11026,17 +10744,6 @@ class App
         if (count($parts) > 1) {
             $subAction = $parts[1];
 
-            // Open Graph Dynamic Card: /<slug>/og ou /<slug>/og.png
-            if ($subAction === 'og' || $subAction === 'og.png') {
-                $png = OgCard::generatePng($item, $this->config);
-                header('Content-Type: image/png');
-                header('Content-Length: '.(string) strlen($png));
-                header('Cache-Control: public, max-age=3600');
-                echo $png;
-
-                return;
-            }
-
             // 0. Widget de embed JavaScript: /<slug>/embed.js
             if ($subAction === 'embed.js') {
                 if (! in_array($item['type'], ['gist', 'file'], true)) {
@@ -11254,17 +10961,6 @@ class App
                 http_response_code(404);
                 header('Content-Type: text/plain');
                 echo "File Expired\n";
-
-                return;
-            }
-
-            // Open Graph Dynamic Card via query: /<slug>?og=1
-            if (isset($_GET['og'])) {
-                $png = OgCard::generatePng($item, $this->config);
-                header('Content-Type: image/png');
-                header('Content-Length: '.(string) strlen($png));
-                header('Cache-Control: public, max-age=3600');
-                echo $png;
 
                 return;
             }
